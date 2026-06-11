@@ -5,6 +5,13 @@ import { companiesCollection } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InstallPrompt } from "./InstallPrompt";
+import {
+  setCompany as setCompanyAction,
+  setPlatform as setPlatformAction,
+  setStatus as setStatusAction,
+  useAppDispatch,
+  useAppSelector,
+} from "@/store";
 
 export type Platform = { id: string; name: string };
 export type Company = { id: string; name: string; platforms: Platform[] };
@@ -38,12 +45,15 @@ export type SetupSelection = {
 };
 
 export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void }) {
+  const dispatch = useAppDispatch();
+  const setup = useAppSelector((s) => s.setup);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [companyId, setCompanyId] = useState<string>("");
-  const [platformId, setPlatformId] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
+
+  const companyId = setup.companyId;
+  const platformId = setup.platformId;
+  const status = setup.status;
 
   useEffect(() => {
     (async () => {
@@ -66,14 +76,30 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
     })();
   }, []);
 
-  const company = companies.find((c) => c.id === companyId);
-  const platform = company?.platforms.find((p) => p.id === platformId);
+  // Resolve current company/platform from fresh fetch, fall back to persisted snapshot
+  const company =
+    companies.find((c) => c.id === companyId) ?? setup.companySnapshot ?? undefined;
+  const platform =
+    company?.platforms.find((p) => p.id === platformId) ??
+    setup.platformSnapshot ??
+    undefined;
   const canStart = !!company && !!platform && !!status;
+
+  const handleCompany = (id: string) => {
+    const c = companies.find((x) => x.id === id) ?? null;
+    dispatch(setCompanyAction(c));
+  };
+  const handlePlatform = (id: string) => {
+    const p = company?.platforms.find((x) => x.id === id) ?? null;
+    dispatch(setPlatformAction(p));
+  };
+  const handleStatus = (s: string) => dispatch(setStatusAction(s));
 
   const handleStart = () => {
     if (!canStart) return;
     onStart({ company: company!, platform: platform!, status });
   };
+
 
   return (
     <div className="flex min-h-dvh flex-col bg-background px-5 pb-8 pt-[max(env(safe-area-inset-top),1rem)]">
