@@ -225,6 +225,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           title="Reload master file"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+        </Button>
         <div className="flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
           <span>{successCount}</span>
