@@ -139,7 +139,7 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
           label="Company"
           step="1"
         >
-          <Select value={companyId} onValueChange={(v) => { setCompanyId(v); setPlatformId(""); }}>
+          <Select value={companyId} onValueChange={handleCompany}>
             <SelectTrigger className="h-14 rounded-2xl border-border bg-card text-base">
               <SelectValue placeholder={loading ? "Loading…" : "Select company"} />
             </SelectTrigger>
@@ -159,7 +159,7 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
           step="2"
           disabled={!company}
         >
-          <Select value={platformId} onValueChange={setPlatformId} disabled={!company}>
+          <Select value={platformId} onValueChange={handlePlatform} disabled={!company}>
             <SelectTrigger className="h-14 rounded-2xl border-border bg-card text-base disabled:opacity-50">
               <SelectValue placeholder={company ? "Select platform" : "Pick company first"} />
             </SelectTrigger>
@@ -183,7 +183,7 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
               <button
                 key={s}
                 type="button"
-                onClick={() => setStatus(s)}
+                onClick={() => handleStatus(s)}
                 className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold capitalize transition-all active:scale-95 ${
                   status === s
                     ? "border-primary bg-primary text-primary-foreground shadow-glow"
