@@ -87,7 +87,7 @@ const masterSlice = createSlice({
       if (entry && !entry.scannedAwbs.includes(awb)) entry.scannedAwbs.push(awb);
     },
     clearScannedAwbs(state, action: PayloadAction<{ path: string }>) {
-      const entry = state.cache[path: action.payload.path] = state.cache[action.payload.path];
+      const entry = state.cache[action.payload.path];
       if (entry) entry.scannedAwbs = [];
     },
     invalidate(state, action: PayloadAction<{ path: string }>) {
