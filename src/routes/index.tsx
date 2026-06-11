@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { Provider } from "react-redux";
 import { Toaster } from "sonner";
 import { SetupScreen, type SetupSelection } from "@/components/SetupScreen";
 import { ScannerScreen } from "@/components/ScannerScreen";
+import { store } from "@/store";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,18 +32,20 @@ function Index() {
   const [selection, setSelection] = useState<SetupSelection | null>(null);
 
   return (
-    <div className="dark mx-auto max-w-[480px] bg-background text-foreground antialiased">
-      {selection ? (
-        <ScannerScreen selection={selection} onExit={() => setSelection(null)} />
-      ) : (
-        <SetupScreen onStart={setSelection} />
-      )}
-      <Toaster
-        theme="dark"
-        position="top-center"
-        richColors
-        toastOptions={{ style: { marginTop: "env(safe-area-inset-top)" } }}
-      />
-    </div>
+    <Provider store={store}>
+      <div className="dark mx-auto max-w-[480px] bg-background text-foreground antialiased">
+        {selection ? (
+          <ScannerScreen selection={selection} onExit={() => setSelection(null)} />
+        ) : (
+          <SetupScreen onStart={setSelection} />
+        )}
+        <Toaster
+          theme="dark"
+          position="top-center"
+          richColors
+          toastOptions={{ style: { marginTop: "env(safe-area-inset-top)" } }}
+        />
+      </div>
+    </Provider>
   );
 }
