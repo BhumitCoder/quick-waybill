@@ -35,6 +35,7 @@ type ScanResult = {
 };
 
 export function ScannerScreen({ selection, onExit }: { selection: SetupSelection; onExit: () => void }) {
+  const { isDark, toggle } = useTheme();
   const videoRef = useRef<HTMLVideoElement>(null);
   const dispatch = useAppDispatch();
 
