@@ -1,10 +1,16 @@
 import { useEffect, useRef, useState } from "react";
 import { getDocs } from "firebase/firestore";
-import { ScanLine, Building2, Layers, Tag, Loader2, Sun, Moon, CheckCircle2, AlertTriangle } from "lucide-react";
+import {
+  ScanLine, Building2, Layers, Sun, Moon,
+  CheckCircle2, AlertTriangle, Loader2, ChevronRight,
+} from "lucide-react";
 import { companiesCollection } from "@/lib/firebase";
 import { readMasterRows, masterPath } from "@/lib/masterService";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { InstallPrompt } from "./InstallPrompt";
 import { useTheme } from "@/hooks/useTheme";
 import {
@@ -19,33 +25,22 @@ import {
 export type Platform = { id: string; name: string };
 export type Company = { id: string; name: string; platforms: Platform[] };
 
-const STATUS_OPTIONS = [
-  "pending",
-  "processing",
-  "shipped",
-  "delivered",
-  "cancelled",
-  "returned",
-  "lost",
-  "manifest",
-] as const;
-
-const STATUS_META: Record<string, { color: string; dot: string }> = {
-  pending:    { color: "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400",   dot: "bg-amber-500" },
-  processing: { color: "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-400",       dot: "bg-blue-500" },
-  shipped:    { color: "border-cyan-500/30 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400",       dot: "bg-cyan-500" },
-  delivered:  { color: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
-  cancelled:  { color: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-400",       dot: "bg-rose-500" },
-  returned:   { color: "border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-400", dot: "bg-orange-500" },
-  lost:       { color: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-400",           dot: "bg-red-500" },
-  manifest:   { color: "border-violet-500/30 bg-violet-500/10 text-violet-600 dark:text-violet-400", dot: "bg-violet-500" },
-};
-
 export type SetupSelection = {
   company: Company;
   platform: Platform;
   status: string;
 };
+
+const STATUSES = [
+  { id: "pending",    label: "Pending",    dot: "bg-amber-400",   pill: "bg-amber-50   border-amber-200   text-amber-700   dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400"   },
+  { id: "processing", label: "Processing", dot: "bg-blue-400",    pill: "bg-blue-50    border-blue-200    text-blue-700    dark:bg-blue-500/10  dark:border-blue-500/30  dark:text-blue-400"    },
+  { id: "shipped",    label: "Shipped",    dot: "bg-cyan-400",    pill: "bg-cyan-50    border-cyan-200    text-cyan-700    dark:bg-cyan-500/10  dark:border-cyan-500/30  dark:text-cyan-400"    },
+  { id: "delivered",  label: "Delivered",  dot: "bg-emerald-400", pill: "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400" },
+  { id: "cancelled",  label: "Cancelled",  dot: "bg-rose-400",    pill: "bg-rose-50    border-rose-200    text-rose-700    dark:bg-rose-500/10   dark:border-rose-500/30   dark:text-rose-400"   },
+  { id: "returned",   label: "Returned",   dot: "bg-orange-400",  pill: "bg-orange-50  border-orange-200  text-orange-700  dark:bg-orange-500/10 dark:border-orange-500/30 dark:text-orange-400"  },
+  { id: "lost",       label: "Lost",       dot: "bg-red-400",     pill: "bg-red-50     border-red-200     text-red-700     dark:bg-red-500/10    dark:border-red-500/30    dark:text-red-400"    },
+  { id: "manifest",   label: "Manifest",   dot: "bg-violet-400",  pill: "bg-violet-50  border-violet-200  text-violet-700  dark:bg-violet-500/10 dark:border-violet-500/30 dark:text-violet-400"  },
+] as const;
 
 type PrefetchStatus = "idle" | "loading" | "ready" | "error";
 
@@ -56,260 +51,219 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const [prefetchStatus, setPrefetchStatus] = useState<PrefetchStatus>("idle");
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [prefetch, setPrefetch] = useState<PrefetchStatus>("idle");
   const [starting, setStarting] = useState(false);
-  const pendingPrefetchRef = useRef<Promise<void> | null>(null);
+  const pendingRef = useRef<Promise<void> | null>(null);
 
-  const companyId = setup.companyId;
-  const platformId = setup.platformId;
-  const status = setup.status;
+  const { companyId, platformId, status } = setup;
 
-  // Load companies from Firestore
   useEffect(() => {
-    (async () => {
-      try {
-        const snap = await getDocs(companiesCollection);
-        const list: Company[] = snap.docs.map((d) => {
+    getDocs(companiesCollection)
+      .then((snap) => {
+        setCompanies(snap.docs.map((d) => {
           const data = d.data() as { name?: string; platforms?: Platform[] };
-          return {
-            id: d.id,
-            name: data.name ?? d.id,
-            platforms: Array.isArray(data.platforms) ? data.platforms : [],
-          };
-        });
-        setCompanies(list);
-      } catch (e) {
-        setError((e as Error).message);
-      } finally {
-        setLoading(false);
-      }
-    })();
+          return { id: d.id, name: data.name ?? d.id, platforms: Array.isArray(data.platforms) ? data.platforms : [] };
+        }));
+      })
+      .catch((e) => setFetchError((e as Error).message))
+      .finally(() => setLoading(false));
   }, []);
 
   const company = companies.find((c) => c.id === companyId) ?? setup.companySnapshot ?? undefined;
-  const platform =
-    company?.platforms.find((p) => p.id === platformId) ?? setup.platformSnapshot ?? undefined;
+  const platform = company?.platforms.find((p) => p.id === platformId) ?? setup.platformSnapshot ?? undefined;
   const canStart = !!company && !!platform && !!status;
 
-  // Pre-fetch the master file as soon as company + platform are both selected
-  const masterCacheEntry = useAppSelector((s) => {
-    if (!company || !platform) return undefined;
-    return s.master.cache[masterPath(company.id, platform.id)];
-  });
+  const cachedEntry = useAppSelector((s) =>
+    company && platform ? s.master.cache[masterPath(company.id, platform.id)] : undefined
+  );
 
   useEffect(() => {
-    if (!company || !platform) {
-      setPrefetchStatus("idle");
-      pendingPrefetchRef.current = null;
-      return;
-    }
-
-    if (masterCacheEntry) {
-      setPrefetchStatus("ready");
-      return;
-    }
-
-    setPrefetchStatus("loading");
+    if (!company || !platform) { setPrefetch("idle"); return; }
+    if (cachedEntry) { setPrefetch("ready"); return; }
+    setPrefetch("loading");
     let cancelled = false;
     const path = masterPath(company.id, platform.id);
-
     const p = (async () => {
       try {
         const rows = await readMasterRows(path);
         if (cancelled) return;
         dispatch(setMaster({ path, rows }));
-        if (!cancelled) setPrefetchStatus("ready");
+        if (!cancelled) setPrefetch("ready");
       } catch {
-        if (!cancelled) setPrefetchStatus("error");
+        if (!cancelled) setPrefetch("error");
       }
     })();
-
-    pendingPrefetchRef.current = p;
+    pendingRef.current = p;
     return () => { cancelled = true; };
-  }, [company?.id, platform?.id, !!masterCacheEntry, dispatch]);
-
-  const handleCompany = (id: string) => {
-    const c = companies.find((x) => x.id === id) ?? null;
-    dispatch(setCompanyAction(c));
-  };
-  const handlePlatform = (id: string) => {
-    const p = company?.platforms.find((x) => x.id === id) ?? null;
-    dispatch(setPlatformAction(p));
-  };
-  const handleStatus = (s: string) => dispatch(setStatusAction(s));
+  }, [company?.id, platform?.id, !!cachedEntry, dispatch]);
 
   const handleStart = async () => {
     if (!canStart || starting) return;
-
-    if (prefetchStatus === "loading" && pendingPrefetchRef.current) {
+    if (prefetch === "loading" && pendingRef.current) {
       setStarting(true);
-      try {
-        await pendingPrefetchRef.current;
-      } finally {
-        setStarting(false);
-      }
+      try { await pendingRef.current; } finally { setStarting(false); }
     }
-
     onStart({ company: company!, platform: platform!, status });
   };
 
-  const btnLabel = () => {
-    if (starting) return <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading master file…</>;
-    if (canStart && prefetchStatus === "loading") return <><Loader2 className="mr-2 h-4 w-4 animate-spin opacity-70" /> Start Scanning</>;
-    return <><ScanLine className="mr-2 h-5 w-5" /> Start Scanning</>;
-  };
-
   return (
-    <div className="flex min-h-dvh flex-col bg-background px-5 pb-8 pt-[max(env(safe-area-inset-top),1.25rem)]">
-      {/* Header */}
-      <header className="flex items-center justify-between pb-5">
-        <div className="flex items-center gap-3">
-          <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-primary to-primary-glow shadow-glow">
-            <ScanLine className="h-5 w-5 text-primary-foreground" />
-          </div>
-          <div>
-            <h1 className="text-base font-bold tracking-tight leading-tight">AWB Scanner</h1>
-            <p className="text-[11px] text-muted-foreground leading-tight">Bulk status updates</p>
-          </div>
+    <div className="flex min-h-dvh flex-col bg-background">
+      {/* Safe-area top spacer */}
+      <div style={{ height: "env(safe-area-inset-top)" }} />
+
+      {/* ── Header ── */}
+      <header className="flex items-center gap-3 px-5 pt-3 pb-4">
+        <div className="grid h-10 w-10 shrink-0 place-items-center rounded-[14px] bg-gradient-to-br from-primary to-primary-glow shadow-glow">
+          <ScanLine className="h-5 w-5 text-primary-foreground" />
         </div>
-        <div className="flex items-center gap-1">
-          <Button variant="ghost" size="icon" onClick={toggle} className="h-9 w-9 rounded-xl">
-            {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </Button>
-          <InstallPrompt />
+        <div className="flex-1 min-w-0">
+          <p className="text-[17px] font-bold leading-none tracking-tight">AWB Scanner</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">Bulk status updates</p>
         </div>
+        <Button variant="ghost" size="icon" onClick={toggle} className="h-9 w-9 rounded-xl text-muted-foreground">
+          {isDark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
+        </Button>
+        <InstallPrompt />
       </header>
 
-      {/* Form */}
-      <div className="flex flex-1 flex-col gap-5">
-        <Field icon={<Building2 className="h-3.5 w-3.5" />} label="Company" step="1">
-          <Select value={companyId} onValueChange={handleCompany}>
-            <SelectTrigger className="h-13 rounded-2xl border-border bg-card text-base">
-              <SelectValue placeholder={loading ? "Loading…" : "Select company"} />
-            </SelectTrigger>
-            <SelectContent>
-              {companies.map((c) => (
-                <SelectItem key={c.id} value={c.id} className="py-3 text-base">
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+      {/* ── Scrollable body ── */}
+      <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-5">
 
-        <Field icon={<Layers className="h-3.5 w-3.5" />} label="Platform" step="2" disabled={!company}>
-          <Select value={platformId} onValueChange={handlePlatform} disabled={!company}>
-            <SelectTrigger className="h-13 rounded-2xl border-border bg-card text-base disabled:opacity-50">
-              <SelectValue placeholder={company ? "Select platform" : "Pick company first"} />
-            </SelectTrigger>
-            <SelectContent>
-              {(company?.platforms ?? []).map((p) => (
-                <SelectItem key={p.id} value={p.id} className="py-3 text-base">
-                  {p.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </Field>
+        {/* Company + Platform card */}
+        <div>
+          <SectionLabel>Destination</SectionLabel>
+          <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
+            {/* Company */}
+            <Select value={companyId} onValueChange={(id) => {
+              const c = companies.find((x) => x.id === id) ?? null;
+              dispatch(setCompanyAction(c));
+            }}>
+              <SelectTrigger className="h-auto w-full cursor-pointer items-center gap-0 rounded-none border-0 bg-transparent px-4 py-0 focus:ring-0 focus:ring-offset-0 [&>span]:line-clamp-none [&>[aria-hidden]]:hidden">
+                <div className="flex w-full items-center gap-3.5 py-3.5">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-primary/10">
+                    <Building2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Company</p>
+                    <p className={`mt-0.5 text-[15px] font-medium leading-tight truncate ${!company ? "text-muted-foreground/60" : "text-foreground"}`}>
+                      {loading ? "Loading…" : <SelectValue placeholder="Select company" />}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {companies.map((c) => (
+                  <SelectItem key={c.id} value={c.id} className="py-3 text-base">{c.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-        <Field icon={<Tag className="h-3.5 w-3.5" />} label="Status to apply" step="3">
+            <div className="mx-4 h-px bg-border/60" />
+
+            {/* Platform */}
+            <Select value={platformId} onValueChange={(id) => {
+              const p = company?.platforms.find((x) => x.id === id) ?? null;
+              dispatch(setPlatformAction(p));
+            }} disabled={!company}>
+              <SelectTrigger className="h-auto w-full cursor-pointer items-center gap-0 rounded-none border-0 bg-transparent px-4 py-0 focus:ring-0 focus:ring-offset-0 disabled:opacity-50 [&>span]:line-clamp-none [&>[aria-hidden]]:hidden">
+                <div className="flex w-full items-center gap-3.5 py-3.5">
+                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-primary/10">
+                    <Layers className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0 text-left">
+                    <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Platform</p>
+                    <p className={`mt-0.5 text-[15px] font-medium leading-tight truncate ${!platform ? "text-muted-foreground/60" : "text-foreground"}`}>
+                      {company
+                        ? <SelectValue placeholder="Select platform" />
+                        : "Pick company first"}
+                    </p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/40" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                {(company?.platforms ?? []).map((p) => (
+                  <SelectItem key={p.id} value={p.id} className="py-3 text-base">{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Status grid */}
+        <div>
+          <SectionLabel>Status to Apply</SectionLabel>
           <div className="grid grid-cols-2 gap-2">
-            {STATUS_OPTIONS.map((s) => {
-              const meta = STATUS_META[s];
-              const isSelected = status === s;
+            {STATUSES.map(({ id, label, dot, pill }) => {
+              const selected = status === id;
               return (
                 <button
-                  key={s}
+                  key={id}
                   type="button"
-                  onClick={() => handleStatus(s)}
-                  className={`flex h-11 items-center justify-center gap-2 rounded-2xl border text-sm font-semibold capitalize transition-all active:scale-95 ${
-                    isSelected
-                      ? "border-primary bg-primary text-primary-foreground shadow-glow"
-                      : `${meta?.color ?? "border-border bg-card text-foreground"}`
+                  onClick={() => dispatch(setStatusAction(id))}
+                  className={`relative flex h-[52px] items-center gap-3 rounded-2xl border px-4 text-left text-[14px] font-semibold transition-all active:scale-[0.96] ${
+                    selected
+                      ? "border-primary bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-glow"
+                      : pill
                   }`}
                 >
-                  {!isSelected && meta && (
-                    <span className={`h-2 w-2 rounded-full ${meta.dot}`} />
-                  )}
-                  {s}
+                  <span className={`h-2 w-2 shrink-0 rounded-full ${selected ? "bg-white/60" : dot}`} />
+                  {label}
                 </button>
               );
             })}
           </div>
-        </Field>
+        </div>
 
-        {error && (
-          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
-            {error}
+        {fetchError && (
+          <div className="rounded-2xl border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {fetchError}
           </div>
         )}
       </div>
 
-      {/* Pre-fetch status indicator */}
-      {canStart && (
-        <div className="mt-4 flex items-center justify-center gap-1.5">
-          {prefetchStatus === "loading" && (
-            <>
-              <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
-              <span className="text-[11px] text-muted-foreground">Loading master file in background…</span>
-            </>
+      {/* ── Bottom CTA ── */}
+      <div className="border-t border-border/50 bg-background px-5 pt-3 pb-[max(env(safe-area-inset-bottom),20px)]">
+        {/* Prefetch pill */}
+        <div className="mb-2.5 flex h-5 items-center justify-center gap-1.5">
+          {canStart && prefetch === "loading" && (
+            <><Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+            <span className="text-[11px] text-muted-foreground">Loading master file…</span></>
           )}
-          {prefetchStatus === "ready" && (
-            <>
-              <CheckCircle2 className="h-3 w-3 text-emerald-500" />
-              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">Master file ready</span>
-            </>
+          {canStart && prefetch === "ready" && (
+            <><CheckCircle2 className="h-3 w-3 text-emerald-500" />
+            <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Master file ready</span></>
           )}
-          {prefetchStatus === "error" && (
-            <>
-              <AlertTriangle className="h-3 w-3 text-amber-500" />
-              <span className="text-[11px] text-amber-600 dark:text-amber-400">File not found — will retry on start</span>
-            </>
+          {canStart && prefetch === "error" && (
+            <><AlertTriangle className="h-3 w-3 text-amber-500" />
+            <span className="text-[11px] text-amber-600 dark:text-amber-400">File not found — will retry on start</span></>
           )}
         </div>
-      )}
 
-      {/* CTA */}
-      <div className="sticky bottom-0 mt-4 pt-2">
         <Button
           onClick={handleStart}
           disabled={!canStart || loading || starting}
-          className="h-14 w-full rounded-2xl bg-gradient-to-br from-primary to-primary-glow text-base font-bold shadow-glow disabled:from-muted disabled:to-muted disabled:shadow-none transition-all"
+          className="h-14 w-full rounded-2xl bg-gradient-to-br from-primary to-primary-glow text-[15px] font-bold tracking-wide shadow-glow transition-all active:scale-[0.98] disabled:from-muted disabled:to-muted disabled:text-muted-foreground disabled:shadow-none"
         >
-          {btnLabel()}
+          {starting ? (
+            <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Preparing…</>
+          ) : prefetch === "loading" && canStart ? (
+            <><Loader2 className="mr-2 h-4 w-4 animate-spin opacity-60" /><ScanLine className="mr-1.5 h-5 w-5" />Start Scanning</>
+          ) : (
+            <><ScanLine className="mr-2 h-5 w-5" />Start Scanning</>
+          )}
         </Button>
       </div>
     </div>
   );
 }
 
-function Field({
-  icon,
-  label,
-  step,
-  disabled,
-  children,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  step: string;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
+function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
-    <div className={disabled ? "opacity-50 pointer-events-none" : ""}>
-      <div className="mb-2 flex items-center gap-2">
-        <span className="grid h-5 w-5 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">
-          {step}
-        </span>
-        <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-          {icon}
-          {label}
-        </span>
-      </div>
+    <p className="mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
       {children}
-    </div>
+    </p>
   );
 }

@@ -16,17 +16,13 @@ export function InstallPrompt() {
 
   useEffect(() => {
     const ua = window.navigator.userAgent.toLowerCase();
-    const ios = /iphone|ipad|ipod/.test(ua) && !/crios|fxios/.test(ua);
-    setIsIOS(ios);
+    setIsIOS(/iphone|ipad|ipod/.test(ua) && !/crios|fxios/.test(ua));
     const standalone =
       window.matchMedia("(display-mode: standalone)").matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
     setInstalled(standalone);
 
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferred(e as BIPEvent);
-    };
+    const handler = (e: Event) => { e.preventDefault(); setDeferred(e as BIPEvent); };
     window.addEventListener("beforeinstallprompt", handler);
     window.addEventListener("appinstalled", () => setInstalled(true));
     return () => window.removeEventListener("beforeinstallprompt", handler);
@@ -50,62 +46,51 @@ export function InstallPrompt() {
     <>
       <Button
         onClick={handleInstall}
-        variant="outline"
-        size="sm"
-        className="gap-2 border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9 rounded-xl text-muted-foreground hover:text-foreground"
+        title="Install App"
       >
-        <Download className="h-4 w-4" />
-        Install App
+        <Download className="h-[18px] w-[18px]" />
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Install AWB Scanner</DialogTitle>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader className="gap-1">
+            <DialogTitle className="text-lg">Install AWB Scanner</DialogTitle>
             <DialogDescription>
-              Add this app to your home screen for the fastest scanning experience.
+              Add to your home screen for the best scanning experience.
             </DialogDescription>
           </DialogHeader>
-          {isIOS ? (
-            <ol className="space-y-3 text-sm">
-              <li className="flex gap-3">
-                <span className="font-semibold text-primary">1.</span>
-                <span className="flex items-center gap-2">
-                  Tap the <Share className="inline h-4 w-4" /> Share button in Safari
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-semibold text-primary">2.</span>
-                <span className="flex items-center gap-2">
-                  Choose <Plus className="inline h-4 w-4" /> "Add to Home Screen"
-                </span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-semibold text-primary">3.</span>
-                <span>Tap "Add" — the app icon appears on your home screen</span>
-              </li>
-            </ol>
-          ) : (
-            <ol className="space-y-3 text-sm">
-              <li className="flex gap-3">
-                <span className="font-semibold text-primary">1.</span>
-                <span>Open the browser menu (⋮)</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-semibold text-primary">2.</span>
-                <span>Tap "Install app" or "Add to Home screen"</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="font-semibold text-primary">3.</span>
-                <span>Confirm — launch the app from your home screen</span>
-              </li>
-            </ol>
-          )}
-          <Button onClick={() => setOpen(false)} variant="secondary" className="mt-2">
+          <ol className="mt-1 space-y-3">
+            {isIOS ? (
+              <>
+                <Step n={1}><>Tap the <Share className="inline mx-0.5 h-4 w-4 align-middle" /> Share button in Safari</></Step>
+                <Step n={2}><>Choose <Plus className="inline mx-0.5 h-4 w-4 align-middle" /> "Add to Home Screen"</></Step>
+                <Step n={3}>Tap "Add" to confirm</Step>
+              </>
+            ) : (
+              <>
+                <Step n={1}>Open the browser menu (⋮)</Step>
+                <Step n={2}>Tap "Install app" or "Add to Home screen"</Step>
+                <Step n={3}>Confirm to install</Step>
+              </>
+            )}
+          </ol>
+          <Button onClick={() => setOpen(false)} variant="secondary" className="mt-2 h-12 w-full rounded-2xl font-semibold">
             <X className="mr-2 h-4 w-4" /> Close
           </Button>
         </DialogContent>
       </Dialog>
     </>
+  );
+}
+
+function Step({ n, children }: { n: number; children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-3 text-sm">
+      <span className="mt-px grid h-5 w-5 shrink-0 place-items-center rounded-full bg-primary/15 text-[10px] font-bold text-primary">{n}</span>
+      <span className="text-foreground/80 leading-relaxed">{children}</span>
+    </li>
   );
 }
