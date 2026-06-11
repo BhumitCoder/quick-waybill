@@ -1,22 +1,55 @@
 let audioCtx: AudioContext | null = null;
+let unlocked = false;
 
-export function beep(freq = 880, durationMs = 80) {
+function getCtx(): AudioContext {
+  if (!audioCtx) {
+    const Ctx =
+      window.AudioContext ||
+      (window as unknown as { webkitAudioContext: typeof AudioContext })
+        .webkitAudioContext;
+    audioCtx = new Ctx();
+  }
+  return audioCtx;
+}
+
+export function unlockAudio() {
+  if (unlocked) return;
   try {
-    if (!audioCtx) {
-      const Ctx = (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext);
-      audioCtx = new Ctx();
+    const ctx = getCtx();
+    if (ctx.state === "suspended") {
+      ctx.resume().catch(() => {});
     }
-    const ctx = audioCtx;
+    const buf = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.connect(ctx.destination);
+    src.start(0);
+    unlocked = true;
+  } catch {
+    /* ignore */
+  }
+}
+
+export function beep(freq = 1046, durationMs = 100) {
+  try {
+    const ctx = getCtx();
+    if (ctx.state === "suspended") ctx.resume().catch(() => {});
+
     const osc = ctx.createOscillator();
     const gain = ctx.createGain();
-    osc.type = "sine";
+
+    osc.type = "square";
     osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + durationMs / 1000);
+
+    gain.gain.setValueAtTime(0, ctx.currentTime);
+    gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + 0.005);
+    gain.gain.setValueAtTime(0.25, ctx.currentTime + durationMs / 1000 - 0.01);
+    gain.gain.linearRampToValueAtTime(0, ctx.currentTime + durationMs / 1000);
+
     osc.connect(gain);
     gain.connect(ctx.destination);
-    osc.start();
-    osc.stop(ctx.currentTime + durationMs / 1000);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + durationMs / 1000 + 0.01);
   } catch {
     /* ignore */
   }
@@ -31,5 +64,6 @@ export function vibrate(ms = 50) {
 }
 
 export function errorBeep() {
-  beep(220, 160);
+  beep(280, 180);
+  setTimeout(() => beep(220, 180), 210);
 }

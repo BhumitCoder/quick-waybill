@@ -11,7 +11,7 @@ import {
   findRowByAwb, getField, masterPath, readMasterRows,
   setField, writeMasterRows, type MasterRow,
 } from "@/lib/masterService";
-import { beep, errorBeep, vibrate } from "@/lib/scanner";
+import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
 import type { SetupSelection } from "./SetupScreen";
 import { invalidate, markScanned, setMaster, updateRow, useAppDispatch, useAppSelector } from "@/store";
 
@@ -49,6 +49,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [results, setResults] = useState<ScanResult[]>([]);
   const [uploading, setUploading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [flashColor, setFlashColor] = useState<"green" | "red" | null>(null);
 
   useEffect(() => {
     if (cacheEntry) {
@@ -101,6 +102,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
     if (scannedRef.current.has(key)) {
       vibrate(30);
+      setFlashColor("red");
+      setTimeout(() => setFlashColor(null), 350);
       toast.warning("Already updated this session", { description: awb });
       pushResult({ id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, warning: true, error: "Already scanned" });
       return;
@@ -108,6 +111,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const idx = findRowByAwb(rowsRef.current, awb);
     if (idx === -1) {
       errorBeep(); vibrate(30);
+      setFlashColor("red");
+      setTimeout(() => setFlashColor(null), 350);
       toast.error("AWB not found", { description: awb });
       pushResult({ id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: "Not in master file" });
       return;
@@ -124,6 +129,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     dispatch(markScanned({ path, awb: key }));
 
     beep(); vibrate(50);
+    setFlashColor("green");
+    setTimeout(() => setFlashColor(null), 350);
     pushResult({ id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: true, orderInfo: { orderId, productName, previousStatus } });
     toast.success(`→ ${selection.status}`, { description: productName || orderId || awb });
 
@@ -201,8 +208,22 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       </header>
 
       {/* ── Camera ── */}
-      <div className="relative w-full shrink-0 overflow-hidden bg-black" style={{ height: "clamp(200px, 55vw, 310px)" }}>
+      <div
+        className="relative w-full shrink-0 overflow-hidden bg-black"
+        style={{ height: "clamp(200px, 55vw, 310px)" }}
+        onPointerDown={unlockAudio}
+      >
         <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
+
+        {/* Scan flash overlay */}
+        {flashColor && (
+          <div
+            className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+            style={{
+              backgroundColor: flashColor === "green" ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)",
+            }}
+          />
+        )}
 
         {/* Vignette outside frame */}
         <div className="pointer-events-none absolute inset-0 bg-black/50" />
