@@ -4,14 +4,14 @@ import require$$0 from "fs";
 import require$$0$2 from "os";
 import require$$0$3 from "net";
 import require$$0$4 from "events";
-import require$$1$1 from "stream";
-import require$$0$5 from "http2";
+import require$$0$6 from "http2";
 import require$$3 from "http";
 import require$$7 from "url";
-import require$$1$2 from "dns";
-import require$$0$6 from "zlib";
+import require$$1$1 from "dns";
+import require$$0$7 from "zlib";
+import require$$5 from "stream";
 import { r as requireSrc$1 } from "./proto-loader.mjs";
-import require$$2 from "util";
+import require$$0$5 from "util";
 var src = {};
 var callCredentials = {};
 var metadata = {};
@@ -1967,7 +1967,7 @@ function requireCall() {
   call.ClientDuplexStreamImpl = call.ClientWritableStreamImpl = call.ClientReadableStreamImpl = call.ClientUnaryCallImpl = void 0;
   call.callErrorFromStatus = callErrorFromStatus;
   const events_1 = require$$0$4;
-  const stream_1 = require$$1$1;
+  const stream_1 = require$$5;
   const constants_1 = requireConstants();
   function callErrorFromStatus(status, callerStack) {
     const message = `${status.code} ${constants_1.Status[status.code]}: ${status.details}`;
@@ -3826,8 +3826,8 @@ function requireResolverDns() {
     exports$1.DEFAULT_PORT = void 0;
     exports$1.setup = setup;
     const resolver_1 = requireResolver();
-    const dns = require$$1$2;
-    const util = require$$2;
+    const dns = require$$1$1;
+    const util = require$$0$5;
     const service_config_1 = requireServiceConfig();
     const constants_1 = requireConstants();
     const metadata_1 = requireMetadata();
@@ -4364,7 +4364,7 @@ function requireSubchannelCall() {
   hasRequiredSubchannelCall = 1;
   Object.defineProperty(subchannelCall, "__esModule", { value: true });
   subchannelCall.Http2SubchannelCall = void 0;
-  const http2 = require$$0$5;
+  const http2 = require$$0$6;
   const os = require$$0$2;
   const constants_1 = requireConstants();
   const metadata_1 = requireMetadata();
@@ -4729,7 +4729,7 @@ function requireTransport() {
   hasRequiredTransport = 1;
   Object.defineProperty(transport, "__esModule", { value: true });
   transport.Http2SubchannelConnector = void 0;
-  const http2 = require$$0$5;
+  const http2 = require$$0$6;
   const tls_1 = require$$0$1;
   const channelz_1 = requireChannelz();
   const constants_1 = requireConstants();
@@ -5415,7 +5415,7 @@ function requireCompressionFilter() {
   hasRequiredCompressionFilter = 1;
   Object.defineProperty(compressionFilter, "__esModule", { value: true });
   compressionFilter.CompressionFilterFactory = compressionFilter.CompressionFilter = void 0;
-  const zlib = require$$0$6;
+  const zlib = require$$0$7;
   const compression_algorithms_1 = requireCompressionAlgorithms();
   const constants_1 = requireConstants();
   const filter_1 = requireFilter();
@@ -5782,7 +5782,7 @@ function requireLoadBalancingCall() {
   const uri_parser_1 = requireUriParser();
   const logging2 = requireLogging();
   const control_plane_status_1 = requireControlPlaneStatus();
-  const http2 = require$$0$5;
+  const http2 = require$$0$6;
   const TRACER_NAME = "load_balancing_call";
   class LoadBalancingCall {
     constructor(channel2, callConfig, methodName, host, credentials, deadline2, callNumber2) {
@@ -7354,9 +7354,9 @@ function requireServerCall() {
   Object.defineProperty(serverCall, "__esModule", { value: true });
   serverCall.Http2ServerCallStream = serverCall.ServerDuplexStreamImpl = serverCall.ServerWritableStreamImpl = serverCall.ServerReadableStreamImpl = serverCall.ServerUnaryCallImpl = void 0;
   const events_1 = require$$0$4;
-  const http2 = require$$0$5;
-  const stream_1 = require$$1$1;
-  const zlib = require$$0$6;
+  const http2 = require$$0$6;
+  const stream_1 = require$$5;
+  const zlib = require$$0$7;
   const constants_1 = requireConstants();
   const metadata_1 = requireMetadata();
   const stream_decoder_1 = requireStreamDecoder();
@@ -8055,7 +8055,7 @@ function requireServer() {
   hasRequiredServer = 1;
   Object.defineProperty(server, "__esModule", { value: true });
   server.Server = void 0;
-  const http2 = require$$0$5;
+  const http2 = require$$0$6;
   const constants_1 = requireConstants();
   const server_call_1 = requireServerCall();
   const server_credentials_1 = requireServerCredentials();

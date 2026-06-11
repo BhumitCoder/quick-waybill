@@ -7,11 +7,15 @@ import { j as jsxRuntimeExports } from "../_libs/react.mjs";
 import { r as renderRouterToStream, R as RouterProvider } from "../_libs/tanstack__react-router.mjs";
 import "../_libs/rou3.mjs";
 import "../_libs/srvx.mjs";
+import "node:stream";
 import "../_libs/cookie-es.mjs";
 import "../_libs/seroval-plugins.mjs";
 import "node:stream/web";
-import "node:stream";
 import "../_libs/react-dom.mjs";
+import "async_hooks";
+import "stream";
+import "util";
+import "crypto";
 import "../_libs/isbot.mjs";
 function StartServer(props) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx(RouterProvider, { router: props.router });

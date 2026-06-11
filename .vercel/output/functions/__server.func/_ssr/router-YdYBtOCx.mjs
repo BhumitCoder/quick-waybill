@@ -10,6 +10,10 @@ import "../_libs/seroval-plugins.mjs";
 import "node:stream/web";
 import "node:stream";
 import "../_libs/react-dom.mjs";
+import "async_hooks";
+import "stream";
+import "util";
+import "crypto";
 import "../_libs/isbot.mjs";
 const appCss = "/assets/styles-DB6PPl55.css";
 function reportLovableError(error, context = {}) {
