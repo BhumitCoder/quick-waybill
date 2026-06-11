@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { SetupScreen, type SetupSelection } from "@/components/SetupScreen";
 import { ScannerScreen } from "@/components/ScannerScreen";
 import { store } from "@/store";
+import { useTheme } from "@/hooks/useTheme";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -13,9 +14,9 @@ export const Route = createFileRoute("/")({
       { name: "description", content: "Scan AWB barcodes to bulk-update order statuses in your master files." },
       { property: "og:title", content: "AWB Scanner" },
       { property: "og:description", content: "Scan AWB barcodes to bulk-update order statuses." },
-      { name: "theme-color", content: "#0f172a" },
+      { name: "theme-color", content: "#f8fafc" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "apple-mobile-web-app-status-bar-style", content: "black-translucent" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "Scanner" },
       { name: "mobile-web-app-capable", content: "yes" },
     ],
@@ -30,17 +31,18 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [selection, setSelection] = useState<SetupSelection | null>(null);
+  const { isDark } = useTheme();
 
   return (
     <Provider store={store}>
-      <div className="dark mx-auto max-w-[480px] bg-background text-foreground antialiased">
+      <div className={`${isDark ? "dark" : ""} mx-auto max-w-[480px] bg-background text-foreground antialiased`}>
         {selection ? (
           <ScannerScreen selection={selection} onExit={() => setSelection(null)} />
         ) : (
           <SetupScreen onStart={setSelection} />
         )}
         <Toaster
-          theme="dark"
+          theme={isDark ? "dark" : "light"}
           position="top-center"
           richColors
           toastOptions={{ style: { marginTop: "env(safe-area-inset-top)" } }}
