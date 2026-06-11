@@ -46,6 +46,7 @@ export type SetupSelection = {
 };
 
 export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void }) {
+  const { isDark, toggle } = useTheme();
   const dispatch = useAppDispatch();
   const setup = useAppSelector((s) => s.setup);
   const [companies, setCompanies] = useState<Company[]>([]);
