@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Provider } from "react-redux";
 import { Toaster } from "sonner";
 import { SetupScreen, type SetupSelection } from "@/components/SetupScreen";
@@ -32,6 +32,12 @@ export const Route = createFileRoute("/")({
 function Index() {
   const [selection, setSelection] = useState<SetupSelection | null>(null);
   const { isDark } = useTheme();
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
 
   return (
     <Provider store={store}>
