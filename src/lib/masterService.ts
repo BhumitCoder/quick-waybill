@@ -25,10 +25,10 @@ export async function readMasterRows(storagePath: string): Promise<MasterRow[]> 
   const workbook = XLSX.read(bytes, { type: "array" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
-  // raw: false → use the formatted cell text (what the user sees in Excel).
-  // This is critical: it preserves leading zeros on numeric-formatted AWB
-  // cells and avoids floating-point weirdness on large barcode integers.
-  return XLSX.utils.sheet_to_json<MasterRow>(sheet, { defval: "", raw: false });
+  // Use raw: true (default) — returns actual JS values, not formatted strings.
+  // raw: false would convert large numeric AWBs to scientific notation
+  // ("1.53955E+14") which never matches the scanned barcode string.
+  return XLSX.utils.sheet_to_json<MasterRow>(sheet, { defval: "" });
 }
 
 export async function writeMasterRows(storagePath: string, rows: MasterRow[]): Promise<void> {
@@ -92,42 +92,33 @@ export const normalize = (s: unknown): string => {
 //
 // Strategy:
 //   1. Detect the AWB column by matching the header against known patterns.
-//   2. Exact-match the normalized scanned value against the cell value.
-//   3. If no AWB column is found, fall back to scanning EVERY column —
-//      some sheets have non-standard headers.
-//   4. If still no match, try "contains" — handles barcodes that include
-//      extra prefix/suffix characters not present in the Excel value.
+//   2. Exact-match the normalized scanned value against the detected column.
+//   3. If no AWB column header is recognised, scan EVERY column for an exact
+//      match — handles custom / non-standard column names.
 
 export function findRowByAwb(rows: MasterRow[], awb: string): number {
   if (!rows.length) return -1;
 
   const needle = normalize(awb);
+  if (!needle) return -1;
+
   const awbKey = detectAwbKey(Object.keys(rows[0]));
 
-  // ── 1. Named AWB column, exact match ──────────────────────────────────────
+  // 1. Known AWB column — exact match (fast path, covers 99% of cases)
   if (awbKey) {
     const idx = rows.findIndex((r) => normalize(r[awbKey]) === needle);
     if (idx !== -1) return idx;
   }
 
-  // ── 2. No named column — scan every column for an exact match ─────────────
-  const fullScanIdx = rows.findIndex((r) =>
-    Object.values(r).some((v) => normalize(v) === needle),
-  );
-  if (fullScanIdx !== -1) return fullScanIdx;
-
-  // ── 3. Contains fallback — barcode may carry an extra prefix/suffix ────────
-  // e.g. scanner reads "JD014600007660018575" but Excel stores "14600007660018575"
-  const col = awbKey;
-  const containsIdx = rows.findIndex((r) => {
-    const vals = col
-      ? [normalize(r[col])]
-      : Object.values(r).map(normalize);
-    return vals.some(
-      (v) => v.length > 0 && (v.includes(needle) || needle.includes(v)),
+  // 2. No recognised AWB column header — scan every column for exact match.
+  //    Handles custom / non-standard column names.
+  if (!awbKey) {
+    return rows.findIndex((r) =>
+      Object.values(r).some((v) => normalize(v) === needle),
     );
-  });
-  return containsIdx;
+  }
+
+  return -1;
 }
 
 export function getField(row: MasterRow, name: string): string {

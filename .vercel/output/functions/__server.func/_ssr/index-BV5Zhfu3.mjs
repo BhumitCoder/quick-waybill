@@ -116,7 +116,7 @@ async function readMasterRows(storagePath) {
   await new Promise((r) => setTimeout(r, 0));
   const workbook = XLSX.read(bytes, { type: "array" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
+  return XLSX.utils.sheet_to_json(sheet, { defval: "" });
 }
 async function writeMasterRows(storagePath, rows) {
   const XLSX = await getXLSX();
@@ -162,23 +162,18 @@ const normalize = (s) => {
 function findRowByAwb(rows, awb) {
   if (!rows.length) return -1;
   const needle = normalize(awb);
+  if (!needle) return -1;
   const awbKey = detectAwbKey(Object.keys(rows[0]));
   if (awbKey) {
     const idx = rows.findIndex((r) => normalize(r[awbKey]) === needle);
     if (idx !== -1) return idx;
   }
-  const fullScanIdx = rows.findIndex(
-    (r) => Object.values(r).some((v) => normalize(v) === needle)
-  );
-  if (fullScanIdx !== -1) return fullScanIdx;
-  const col = awbKey;
-  const containsIdx = rows.findIndex((r) => {
-    const vals = col ? [normalize(r[col])] : Object.values(r).map(normalize);
-    return vals.some(
-      (v) => v.length > 0 && (v.includes(needle) || needle.includes(v))
+  if (!awbKey) {
+    return rows.findIndex(
+      (r) => Object.values(r).some((v) => normalize(v) === needle)
     );
-  });
-  return containsIdx;
+  }
+  return -1;
 }
 function getField(row, name) {
   const key = Object.keys(row).find((k) => k.toLowerCase().trim() === name.toLowerCase());
@@ -765,7 +760,7 @@ function SetupScreen({ onStart }) {
 function SectionLabel({ children }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground", children });
 }
-const ScannerScreen = reactExports.lazy(() => import("./ScannerScreen-BClu1uMS.mjs").then((m) => ({
+const ScannerScreen = reactExports.lazy(() => import("./ScannerScreen-C9Lyx9zi.mjs").then((m) => ({
   default: m.ScannerScreen
 })));
 function Index() {
