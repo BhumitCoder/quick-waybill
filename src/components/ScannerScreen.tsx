@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2, ScanLine, Package } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2, ScanLine, Package, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScanner } from "@/hooks/useScanner";
 import {
@@ -14,6 +14,14 @@ import {
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate } from "@/lib/scanner";
 import type { SetupSelection } from "./SetupScreen";
+import {
+  invalidate,
+  markScanned,
+  setMaster,
+  updateRow,
+  useAppDispatch,
+  useAppSelector,
+} from "@/store";
 
 type ScanResult = {
   id: string;
@@ -27,27 +35,42 @@ type ScanResult = {
 
 export function ScannerScreen({ selection, onExit }: { selection: SetupSelection; onExit: () => void }) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const rowsRef = useRef<MasterRow[] | null>(null);
-  const scannedAwbsRef = useRef<Set<string>>(new Set());
-  const uploadingRef = useRef(false);
-
-  const [loadingMaster, setLoadingMaster] = useState(true);
-  const [masterError, setMasterError] = useState<string | null>(null);
-  const [results, setResults] = useState<ScanResult[]>([]);
-  const [uploading, setUploading] = useState(false);
+  const dispatch = useAppDispatch();
 
   const path = useMemo(
     () => masterPath(selection.company.id, selection.platform.id),
     [selection],
   );
 
-  // Load master once
+  const cacheEntry = useAppSelector((s) => s.master.cache[path]);
+  const rowsRef = useRef<MasterRow[] | null>(cacheEntry?.rows ?? null);
+  const scannedAwbsRef = useRef<Set<string>>(new Set(cacheEntry?.scannedAwbs ?? []));
+  const uploadingRef = useRef(false);
+
+  const [loadingMaster, setLoadingMaster] = useState(!cacheEntry);
+  const [masterError, setMasterError] = useState<string | null>(null);
+  const [results, setResults] = useState<ScanResult[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // Load master only if not cached
   useEffect(() => {
+    if (cacheEntry) {
+      rowsRef.current = cacheEntry.rows;
+      scannedAwbsRef.current = new Set(cacheEntry.scannedAwbs);
+      setLoadingMaster(false);
+      return;
+    }
+    let cancelled = false;
     (async () => {
+      setLoadingMaster(true);
       try {
         const rows = await readMasterRows(path);
+        if (cancelled) return;
         rowsRef.current = rows;
+        dispatch(setMaster({ path, rows }));
       } catch (e) {
+        if (cancelled) return;
         const msg = (e as Error).message;
         setMasterError(
           msg.includes("object-not-found")
@@ -55,10 +78,31 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
             : msg,
         );
       } finally {
-        setLoadingMaster(false);
+        if (!cancelled) setLoadingMaster(false);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [path]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    setMasterError(null);
+    try {
+      dispatch(invalidate({ path }));
+      const rows = await readMasterRows(path);
+      rowsRef.current = rows;
+      scannedAwbsRef.current = new Set();
+      dispatch(setMaster({ path, rows }));
+      toast.success("Master file reloaded");
+    } catch (e) {
+      setMasterError((e as Error).message);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [dispatch, path]);
 
   const pushResult = useCallback((r: ScanResult) => {
     setResults((prev) => [r, ...prev].slice(0, 200));
@@ -108,9 +152,13 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         getField(row, "Product Name") ||
         getField(row, "product");
 
-      // Optimistic UI
-      rowsRef.current[idx] = setField(row, "status", selection.status);
+      // Optimistic UI + cache update
+      const updated = setField(row, "status", selection.status);
+      rowsRef.current[idx] = updated;
       scannedAwbsRef.current.add(key);
+      dispatch(updateRow({ path, index: idx, row: updated }));
+      dispatch(markScanned({ path, awb: key }));
+
       beep();
       vibrate(50);
       pushResult({
@@ -129,7 +177,6 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         uploadingRef.current = true;
         setUploading(true);
         try {
-          // small delay so rapid scans batch into a single upload
           await new Promise((r) => setTimeout(r, 600));
           await writeMasterRows(path, rowsRef.current!);
         } catch (e) {
@@ -140,10 +187,11 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         }
       }
     },
-    [path, pushResult, selection.status],
+    [dispatch, path, pushResult, selection.status],
   );
 
   useScanner(videoRef, handleDecode, !loadingMaster && !masterError);
+
 
   const successCount = results.filter((r) => r.success).length;
   const failedCount = results.filter((r) => !r.success && !r.warning).length;
