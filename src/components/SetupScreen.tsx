@@ -116,6 +116,9 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
             <p className="text-xs text-muted-foreground">Bulk status updates</p>
           </div>
         </div>
+        <Button variant="ghost" size="icon" onClick={toggle} className="h-10 w-10 rounded-xl">
+          {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
         <InstallPrompt />
       </header>
 
