@@ -35,7 +35,7 @@ function Index() {
 
   return (
     <Provider store={store}>
-      <div className={`${isDark ? "dark" : ""} mx-auto max-w-[480px] bg-background text-foreground antialiased`}>
+      <div className="mx-auto max-w-[480px] bg-background text-foreground antialiased">
         {selection ? (
           <ScannerScreen selection={selection} onExit={() => setSelection(null)} />
         ) : (

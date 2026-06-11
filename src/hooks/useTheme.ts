@@ -15,11 +15,23 @@ function getStoredTheme(): Theme {
   return "light";
 }
 
+function applyTheme(theme: Theme) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  if (theme === "dark") {
+    root.classList.add("dark");
+  } else {
+    root.classList.remove("dark");
+  }
+}
+
 export function useTheme() {
   const [theme, setTheme] = useState<Theme>(getStoredTheme);
 
   useEffect(() => {
-    setTheme(getStoredTheme());
+    const stored = getStoredTheme();
+    setTheme(stored);
+    applyTheme(stored);
   }, []);
 
   const toggle = useCallback(() => {
@@ -30,6 +42,7 @@ export function useTheme() {
       } catch {
         /* ignore */
       }
+      applyTheme(next);
       return next;
     });
   }, []);
