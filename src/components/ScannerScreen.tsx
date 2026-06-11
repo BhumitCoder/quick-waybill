@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle,
-  Loader2, RefreshCw, CloudUpload, Zap, Hash,
+  Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScanner } from "@/hooks/useScanner";
@@ -151,7 +151,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     }
   }, [dispatch, flash, path, selection.status]);
 
-  useScanner(videoRef, handleDecode, !loadingMaster && !masterError);
+  const { hasTorch, torchOn, toggleTorch } = useScanner(videoRef, handleDecode, !loadingMaster && !masterError);
 
   const ok   = results.filter((r) => r.success).length;
   const fail = results.filter((r) => !r.success && !r.warning).length;
@@ -209,6 +209,21 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
             <StatBadge value={warn} color="amber" />
           )}
         </div>
+
+        {hasTorch && (
+          <button
+            onClick={toggleTorch}
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl transition-all active:scale-95 ${
+              torchOn
+                ? "bg-amber-400/20 text-amber-300 ring-1 ring-amber-400/40"
+                : "bg-white/5 text-white/40 hover:bg-white/10 hover:text-white"
+            }`}
+          >
+            {torchOn
+              ? <Flashlight className="h-4 w-4" />
+              : <FlashlightOff className="h-4 w-4" />}
+          </button>
+        )}
 
         <button
           onClick={handleRefresh}

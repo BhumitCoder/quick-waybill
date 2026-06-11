@@ -294,7 +294,7 @@ var ArrayIndexOutOfBoundsException = (
     return ArrayIndexOutOfBoundsException2;
   })(IndexOutOfBoundsException)
 );
-var __values$K = function(o) {
+var __values$L = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -379,7 +379,7 @@ var Arrays = (
       }
       var result = 1;
       try {
-        for (var a_1 = __values$K(a), a_1_1 = a_1.next(); !a_1_1.done; a_1_1 = a_1.next()) {
+        for (var a_1 = __values$L(a), a_1_1 = a_1.next(); !a_1_1.done; a_1_1 = a_1.next()) {
           var element = a_1_1.value;
           result = 31 * result + element;
         }
@@ -810,7 +810,7 @@ var FormatException = (
     return FormatException2;
   })(Exception)
 );
-var __values$J = function(o) {
+var __values$K = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -876,7 +876,7 @@ var CharacterSetECI = (
         CharacterSetECI2.VALUES_TO_ECI.set(v, this);
       }
       try {
-        for (var otherEncodingNames_1 = __values$J(otherEncodingNames), otherEncodingNames_1_1 = otherEncodingNames_1.next(); !otherEncodingNames_1_1.done; otherEncodingNames_1_1 = otherEncodingNames_1.next()) {
+        for (var otherEncodingNames_1 = __values$K(otherEncodingNames), otherEncodingNames_1_1 = otherEncodingNames_1.next(); !otherEncodingNames_1_1.done; otherEncodingNames_1_1 = otherEncodingNames_1.next()) {
           var otherName = otherEncodingNames_1_1.value;
           CharacterSetECI2.NAME_TO_ECI.set(otherName, this);
         }
@@ -2336,7 +2336,7 @@ var __generator = function(thisArg, body) {
     return { value: op[0] ? op[1] : void 0, done: true };
   }
 };
-var __values$I = function(o) {
+var __values$J = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -2441,7 +2441,7 @@ var BrowserCodeReader = (
               devices = _b.sent();
               videoDevices = [];
               try {
-                for (devices_1 = __values$I(devices), devices_1_1 = devices_1.next(); !devices_1_1.done; devices_1_1 = devices_1.next()) {
+                for (devices_1 = __values$J(devices), devices_1_1 = devices_1.next(); !devices_1_1.done; devices_1_1 = devices_1.next()) {
                   device = devices_1_1.value;
                   kind = device.kind === "video" ? "videoinput" : device.kind;
                   if (kind !== "videoinput") {
@@ -3137,7 +3137,7 @@ var BrowserCodeReader = (
     return BrowserCodeReader2;
   })()
 );
-var Result = (
+var Result$1 = (
   /** @class */
   (function() {
     function Result2(text, rawBytes, numBits, resultPoints, format, timestamp) {
@@ -5227,7 +5227,7 @@ var AztecReader = (
           throw e;
         }
       }
-      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), decoderResult.getNumBits(), points, BarcodeFormat.AZTEC, System.currentTimeMillis());
+      var result = new Result$1(decoderResult.getText(), decoderResult.getRawBytes(), decoderResult.getNumBits(), points, BarcodeFormat.AZTEC, System.currentTimeMillis());
       var byteSegments = decoderResult.getByteSegments();
       if (byteSegments != null) {
         result.putMetadata(ResultMetadataType.BYTE_SEGMENTS, byteSegments);
@@ -5272,16 +5272,19 @@ var __extends$S = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$S(BrowserAztecCodeReader, _super);
-  function BrowserAztecCodeReader(timeBetweenScansMillis) {
-    if (timeBetweenScansMillis === void 0) {
-      timeBetweenScansMillis = 500;
+var BrowserAztecCodeReader = (
+  /** @class */
+  (function(_super) {
+    __extends$S(BrowserAztecCodeReader2, _super);
+    function BrowserAztecCodeReader2(timeBetweenScansMillis) {
+      if (timeBetweenScansMillis === void 0) {
+        timeBetweenScansMillis = 500;
+      }
+      return _super.call(this, new AztecReader(), timeBetweenScansMillis) || this;
     }
-    return _super.call(this, new AztecReader(), timeBetweenScansMillis) || this;
-  }
-  return BrowserAztecCodeReader;
-})(BrowserCodeReader);
+    return BrowserAztecCodeReader2;
+  })(BrowserCodeReader)
+);
 var OneDReader = (
   /** @class */
   (function() {
@@ -5763,7 +5766,7 @@ var Code128Reader = (
         rawBytes[i] = rawCodes[i];
       }
       var points = [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)];
-      return new Result(result, rawBytes, 0, points, BarcodeFormat.CODE_128, (/* @__PURE__ */ new Date()).getTime());
+      return new Result$1(result, rawBytes, 0, points, BarcodeFormat.CODE_128, (/* @__PURE__ */ new Date()).getTime());
     };
     Code128Reader2.CODE_PATTERNS = [
       Int32Array.from([2, 1, 2, 2, 2, 2]),
@@ -5911,7 +5914,7 @@ var __extends$Q = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __values$H = function(o) {
+var __values$I = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -5960,7 +5963,7 @@ var Code39Reader = (
         this.decodeRowResult += decodedChar;
         lastStart = nextStart;
         try {
-          for (var theCounters_1 = (e_1 = void 0, __values$H(theCounters)), theCounters_1_1 = theCounters_1.next(); !theCounters_1_1.done; theCounters_1_1 = theCounters_1.next()) {
+          for (var theCounters_1 = (e_1 = void 0, __values$I(theCounters)), theCounters_1_1 = theCounters_1.next(); !theCounters_1_1.done; theCounters_1_1 = theCounters_1.next()) {
             var counter = theCounters_1_1.value;
             nextStart += counter;
           }
@@ -5978,7 +5981,7 @@ var Code39Reader = (
       this.decodeRowResult = this.decodeRowResult.substring(0, this.decodeRowResult.length - 1);
       var lastPatternSize = 0;
       try {
-        for (var theCounters_2 = __values$H(theCounters), theCounters_2_1 = theCounters_2.next(); !theCounters_2_1.done; theCounters_2_1 = theCounters_2.next()) {
+        for (var theCounters_2 = __values$I(theCounters), theCounters_2_1 = theCounters_2.next(); !theCounters_2_1.done; theCounters_2_1 = theCounters_2.next()) {
           var counter = theCounters_2_1.value;
           lastPatternSize += counter;
         }
@@ -6017,7 +6020,7 @@ var Code39Reader = (
       }
       var left = (start[1] + start[0]) / 2;
       var right = lastStart + lastPatternSize / 2;
-      return new Result(resultString, null, 0, [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)], BarcodeFormat.CODE_39, (/* @__PURE__ */ new Date()).getTime());
+      return new Result$1(resultString, null, 0, [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)], BarcodeFormat.CODE_39, (/* @__PURE__ */ new Date()).getTime());
     };
     Code39Reader2.findAsteriskPattern = function(row, counters) {
       var width = row.getSize();
@@ -6056,7 +6059,7 @@ var Code39Reader = (
       do {
         var minCounter = 2147483647;
         try {
-          for (var counters_1 = (e_3 = void 0, __values$H(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
+          for (var counters_1 = (e_3 = void 0, __values$I(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
             var counter = counters_1_1.value;
             if (counter < minCounter && counter > maxNarrowCounter) {
               minCounter = counter;
@@ -6245,7 +6248,7 @@ var __extends$P = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __values$G = function(o) {
+var __values$H = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -6286,7 +6289,7 @@ var Code93Reader = (
         this.decodeRowResult += decodedChar;
         lastStart = nextStart;
         try {
-          for (var theCounters_1 = (e_1 = void 0, __values$G(theCounters)), theCounters_1_1 = theCounters_1.next(); !theCounters_1_1.done; theCounters_1_1 = theCounters_1.next()) {
+          for (var theCounters_1 = (e_1 = void 0, __values$H(theCounters)), theCounters_1_1 = theCounters_1.next(); !theCounters_1_1.done; theCounters_1_1 = theCounters_1.next()) {
             var counter = theCounters_1_1.value;
             nextStart += counter;
           }
@@ -6304,7 +6307,7 @@ var Code93Reader = (
       this.decodeRowResult = this.decodeRowResult.substring(0, this.decodeRowResult.length - 1);
       var lastPatternSize = 0;
       try {
-        for (var theCounters_2 = __values$G(theCounters), theCounters_2_1 = theCounters_2.next(); !theCounters_2_1.done; theCounters_2_1 = theCounters_2.next()) {
+        for (var theCounters_2 = __values$H(theCounters), theCounters_2_1 = theCounters_2.next(); !theCounters_2_1.done; theCounters_2_1 = theCounters_2.next()) {
           var counter = theCounters_2_1.value;
           lastPatternSize += counter;
         }
@@ -6328,7 +6331,7 @@ var Code93Reader = (
       var resultString = this.decodeExtended(this.decodeRowResult);
       var left = (start[1] + start[0]) / 2;
       var right = lastStart + lastPatternSize / 2;
-      return new Result(resultString, null, 0, [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)], BarcodeFormat.CODE_93, (/* @__PURE__ */ new Date()).getTime());
+      return new Result$1(resultString, null, 0, [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)], BarcodeFormat.CODE_93, (/* @__PURE__ */ new Date()).getTime());
     };
     Code93Reader2.prototype.findAsteriskPattern = function(row) {
       var width = row.getSize();
@@ -6365,7 +6368,7 @@ var Code93Reader = (
       var e_3, _a2;
       var sum = 0;
       try {
-        for (var counters_1 = __values$G(counters), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
+        for (var counters_1 = __values$H(counters), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
           var counter = counters_1_1.value;
           sum += counter;
         }
@@ -6566,7 +6569,7 @@ var __extends$O = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __read$a = function(o, n) {
+var __read$b = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -6583,7 +6586,7 @@ var __read$a = function(o, n) {
   }
   return ar;
 };
-var __spreadArray$6 = function(to, from, pack) {
+var __spreadArray$7 = function(to, from, pack) {
   if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
     if (ar || !(i in from)) {
       if (!ar) ar = Array.prototype.slice.call(from, 0, i);
@@ -6592,7 +6595,7 @@ var __spreadArray$6 = function(to, from, pack) {
   }
   return to.concat(ar || Array.prototype.slice.call(from));
 };
-var __values$F = function(o) {
+var __values$G = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -6608,7 +6611,7 @@ var ITFReader = (
   (function(_super) {
     __extends$O(ITFReader2, _super);
     function ITFReader2() {
-      var _this = _super.apply(this, __spreadArray$6([], __read$a(arguments), false)) || this;
+      var _this = _super.apply(this, __spreadArray$7([], __read$b(arguments), false)) || this;
       _this.narrowLineWidth = -1;
       return _this;
     }
@@ -6630,7 +6633,7 @@ var ITFReader = (
       var lengthOK = false;
       var maxAllowedLength = 0;
       try {
-        for (var allowedLengths_1 = __values$F(allowedLengths), allowedLengths_1_1 = allowedLengths_1.next(); !allowedLengths_1_1.done; allowedLengths_1_1 = allowedLengths_1.next()) {
+        for (var allowedLengths_1 = __values$G(allowedLengths), allowedLengths_1_1 = allowedLengths_1.next(); !allowedLengths_1_1.done; allowedLengths_1_1 = allowedLengths_1.next()) {
           var value = allowedLengths_1_1.value;
           if (length === value) {
             lengthOK = true;
@@ -6656,7 +6659,7 @@ var ITFReader = (
         throw new FormatException();
       }
       var points = [new ResultPoint(startRange[1], rowNumber), new ResultPoint(endRange[0], rowNumber)];
-      var resultReturn = new Result(
+      var resultReturn = new Result$1(
         resultString,
         null,
         // no natural byte representation for these barcodes
@@ -6863,7 +6866,7 @@ var __extends$N = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __read$9 = function(o, n) {
+var __read$a = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -6880,7 +6883,7 @@ var __read$9 = function(o, n) {
   }
   return ar;
 };
-var __spreadArray$5 = function(to, from, pack) {
+var __spreadArray$6 = function(to, from, pack) {
   if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
     if (ar || !(i in from)) {
       if (!ar) ar = Array.prototype.slice.call(from, 0, i);
@@ -6894,7 +6897,7 @@ var AbstractUPCEANReader = (
   (function(_super) {
     __extends$N(AbstractUPCEANReader2, _super);
     function AbstractUPCEANReader2() {
-      var _this = _super.apply(this, __spreadArray$5([], __read$9(arguments), false)) || this;
+      var _this = _super.apply(this, __spreadArray$6([], __read$a(arguments), false)) || this;
       _this.decodeRowStringBuffer = "";
       return _this;
     }
@@ -7032,7 +7035,7 @@ var AbstractUPCEANReader = (
     return AbstractUPCEANReader2;
   })(OneDReader)
 );
-var __values$E = function(o) {
+var __values$F = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -7060,7 +7063,7 @@ var UPCEANExtension5Support = (
         new ResultPoint((extensionStartRange[0] + extensionStartRange[1]) / 2, rowNumber),
         new ResultPoint(end, rowNumber)
       ];
-      var extensionResult = new Result(resultString, null, 0, resultPoints, BarcodeFormat.UPC_EAN_EXTENSION, (/* @__PURE__ */ new Date()).getTime());
+      var extensionResult = new Result$1(resultString, null, 0, resultPoints, BarcodeFormat.UPC_EAN_EXTENSION, (/* @__PURE__ */ new Date()).getTime());
       if (extensionData != null) {
         extensionResult.putAllMetadata(extensionData);
       }
@@ -7080,7 +7083,7 @@ var UPCEANExtension5Support = (
         var bestMatch = AbstractUPCEANReader.decodeDigit(row, counters, rowOffset, AbstractUPCEANReader.L_AND_G_PATTERNS);
         resultString += String.fromCharCode("0".charCodeAt(0) + bestMatch % 10);
         try {
-          for (var counters_1 = (e_1 = void 0, __values$E(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
+          for (var counters_1 = (e_1 = void 0, __values$F(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
             var counter = counters_1_1.value;
             rowOffset += counter;
           }
@@ -7174,7 +7177,7 @@ var UPCEANExtension5Support = (
     return UPCEANExtension5Support2;
   })()
 );
-var __values$D = function(o) {
+var __values$E = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -7201,7 +7204,7 @@ var UPCEANExtension2Support = (
         new ResultPoint((extensionStartRange[0] + extensionStartRange[1]) / 2, rowNumber),
         new ResultPoint(end, rowNumber)
       ];
-      var extensionResult = new Result(resultString, null, 0, resultPoints, BarcodeFormat.UPC_EAN_EXTENSION, (/* @__PURE__ */ new Date()).getTime());
+      var extensionResult = new Result$1(resultString, null, 0, resultPoints, BarcodeFormat.UPC_EAN_EXTENSION, (/* @__PURE__ */ new Date()).getTime());
       if (extensionData != null) {
         extensionResult.putAllMetadata(extensionData);
       }
@@ -7221,7 +7224,7 @@ var UPCEANExtension2Support = (
         var bestMatch = AbstractUPCEANReader.decodeDigit(row, counters, rowOffset, AbstractUPCEANReader.L_AND_G_PATTERNS);
         resultString += String.fromCharCode("0".charCodeAt(0) + bestMatch % 10);
         try {
-          for (var counters_1 = (e_1 = void 0, __values$D(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
+          for (var counters_1 = (e_1 = void 0, __values$E(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
             var counter = counters_1_1.value;
             rowOffset += counter;
           }
@@ -7352,7 +7355,7 @@ var UPCEANReader = (
       var right = (endRange[1] + endRange[0]) / 2;
       var format = this.getBarcodeFormat();
       var resultPoint = [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)];
-      var decodeResult = new Result(resultString, null, 0, resultPoint, format, (/* @__PURE__ */ new Date()).getTime());
+      var decodeResult = new Result$1(resultString, null, 0, resultPoint, format, (/* @__PURE__ */ new Date()).getTime());
       var extensionLength = 0;
       try {
         var extensionResult = UPCEANExtensionSupport.decodeRow(rowNumber, row, endRange[1]);
@@ -7433,7 +7436,7 @@ var __extends$L = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __values$C = function(o) {
+var __values$D = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -7467,7 +7470,7 @@ var EAN13Reader = (
         var bestMatch = UPCEANReader.decodeDigit(row, counters, rowOffset, UPCEANReader.L_AND_G_PATTERNS);
         resultString += String.fromCharCode("0".charCodeAt(0) + bestMatch % 10);
         try {
-          for (var counters_1 = (e_1 = void 0, __values$C(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
+          for (var counters_1 = (e_1 = void 0, __values$D(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
             var counter = counters_1_1.value;
             rowOffset += counter;
           }
@@ -7491,7 +7494,7 @@ var EAN13Reader = (
         var bestMatch = UPCEANReader.decodeDigit(row, counters, rowOffset, UPCEANReader.L_PATTERNS);
         resultString += String.fromCharCode("0".charCodeAt(0) + bestMatch);
         try {
-          for (var counters_2 = (e_2 = void 0, __values$C(counters)), counters_2_1 = counters_2.next(); !counters_2_1.done; counters_2_1 = counters_2.next()) {
+          for (var counters_2 = (e_2 = void 0, __values$D(counters)), counters_2_1 = counters_2.next(); !counters_2_1.done; counters_2_1 = counters_2.next()) {
             var counter = counters_2_1.value;
             rowOffset += counter;
           }
@@ -7542,7 +7545,7 @@ var __extends$K = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __values$B = function(o) {
+var __values$C = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -7575,7 +7578,7 @@ var EAN8Reader = (
         var bestMatch = UPCEANReader.decodeDigit(row, counters, rowOffset, UPCEANReader.L_PATTERNS);
         resultString += String.fromCharCode("0".charCodeAt(0) + bestMatch);
         try {
-          for (var counters_1 = (e_1 = void 0, __values$B(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
+          for (var counters_1 = (e_1 = void 0, __values$C(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
             var counter = counters_1_1.value;
             rowOffset += counter;
           }
@@ -7595,7 +7598,7 @@ var EAN8Reader = (
         var bestMatch = UPCEANReader.decodeDigit(row, counters, rowOffset, UPCEANReader.L_PATTERNS);
         resultString += String.fromCharCode("0".charCodeAt(0) + bestMatch);
         try {
-          for (var counters_2 = (e_2 = void 0, __values$B(counters)), counters_2_1 = counters_2.next(); !counters_2_1.done; counters_2_1 = counters_2.next()) {
+          for (var counters_2 = (e_2 = void 0, __values$C(counters)), counters_2_1 = counters_2.next(); !counters_2_1.done; counters_2_1 = counters_2.next()) {
             var counter = counters_2_1.value;
             rowOffset += counter;
           }
@@ -7636,7 +7639,7 @@ var __extends$J = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __read$8 = function(o, n) {
+var __read$9 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -7653,7 +7656,7 @@ var __read$8 = function(o, n) {
   }
   return ar;
 };
-var __spreadArray$4 = function(to, from, pack) {
+var __spreadArray$5 = function(to, from, pack) {
   if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
     if (ar || !(i in from)) {
       if (!ar) ar = Array.prototype.slice.call(from, 0, i);
@@ -7667,7 +7670,7 @@ var UPCAReader = (
   (function(_super) {
     __extends$J(UPCAReader2, _super);
     function UPCAReader2() {
-      var _this = _super.apply(this, __spreadArray$4([], __read$8(arguments), false)) || this;
+      var _this = _super.apply(this, __spreadArray$5([], __read$9(arguments), false)) || this;
       _this.ean13Reader = new EAN13Reader();
       return _this;
     }
@@ -7686,7 +7689,7 @@ var UPCAReader = (
     UPCAReader2.prototype.maybeReturnResult = function(result) {
       var text = result.getText();
       if (text.charAt(0) === "0") {
-        var upcaResult = new Result(text.substring(1), null, null, result.getResultPoints(), BarcodeFormat.UPC_A);
+        var upcaResult = new Result$1(text.substring(1), null, null, result.getResultPoints(), BarcodeFormat.UPC_A);
         if (result.getResultMetadata() != null) {
           upcaResult.putAllMetadata(result.getResultMetadata());
         }
@@ -7720,7 +7723,7 @@ var __extends$I = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __values$A = function(o) {
+var __values$B = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -7756,7 +7759,7 @@ var UPCEReader = (
         var bestMatch = UPCEReader2.decodeDigit(row, counters, rowOffset, UPCEReader2.L_AND_G_PATTERNS);
         result += String.fromCharCode("0".charCodeAt(0) + bestMatch % 10);
         try {
-          for (var counters_1 = (e_1 = void 0, __values$A(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
+          for (var counters_1 = (e_1 = void 0, __values$B(counters)), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
             var counter = counters_1_1.value;
             rowOffset += counter;
           }
@@ -7870,7 +7873,7 @@ var __extends$H = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __values$z = function(o) {
+var __values$A = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -7915,7 +7918,7 @@ var MultiFormatUPCEANReader = (
     MultiFormatUPCEANReader2.prototype.decodeRow = function(rowNumber, row, hints) {
       var e_1, _a2;
       try {
-        for (var _b = __values$z(this.readers), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$A(this.readers), _c = _b.next(); !_c.done; _c = _b.next()) {
           var reader = _c.value;
           try {
             var result = reader.decodeRow(rowNumber, row, hints);
@@ -7924,7 +7927,7 @@ var MultiFormatUPCEANReader = (
             var canReturnUPCA = possibleFormats == null || possibleFormats.includes(BarcodeFormat.UPC_A);
             if (ean13MayBeUPCA && canReturnUPCA) {
               var rawBytes = result.getRawBytes();
-              var resultUPCA = new Result(result.getText().substring(1), rawBytes, rawBytes ? rawBytes.length : null, result.getResultPoints(), BarcodeFormat.UPC_A);
+              var resultUPCA = new Result$1(result.getText().substring(1), rawBytes, rawBytes ? rawBytes.length : null, result.getResultPoints(), BarcodeFormat.UPC_A);
               resultUPCA.putAllMetadata(result.getResultMetadata());
               return resultUPCA;
             }
@@ -7946,7 +7949,7 @@ var MultiFormatUPCEANReader = (
     MultiFormatUPCEANReader2.prototype.reset = function() {
       var e_2, _a2;
       try {
-        for (var _b = __values$z(this.readers), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$A(this.readers), _c = _b.next(); !_c.done; _c = _b.next()) {
           var reader = _c.value;
           reader.reset();
         }
@@ -7982,7 +7985,7 @@ var __extends$G = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __read$7 = function(o, n) {
+var __read$8 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -7999,7 +8002,7 @@ var __read$7 = function(o, n) {
   }
   return ar;
 };
-var __spreadArray$3 = function(to, from, pack) {
+var __spreadArray$4 = function(to, from, pack) {
   if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
     if (ar || !(i in from)) {
       if (!ar) ar = Array.prototype.slice.call(from, 0, i);
@@ -8013,7 +8016,7 @@ var CodaBarReader = (
   (function(_super) {
     __extends$G(CodaBarReader2, _super);
     function CodaBarReader2() {
-      var _this = _super.apply(this, __spreadArray$3([], __read$7(arguments), false)) || this;
+      var _this = _super.apply(this, __spreadArray$4([], __read$8(arguments), false)) || this;
       _this.CODA_BAR_CHAR_SET = {
         nnnnnww: "0",
         nnnnwwn: "1",
@@ -8045,7 +8048,7 @@ var CodaBarReader = (
       var retStr = this.codaBarDecodeRow(validRowData.row);
       if (!retStr)
         throw new NotFoundException();
-      return new Result(retStr, null, 0, [new ResultPoint(validRowData.left, rowNumber), new ResultPoint(validRowData.right, rowNumber)], BarcodeFormat.CODABAR, (/* @__PURE__ */ new Date()).getTime());
+      return new Result$1(retStr, null, 0, [new ResultPoint(validRowData.left, rowNumber), new ResultPoint(validRowData.right, rowNumber)], BarcodeFormat.CODABAR, (/* @__PURE__ */ new Date()).getTime());
     };
     CodaBarReader2.prototype.getValidRowData = function(row) {
       var booleanArr = row.toArray();
@@ -8118,7 +8121,7 @@ var __extends$F = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __values$y = function(o) {
+var __values$z = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -8203,7 +8206,7 @@ var AbstractRSSReader = (
         var minCounter = Number.MAX_SAFE_INTEGER;
         var maxCounter = Number.MIN_SAFE_INTEGER;
         try {
-          for (var counters_1 = __values$y(counters), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
+          for (var counters_1 = __values$z(counters), counters_1_1 = counters_1.next(); !counters_1_1.done; counters_1_1 = counters_1.next()) {
             var counter = counters_1_1.value;
             if (counter > maxCounter) {
               maxCounter = counter;
@@ -8293,7 +8296,7 @@ var FinderPattern$1 = (
     return FinderPattern2;
   })()
 );
-var __values$x = function(o) {
+var __values$y = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -8313,7 +8316,7 @@ var RSSUtils = (
       var e_1, _a2;
       var n = 0;
       try {
-        for (var widths_1 = __values$x(widths), widths_1_1 = widths_1.next(); !widths_1_1.done; widths_1_1 = widths_1.next()) {
+        for (var widths_1 = __values$y(widths), widths_1_1 = widths_1.next(); !widths_1_1.done; widths_1_1 = widths_1.next()) {
           var width = widths_1_1.value;
           n += width;
         }
@@ -9805,7 +9808,7 @@ var ExpandedPair = (
     return ExpandedPair2;
   })()
 );
-var __read$6 = function(o, n) {
+var __read$7 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -9822,7 +9825,7 @@ var __read$6 = function(o, n) {
   }
   return ar;
 };
-var __spreadArray$2 = function(to, from, pack) {
+var __spreadArray$3 = function(to, from, pack) {
   if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
     if (ar || !(i in from)) {
       if (!ar) ar = Array.prototype.slice.call(from, 0, i);
@@ -9835,7 +9838,7 @@ var ExpandedRow = (
   /** @class */
   (function() {
     function ExpandedRow2(pairs, rowNumber) {
-      this.pairs = __spreadArray$2([], __read$6(pairs), false);
+      this.pairs = __spreadArray$3([], __read$7(pairs), false);
       this.rowNumber = rowNumber;
     }
     ExpandedRow2.prototype.getPairs = function() {
@@ -9888,7 +9891,7 @@ var __extends$r = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __read$5 = function(o, n) {
+var __read$6 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -9905,7 +9908,7 @@ var __read$5 = function(o, n) {
   }
   return ar;
 };
-var __spreadArray$1 = function(to, from, pack) {
+var __spreadArray$2 = function(to, from, pack) {
   if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
     if (ar || !(i in from)) {
       if (!ar) ar = Array.prototype.slice.call(from, 0, i);
@@ -9914,7 +9917,7 @@ var __spreadArray$1 = function(to, from, pack) {
   }
   return to.concat(ar || Array.prototype.slice.call(from));
 };
-var __values$w = function(o) {
+var __values$x = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -9930,7 +9933,7 @@ var RSSExpandedReader = (
   (function(_super) {
     __extends$r(RSSExpandedReader2, _super);
     function RSSExpandedReader2() {
-      var _this = _super.apply(this, __spreadArray$1([], __read$5(arguments), false)) || this;
+      var _this = _super.apply(this, __spreadArray$2([], __read$6(arguments), false)) || this;
       _this.pairs = new Array(RSSExpandedReader2.MAX_PAIRS);
       _this.rows = new Array();
       _this.startEnd = [0, 0];
@@ -10015,7 +10018,7 @@ var RSSExpandedReader = (
       var _a2;
       for (var i = currentRow; i < this.rows.length; i++) {
         var row = this.rows[i];
-        (_a2 = this.pairs).push.apply(_a2, __spreadArray$1([], __read$5(row.getPairs()), false));
+        (_a2 = this.pairs).push.apply(_a2, __spreadArray$2([], __read$6(row.getPairs()), false));
         var addSize = row.getPairs().length;
         if (RSSExpandedReader2.isValidSequence(this.pairs, false)) {
           if (this.checkChecksum()) {
@@ -10041,7 +10044,7 @@ var RSSExpandedReader = (
     RSSExpandedReader2.isValidSequence = function(pairs, complete) {
       var e_1, _a2;
       try {
-        for (var _b = __values$w(RSSExpandedReader2.FINDER_PATTERN_SEQUENCES), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$x(RSSExpandedReader2.FINDER_PATTERN_SEQUENCES), _c = _b.next(); !_c.done; _c = _b.next()) {
           var sequence = _c.value;
           var sizeOk = complete ? pairs.length === sequence.length : pairs.length <= sequence.length;
           if (sizeOk) {
@@ -10074,7 +10077,7 @@ var RSSExpandedReader = (
         return true;
       }
       try {
-        for (var _b = __values$w(this.FINDER_PATTERN_SEQUENCES), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$x(this.FINDER_PATTERN_SEQUENCES), _c = _b.next(); !_c.done; _c = _b.next()) {
           var sequence = _c.value;
           if (pairs.length + 1 <= sequence.length) {
             for (var i = pairs.length; i < sequence.length; i++) {
@@ -10143,7 +10146,7 @@ var RSSExpandedReader = (
             }
           };
           try {
-            for (var _b = (e_3 = void 0, __values$w(r.getPairs())), _c = _b.next(); !_c.done; _c = _b.next()) {
+            for (var _b = (e_3 = void 0, __values$x(r.getPairs())), _c = _b.next(); !_c.done; _c = _b.next()) {
               var p = _c.value;
               var state_1 = _loop_1(p);
               if (state_1 === "break")
@@ -10167,15 +10170,15 @@ var RSSExpandedReader = (
     RSSExpandedReader2.isPartialRow = function(pairs, rows) {
       var e_4, _a2, e_5, _b, e_6, _c;
       try {
-        for (var rows_1 = __values$w(rows), rows_1_1 = rows_1.next(); !rows_1_1.done; rows_1_1 = rows_1.next()) {
+        for (var rows_1 = __values$x(rows), rows_1_1 = rows_1.next(); !rows_1_1.done; rows_1_1 = rows_1.next()) {
           var r = rows_1_1.value;
           var allFound = true;
           try {
-            for (var pairs_1 = (e_5 = void 0, __values$w(pairs)), pairs_1_1 = pairs_1.next(); !pairs_1_1.done; pairs_1_1 = pairs_1.next()) {
+            for (var pairs_1 = (e_5 = void 0, __values$x(pairs)), pairs_1_1 = pairs_1.next(); !pairs_1_1.done; pairs_1_1 = pairs_1.next()) {
               var p = pairs_1_1.value;
               var found = false;
               try {
-                for (var _d = (e_6 = void 0, __values$w(r.getPairs())), _e = _d.next(); !_e.done; _e = _d.next()) {
+                for (var _d = (e_6 = void 0, __values$x(r.getPairs())), _e = _d.next(); !_e.done; _e = _d.next()) {
                   var pp = _e.value;
                   if (ExpandedPair.equals(p, pp)) {
                     found = true;
@@ -10230,7 +10233,7 @@ var RSSExpandedReader = (
       var firstPoints = pairs[0].getFinderPattern().getResultPoints();
       var lastPoints = pairs[pairs.length - 1].getFinderPattern().getResultPoints();
       var points = [firstPoints[0], firstPoints[1], lastPoints[0], lastPoints[1]];
-      return new Result(resultingString, null, null, points, BarcodeFormat.RSS_EXPANDED, null);
+      return new Result$1(resultingString, null, null, points, BarcodeFormat.RSS_EXPANDED, null);
     };
     RSSExpandedReader2.prototype.checkChecksum = function() {
       var firstPair = this.pairs[0];
@@ -10791,7 +10794,7 @@ var __extends$p = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __read$4 = function(o, n) {
+var __read$5 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -10808,7 +10811,7 @@ var __read$4 = function(o, n) {
   }
   return ar;
 };
-var __spreadArray = function(to, from, pack) {
+var __spreadArray$1 = function(to, from, pack) {
   if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
     if (ar || !(i in from)) {
       if (!ar) ar = Array.prototype.slice.call(from, 0, i);
@@ -10817,7 +10820,7 @@ var __spreadArray = function(to, from, pack) {
   }
   return to.concat(ar || Array.prototype.slice.call(from));
 };
-var __values$v = function(o) {
+var __values$w = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -10833,7 +10836,7 @@ var RSS14Reader = (
   (function(_super) {
     __extends$p(RSS14Reader2, _super);
     function RSS14Reader2() {
-      var _this = _super.apply(this, __spreadArray([], __read$4(arguments), false)) || this;
+      var _this = _super.apply(this, __spreadArray$1([], __read$5(arguments), false)) || this;
       _this.possibleLeftPairs = [];
       _this.possibleRightPairs = [];
       return _this;
@@ -10847,11 +10850,11 @@ var RSS14Reader = (
       RSS14Reader2.addOrTally(this.possibleRightPairs, rightPair);
       row.reverse();
       try {
-        for (var _c = __values$v(this.possibleLeftPairs), _d = _c.next(); !_d.done; _d = _c.next()) {
+        for (var _c = __values$w(this.possibleLeftPairs), _d = _c.next(); !_d.done; _d = _c.next()) {
           var left = _d.value;
           if (left.getCount() > 1) {
             try {
-              for (var _e = (e_2 = void 0, __values$v(this.possibleRightPairs)), _f = _e.next(); !_f.done; _f = _e.next()) {
+              for (var _e = (e_2 = void 0, __values$w(this.possibleRightPairs)), _f = _e.next(); !_f.done; _f = _e.next()) {
                 var right = _f.value;
                 if (right.getCount() > 1 && RSS14Reader2.checkChecksum(left, right)) {
                   return RSS14Reader2.constructResult(left, right);
@@ -10886,7 +10889,7 @@ var RSS14Reader = (
       }
       var found = false;
       try {
-        for (var possiblePairs_1 = __values$v(possiblePairs), possiblePairs_1_1 = possiblePairs_1.next(); !possiblePairs_1_1.done; possiblePairs_1_1 = possiblePairs_1.next()) {
+        for (var possiblePairs_1 = __values$w(possiblePairs), possiblePairs_1_1 = possiblePairs_1.next(); !possiblePairs_1_1.done; possiblePairs_1_1 = possiblePairs_1.next()) {
           var other = possiblePairs_1_1.value;
           if (other.getValue() === pair.getValue()) {
             other.incrementCount();
@@ -10931,7 +10934,7 @@ var RSS14Reader = (
       buffer.append(checkDigit.toString());
       var leftPoints = leftPair.getFinderPattern().getResultPoints();
       var rightPoints = rightPair.getFinderPattern().getResultPoints();
-      return new Result(buffer.toString(), null, 0, [leftPoints[0], leftPoints[1], rightPoints[0], rightPoints[1]], BarcodeFormat.RSS_14, (/* @__PURE__ */ new Date()).getTime());
+      return new Result$1(buffer.toString(), null, 0, [leftPoints[0], leftPoints[1], rightPoints[0], rightPoints[1]], BarcodeFormat.RSS_14, (/* @__PURE__ */ new Date()).getTime());
     };
     RSS14Reader2.checkChecksum = function(leftPair, rightPair) {
       var checkValue = (leftPair.getChecksumPortion() + 16 * rightPair.getChecksumPortion()) % 79;
@@ -11329,17 +11332,20 @@ var __extends$n = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$n(BrowserBarcodeReader, _super);
-  function BrowserBarcodeReader(timeBetweenScansMillis, hints) {
-    if (timeBetweenScansMillis === void 0) {
-      timeBetweenScansMillis = 500;
+var BrowserBarcodeReader = (
+  /** @class */
+  (function(_super) {
+    __extends$n(BrowserBarcodeReader2, _super);
+    function BrowserBarcodeReader2(timeBetweenScansMillis, hints) {
+      if (timeBetweenScansMillis === void 0) {
+        timeBetweenScansMillis = 500;
+      }
+      return _super.call(this, new MultiFormatOneDReader(hints), timeBetweenScansMillis, hints) || this;
     }
-    return _super.call(this, new MultiFormatOneDReader(hints), timeBetweenScansMillis, hints) || this;
-  }
-  return BrowserBarcodeReader;
-})(BrowserCodeReader);
-var __values$u = function(o) {
+    return BrowserBarcodeReader2;
+  })(BrowserCodeReader)
+);
+var __values$v = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -11398,7 +11404,7 @@ var Version$1 = (
       var ecCodewords = ecBlocks.getECCodewords();
       var ecbArray = ecBlocks.getECBlocks();
       try {
-        for (var ecbArray_1 = __values$u(ecbArray), ecbArray_1_1 = ecbArray_1.next(); !ecbArray_1_1.done; ecbArray_1_1 = ecbArray_1.next()) {
+        for (var ecbArray_1 = __values$v(ecbArray), ecbArray_1_1 = ecbArray_1.next(); !ecbArray_1_1.done; ecbArray_1_1 = ecbArray_1.next()) {
           var ecBlock = ecbArray_1_1.value;
           total += ecBlock.getCount() * (ecBlock.getDataCodewords() + ecCodewords);
         }
@@ -11440,7 +11446,7 @@ var Version$1 = (
         throw new FormatException();
       }
       try {
-        for (var _b = __values$u(Version2.VERSIONS), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$v(Version2.VERSIONS), _c = _b.next(); !_c.done; _c = _b.next()) {
           var version = _c.value;
           if (version.symbolSizeRows === numRows && version.symbolSizeColumns === numColumns) {
             return version;
@@ -11798,7 +11804,7 @@ var BitMatrixParser$2 = (
     return BitMatrixParser2;
   })()
 );
-var __values$t = function(o) {
+var __values$u = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -11822,7 +11828,7 @@ var DataBlock$1 = (
       var totalBlocks = 0;
       var ecBlockArray = ecBlocks.getECBlocks();
       try {
-        for (var ecBlockArray_1 = __values$t(ecBlockArray), ecBlockArray_1_1 = ecBlockArray_1.next(); !ecBlockArray_1_1.done; ecBlockArray_1_1 = ecBlockArray_1.next()) {
+        for (var ecBlockArray_1 = __values$u(ecBlockArray), ecBlockArray_1_1 = ecBlockArray_1.next(); !ecBlockArray_1_1.done; ecBlockArray_1_1 = ecBlockArray_1.next()) {
           var ecBlock = ecBlockArray_1_1.value;
           totalBlocks += ecBlock.getCount();
         }
@@ -11838,7 +11844,7 @@ var DataBlock$1 = (
       var result = new Array(totalBlocks);
       var numResultBlocks = 0;
       try {
-        for (var ecBlockArray_2 = __values$t(ecBlockArray), ecBlockArray_2_1 = ecBlockArray_2.next(); !ecBlockArray_2_1.done; ecBlockArray_2_1 = ecBlockArray_2.next()) {
+        for (var ecBlockArray_2 = __values$u(ecBlockArray), ecBlockArray_2_1 = ecBlockArray_2.next(); !ecBlockArray_2_1.done; ecBlockArray_2_1 = ecBlockArray_2.next()) {
           var ecBlock = ecBlockArray_2_1.value;
           for (var i = 0; i < ecBlock.getCount(); i++) {
             var numDataCodewords = ecBlock.getDataCodewords();
@@ -12477,7 +12483,7 @@ var DecodedBitStreamParser$3 = (
     return DecodedBitStreamParser2;
   })()
 );
-var __values$s = function(o) {
+var __values$t = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -12502,7 +12508,7 @@ var Decoder$2 = (
       var dataBlocks = DataBlock$1.getDataBlocks(codewords, version);
       var totalBytes = 0;
       try {
-        for (var dataBlocks_1 = __values$s(dataBlocks), dataBlocks_1_1 = dataBlocks_1.next(); !dataBlocks_1_1.done; dataBlocks_1_1 = dataBlocks_1.next()) {
+        for (var dataBlocks_1 = __values$t(dataBlocks), dataBlocks_1_1 = dataBlocks_1.next(); !dataBlocks_1_1.done; dataBlocks_1_1 = dataBlocks_1.next()) {
           var db = dataBlocks_1_1.value;
           totalBytes += db.getNumDataCodewords();
         }
@@ -12787,7 +12793,7 @@ var DataMatrixReader = (
         points = detectorResult.getPoints();
       }
       var rawBytes = decoderResult.getRawBytes();
-      var result = new Result(decoderResult.getText(), rawBytes, 8 * rawBytes.length, points, BarcodeFormat.DATA_MATRIX, System.currentTimeMillis());
+      var result = new Result$1(decoderResult.getText(), rawBytes, 8 * rawBytes.length, points, BarcodeFormat.DATA_MATRIX, System.currentTimeMillis());
       var byteSegments = decoderResult.getByteSegments();
       if (byteSegments != null) {
         result.putMetadata(ResultMetadataType.BYTE_SEGMENTS, byteSegments);
@@ -12869,16 +12875,19 @@ var __extends$m = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$m(BrowserDatamatrixCodeReader, _super);
-  function BrowserDatamatrixCodeReader(timeBetweenScansMillis) {
-    if (timeBetweenScansMillis === void 0) {
-      timeBetweenScansMillis = 500;
+var BrowserDatamatrixCodeReader = (
+  /** @class */
+  (function(_super) {
+    __extends$m(BrowserDatamatrixCodeReader2, _super);
+    function BrowserDatamatrixCodeReader2(timeBetweenScansMillis) {
+      if (timeBetweenScansMillis === void 0) {
+        timeBetweenScansMillis = 500;
+      }
+      return _super.call(this, new DataMatrixReader(), timeBetweenScansMillis) || this;
     }
-    return _super.call(this, new DataMatrixReader(), timeBetweenScansMillis) || this;
-  }
-  return BrowserDatamatrixCodeReader;
-})(BrowserCodeReader);
+    return BrowserDatamatrixCodeReader2;
+  })(BrowserCodeReader)
+);
 var ErrorCorrectionLevelValues;
 (function(ErrorCorrectionLevelValues2) {
   ErrorCorrectionLevelValues2[ErrorCorrectionLevelValues2["L"] = 0] = "L";
@@ -12941,7 +12950,7 @@ var ErrorCorrectionLevel = (
     return ErrorCorrectionLevel2;
   })()
 );
-var __values$r = function(o) {
+var __values$s = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -12975,7 +12984,7 @@ var FormatInformation = (
       var bestDifference = Number.MAX_SAFE_INTEGER;
       var bestFormatInfo = 0;
       try {
-        for (var _b = __values$r(FormatInformation2.FORMAT_INFO_DECODE_LOOKUP), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$s(FormatInformation2.FORMAT_INFO_DECODE_LOOKUP), _c = _b.next(); !_c.done; _c = _b.next()) {
           var decodeInfo = _c.value;
           var targetInfo = decodeInfo[0];
           if (targetInfo === maskedFormatInfo1 || targetInfo === maskedFormatInfo2) {
@@ -13062,7 +13071,7 @@ var FormatInformation = (
     return FormatInformation2;
   })()
 );
-var __values$q = function(o) {
+var __values$r = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -13092,7 +13101,7 @@ var ECBlocks = (
       var total = 0;
       var ecBlocks = this.ecBlocks;
       try {
-        for (var ecBlocks_1 = __values$q(ecBlocks), ecBlocks_1_1 = ecBlocks_1.next(); !ecBlocks_1_1.done; ecBlocks_1_1 = ecBlocks_1.next()) {
+        for (var ecBlocks_1 = __values$r(ecBlocks), ecBlocks_1_1 = ecBlocks_1.next(); !ecBlocks_1_1.done; ecBlocks_1_1 = ecBlocks_1.next()) {
           var ecBlock = ecBlocks_1_1.value;
           total += ecBlock.getCount();
         }
@@ -13132,7 +13141,7 @@ var ECB = (
     return ECB2;
   })()
 );
-var __values$p = function(o) {
+var __values$q = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -13159,7 +13168,7 @@ var Version = (
       var ecCodewords = ecBlocks[0].getECCodewordsPerBlock();
       var ecbArray = ecBlocks[0].getECBlocks();
       try {
-        for (var ecbArray_1 = __values$p(ecbArray), ecbArray_1_1 = ecbArray_1.next(); !ecbArray_1_1.done; ecbArray_1_1 = ecbArray_1.next()) {
+        for (var ecbArray_1 = __values$q(ecbArray), ecbArray_1_1 = ecbArray_1.next(); !ecbArray_1_1.done; ecbArray_1_1 = ecbArray_1.next()) {
           var ecBlock = ecbArray_1_1.value;
           total += ecBlock.getCount() * (ecBlock.getDataCodewords() + ecCodewords);
         }
@@ -13560,7 +13569,7 @@ var BitMatrixParser$1 = (
     return BitMatrixParser2;
   })()
 );
-var __values$o = function(o) {
+var __values$p = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -13587,7 +13596,7 @@ var DataBlock = (
       var totalBlocks = 0;
       var ecBlockArray = ecBlocks.getECBlocks();
       try {
-        for (var ecBlockArray_1 = __values$o(ecBlockArray), ecBlockArray_1_1 = ecBlockArray_1.next(); !ecBlockArray_1_1.done; ecBlockArray_1_1 = ecBlockArray_1.next()) {
+        for (var ecBlockArray_1 = __values$p(ecBlockArray), ecBlockArray_1_1 = ecBlockArray_1.next(); !ecBlockArray_1_1.done; ecBlockArray_1_1 = ecBlockArray_1.next()) {
           var ecBlock = ecBlockArray_1_1.value;
           totalBlocks += ecBlock.getCount();
         }
@@ -13603,7 +13612,7 @@ var DataBlock = (
       var result = new Array(totalBlocks);
       var numResultBlocks = 0;
       try {
-        for (var ecBlockArray_2 = __values$o(ecBlockArray), ecBlockArray_2_1 = ecBlockArray_2.next(); !ecBlockArray_2_1.done; ecBlockArray_2_1 = ecBlockArray_2.next()) {
+        for (var ecBlockArray_2 = __values$p(ecBlockArray), ecBlockArray_2_1 = ecBlockArray_2.next(); !ecBlockArray_2_1.done; ecBlockArray_2_1 = ecBlockArray_2.next()) {
           var ecBlock = ecBlockArray_2_1.value;
           for (var i = 0; i < ecBlock.getCount(); i++) {
             var numDataCodewords = ecBlock.getDataCodewords();
@@ -13994,7 +14003,7 @@ var QRCodeDecoderMetaData = (
     return QRCodeDecoderMetaData2;
   })()
 );
-var __values$n = function(o) {
+var __values$o = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -14046,7 +14055,7 @@ var Decoder$1 = (
       var dataBlocks = DataBlock.getDataBlocks(codewords, version, ecLevel);
       var totalBytes = 0;
       try {
-        for (var dataBlocks_1 = __values$n(dataBlocks), dataBlocks_1_1 = dataBlocks_1.next(); !dataBlocks_1_1.done; dataBlocks_1_1 = dataBlocks_1.next()) {
+        for (var dataBlocks_1 = __values$o(dataBlocks), dataBlocks_1_1 = dataBlocks_1.next(); !dataBlocks_1_1.done; dataBlocks_1_1 = dataBlocks_1.next()) {
           var dataBlock = dataBlocks_1_1.value;
           totalBytes += dataBlock.getNumDataCodewords();
         }
@@ -14062,7 +14071,7 @@ var Decoder$1 = (
       var resultBytes = new Uint8Array(totalBytes);
       var resultOffset = 0;
       try {
-        for (var dataBlocks_2 = __values$n(dataBlocks), dataBlocks_2_1 = dataBlocks_2.next(); !dataBlocks_2_1.done; dataBlocks_2_1 = dataBlocks_2.next()) {
+        for (var dataBlocks_2 = __values$o(dataBlocks), dataBlocks_2_1 = dataBlocks_2.next(); !dataBlocks_2_1.done; dataBlocks_2_1 = dataBlocks_2.next()) {
           var dataBlock = dataBlocks_2_1.value;
           var codewordBytes = dataBlock.getCodewords();
           var numDataCodewords = dataBlock.getNumDataCodewords();
@@ -14141,7 +14150,7 @@ var AlignmentPattern = (
     return AlignmentPattern2;
   })(ResultPoint)
 );
-var __values$m = function(o) {
+var __values$n = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -14294,7 +14303,7 @@ var AlignmentPatternFinder = (
       if (!isNaN(centerI)) {
         var estimatedModuleSize = (stateCount[0] + stateCount[1] + stateCount[2]) / 3;
         try {
-          for (var _b = __values$m(this.possibleCenters), _c = _b.next(); !_c.done; _c = _b.next()) {
+          for (var _b = __values$n(this.possibleCenters), _c = _b.next(); !_c.done; _c = _b.next()) {
             var center = _c.value;
             if (center.aboutEquals(estimatedModuleSize, centerI, centerJ)) {
               return center.combineEstimate(centerI, centerJ, estimatedModuleSize);
@@ -14395,7 +14404,7 @@ var FinderPatternInfo = (
     return FinderPatternInfo2;
   })()
 );
-var __values$l = function(o) {
+var __values$m = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -14741,7 +14750,7 @@ var FinderPatternFinder = (
       }
       var firstConfirmedCenter = null;
       try {
-        for (var _b = __values$l(this.possibleCenters), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$m(this.possibleCenters), _c = _b.next(); !_c.done; _c = _b.next()) {
           var center = _c.value;
           if (center.getCount() >= FinderPatternFinder2.CENTER_QUORUM) {
             if (firstConfirmedCenter == null) {
@@ -14772,7 +14781,7 @@ var FinderPatternFinder = (
       var totalModuleSize = 0;
       var max = this.possibleCenters.length;
       try {
-        for (var _c = __values$l(this.possibleCenters), _d = _c.next(); !_d.done; _d = _c.next()) {
+        for (var _c = __values$m(this.possibleCenters), _d = _c.next(); !_d.done; _d = _c.next()) {
           var pattern = _d.value;
           if (pattern.getCount() >= FinderPatternFinder2.CENTER_QUORUM) {
             confirmedCount++;
@@ -14794,7 +14803,7 @@ var FinderPatternFinder = (
       var average = totalModuleSize / max;
       var totalDeviation = 0;
       try {
-        for (var _e = __values$l(this.possibleCenters), _f = _e.next(); !_f.done; _f = _e.next()) {
+        for (var _e = __values$m(this.possibleCenters), _f = _e.next(); !_f.done; _f = _e.next()) {
           var pattern = _f.value;
           totalDeviation += Math.abs(pattern.getEstimatedModuleSize() - average);
         }
@@ -14821,7 +14830,7 @@ var FinderPatternFinder = (
         var totalModuleSize = 0;
         var square = 0;
         try {
-          for (var _c = __values$l(this.possibleCenters), _d = _c.next(); !_d.done; _d = _c.next()) {
+          for (var _c = __values$m(this.possibleCenters), _d = _c.next(); !_d.done; _d = _c.next()) {
             var center = _d.value;
             var size = center.getEstimatedModuleSize();
             totalModuleSize += size;
@@ -14861,7 +14870,7 @@ var FinderPatternFinder = (
       if (possibleCenters.length > 3) {
         var totalModuleSize = 0;
         try {
-          for (var possibleCenters_1 = __values$l(possibleCenters), possibleCenters_1_1 = possibleCenters_1.next(); !possibleCenters_1_1.done; possibleCenters_1_1 = possibleCenters_1.next()) {
+          for (var possibleCenters_1 = __values$m(possibleCenters), possibleCenters_1_1 = possibleCenters_1.next(); !possibleCenters_1_1.done; possibleCenters_1_1 = possibleCenters_1.next()) {
             var possibleCenter = possibleCenters_1_1.value;
             totalModuleSize += possibleCenter.getEstimatedModuleSize();
           }
@@ -15160,7 +15169,7 @@ var QRCodeReader = (
       if (decoderResult.getOther() instanceof QRCodeDecoderMetaData) {
         decoderResult.getOther().applyMirroredCorrection(points);
       }
-      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), void 0, points, BarcodeFormat.QR_CODE, void 0);
+      var result = new Result$1(decoderResult.getText(), decoderResult.getRawBytes(), void 0, points, BarcodeFormat.QR_CODE, void 0);
       var byteSegments = decoderResult.getByteSegments();
       if (byteSegments !== null) {
         result.putMetadata(ResultMetadataType.BYTE_SEGMENTS, byteSegments);
@@ -15266,7 +15275,7 @@ var QRCodeReader = (
     return QRCodeReader2;
   })()
 );
-var __values$k = function(o) {
+var __values$l = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -15277,7 +15286,7 @@ var __values$k = function(o) {
   };
   throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
-var __read$3 = function(o, n) {
+var __read$4 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -15325,8 +15334,8 @@ var MicroQRFormatInformation = (
     MicroQRFormatInformation2.decodeFormatInformation = function(maskedFormatInfo) {
       var e_1, _a2, e_2, _b;
       try {
-        for (var _c = __values$k(MicroQRFormatInformation2.FORMAT_INFO_DECODE_LOOKUP), _d = _c.next(); !_d.done; _d = _c.next()) {
-          var _e = __read$3(_d.value, 2), tableEntry = _e[0], data5 = _e[1];
+        for (var _c = __values$l(MicroQRFormatInformation2.FORMAT_INFO_DECODE_LOOKUP), _d = _c.next(); !_d.done; _d = _c.next()) {
+          var _e = __read$4(_d.value, 2), tableEntry = _e[0], data5 = _e[1];
           if (tableEntry === maskedFormatInfo) {
             return new MicroQRFormatInformation2(data5);
           }
@@ -15343,8 +15352,8 @@ var MicroQRFormatInformation = (
       var bestDifference = Number.MAX_SAFE_INTEGER;
       var bestData5 = 0;
       try {
-        for (var _f = __values$k(MicroQRFormatInformation2.FORMAT_INFO_DECODE_LOOKUP), _g = _f.next(); !_g.done; _g = _f.next()) {
-          var _h = __read$3(_g.value, 2), tableEntry = _h[0], data5 = _h[1];
+        for (var _f = __values$l(MicroQRFormatInformation2.FORMAT_INFO_DECODE_LOOKUP), _g = _f.next(); !_g.done; _g = _f.next()) {
+          var _h = __read$4(_g.value, 2), tableEntry = _h[0], data5 = _h[1];
           var bitsDiff = MicroQRFormatInformation2.numBitsDiffering(maskedFormatInfo, tableEntry);
           if (bitsDiff < bestDifference) {
             bestDifference = bitsDiff;
@@ -15405,7 +15414,7 @@ var MicroQRFormatInformation = (
     return MicroQRFormatInformation2;
   })()
 );
-var __read$2 = function(o, n) {
+var __read$3 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -15474,7 +15483,7 @@ var MicroQRVersion = (
       if (versionIndicator < 0 || versionIndicator > 7) {
         throw new FormatException();
       }
-      var _a2 = __read$2(MicroQRVersion2.VERSION_INFO[versionIndicator], 1), versionNumber = _a2[0];
+      var _a2 = __read$3(MicroQRVersion2.VERSION_INFO[versionIndicator], 1), versionNumber = _a2[0];
       return new MicroQRVersion2(versionNumber, versionIndicator, MicroQRVersion2.EC_BLOCKS[versionIndicator]);
     };
     MicroQRVersion2.getVersionForDimension = function(dimension) {
@@ -15949,7 +15958,7 @@ var MicroQRFinderPattern = (
     return MicroQRFinderPattern2;
   })(ResultPoint)
 );
-var __read$1 = function(o, n) {
+var __read$2 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -16160,7 +16169,7 @@ var MicroQRDetector = (
       ];
       var bestSingle = null;
       for (var orientation_1 = 0; orientation_1 < 4; orientation_1++) {
-        var _a2 = __read$1(ORIENTATION_PROBES[orientation_1], 8), rDx = _a2[0], rDy = _a2[1], rdx = _a2[2], rdy = _a2[3], cDx = _a2[4], cDy = _a2[5], cdx = _a2[6], cdy = _a2[7];
+        var _a2 = __read$2(ORIENTATION_PROBES[orientation_1], 8), rDx = _a2[0], rDy = _a2[1], rdx = _a2[2], rdy = _a2[3], cDx = _a2[4], cDy = _a2[5], cdx = _a2[6], cdy = _a2[7];
         var dimH = this.probeTimingLine(fx + rDx * ms, fy + rDy * ms, rdx, rdy, ms);
         var dimV = this.probeTimingLine(fx + cDx * ms, fy + cDy * ms, cdx, cdy, ms);
         if (dimH !== null && dimV !== null) {
@@ -16271,7 +16280,7 @@ var MicroQRCodeReader = (
         points = detectorResult.getPoints();
         decoderResult = this.decoder.decodeBitMatrix(detectorResult.getBits(), hints !== null && hints !== void 0 ? hints : void 0);
       }
-      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), decoderResult.getNumBits(), points, BarcodeFormat.MICRO_QR_CODE, System.currentTimeMillis());
+      var result = new Result$1(decoderResult.getText(), decoderResult.getRawBytes(), decoderResult.getNumBits(), points, BarcodeFormat.MICRO_QR_CODE, System.currentTimeMillis());
       var byteSegments = decoderResult.getByteSegments();
       if (byteSegments !== null) {
         result.putMetadata(ResultMetadataType.BYTE_SEGMENTS, byteSegments);
@@ -16346,7 +16355,7 @@ var BitMatrixParser = (
     return BitMatrixParser2;
   })()
 );
-var __values$j = function(o) {
+var __values$k = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -16430,7 +16439,7 @@ var DecodedBitStreamParser$1 = (
       var e_1, _a2;
       var sb = [];
       try {
-        for (var _b = __values$j(DecodedBitStreamParser2.POSTCODE_3_BYTES), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$k(DecodedBitStreamParser2.POSTCODE_3_BYTES), _c = _b.next(); !_c.done; _c = _b.next()) {
           var p3bytes = _c.value;
           sb.push(DecodedBitStreamParser2.SETS[0].charAt(DecodedBitStreamParser2.getInt(bytes, p3bytes)));
         }
@@ -16650,7 +16659,7 @@ var MaxiCodeReader = (
       }
       var bits = MaxiCodeReader2.extractPureBits(image.getBlackMatrix());
       var decoderResult = this.decoder.decode(bits, hints);
-      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), 8 * decoderResult.getRawBytes().length, MaxiCodeReader2.NO_POINTS, BarcodeFormat.MAXICODE, System.currentTimeMillis());
+      var result = new Result$1(decoderResult.getText(), decoderResult.getRawBytes(), 8 * decoderResult.getRawBytes().length, MaxiCodeReader2.NO_POINTS, BarcodeFormat.MAXICODE, System.currentTimeMillis());
       result.putMetadata(ResultMetadataType.ERRORS_CORRECTED, decoderResult.getErrorsCorrected());
       var ecLevel = decoderResult.getECLevel();
       if (ecLevel != null) {
@@ -16687,7 +16696,7 @@ var MaxiCodeReader = (
     return MaxiCodeReader2;
   })()
 );
-var __values$i = function(o) {
+var __values$j = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -16716,7 +16725,7 @@ var PDF417Common = (
       var result = new Int32Array(list.length);
       var i = 0;
       try {
-        for (var list_1 = __values$i(list), list_1_1 = list_1.next(); !list_1_1.done; list_1_1 = list_1.next()) {
+        for (var list_1 = __values$j(list), list_1_1 = list_1.next(); !list_1_1.done; list_1_1 = list_1.next()) {
           var integer = list_1_1.value;
           result[i++] = integer;
         }
@@ -22343,7 +22352,7 @@ var PDF417DetectorResult = (
     return PDF417DetectorResult2;
   })()
 );
-var __values$h = function(o) {
+var __values$i = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -22384,7 +22393,7 @@ var Detector = (
           foundBarcodeInRow = false;
           column = 0;
           try {
-            for (var barcodeCoordinates_1 = (e_1 = void 0, __values$h(barcodeCoordinates)), barcodeCoordinates_1_1 = barcodeCoordinates_1.next(); !barcodeCoordinates_1_1.done; barcodeCoordinates_1_1 = barcodeCoordinates_1.next()) {
+            for (var barcodeCoordinates_1 = (e_1 = void 0, __values$i(barcodeCoordinates)), barcodeCoordinates_1_1 = barcodeCoordinates_1.next(); !barcodeCoordinates_1_1.done; barcodeCoordinates_1_1 = barcodeCoordinates_1.next()) {
               var barcodeCoordinate = barcodeCoordinates_1_1.value;
               if (barcodeCoordinate[1] != null) {
                 row = Math.trunc(Math.max(row, barcodeCoordinate[1].getY()));
@@ -22566,7 +22575,7 @@ var Detector = (
     return Detector2;
   })()
 );
-var __values$g = function(o) {
+var __values$h = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -22621,7 +22630,7 @@ var ModulusPoly = (
       if (a === 1) {
         var sum = 0;
         try {
-          for (var _b = __values$g(this.coefficients), _c = _b.next(); !_c.done; _c = _b.next()) {
+          for (var _b = __values$h(this.coefficients), _c = _b.next(); !_c.done; _c = _b.next()) {
             var coefficient = _c.value;
             sum = this.field.add(sum, coefficient);
           }
@@ -22874,7 +22883,7 @@ var ModulusGF = (
     return ModulusGF2;
   })(ModulusBase)
 );
-var __values$f = function(o) {
+var __values$g = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -22885,7 +22894,7 @@ var __values$f = function(o) {
   };
   throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
-var ErrorCorrection = (
+var ErrorCorrection$1 = (
   /** @class */
   (function() {
     function ErrorCorrection2() {
@@ -22909,7 +22918,7 @@ var ErrorCorrection = (
       var knownErrors = this.field.getOne();
       if (erasures != null) {
         try {
-          for (var erasures_1 = __values$f(erasures), erasures_1_1 = erasures_1.next(); !erasures_1_1.done; erasures_1_1 = erasures_1.next()) {
+          for (var erasures_1 = __values$g(erasures), erasures_1_1 = erasures_1.next(); !erasures_1_1.done; erasures_1_1 = erasures_1.next()) {
             var erasure = erasures_1_1.value;
             var b = this.field.exp(received.length - 1 - erasure);
             var term = new ModulusPoly(this.field, new Int32Array([this.field.subtract(0, b), 1]));
@@ -23217,7 +23226,7 @@ var Formatter = (
     return Formatter2;
   })()
 );
-var __values$e = function(o) {
+var __values$f = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -23278,7 +23287,7 @@ var DetectionResultColumn = (
       var formatter = new Formatter();
       var row = 0;
       try {
-        for (var _b = __values$e(this.codewords), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$f(this.codewords), _c = _b.next(); !_c.done; _c = _b.next()) {
           var codeword = _c.value;
           if (codeword == null) {
             formatter.format("%3d:    |   %n", row++);
@@ -23301,7 +23310,7 @@ var DetectionResultColumn = (
     return DetectionResultColumn2;
   })()
 );
-var __values$d = function(o) {
+var __values$e = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -23312,7 +23321,7 @@ var __values$d = function(o) {
   };
   throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
-var __read = function(o, n) {
+var __read$1 = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -23366,8 +23375,8 @@ var BarcodeValue = (
         }
       };
       try {
-        for (var _b = __values$d(this.values.entries()), _c = _b.next(); !_c.done; _c = _b.next()) {
-          var _d = __read(_c.value, 2), key = _d[0], value = _d[1];
+        for (var _b = __values$e(this.values.entries()), _c = _b.next(); !_c.done; _c = _b.next()) {
+          var _d = __read$1(_c.value, 2), key = _d[0], value = _d[1];
           _loop_1(key, value);
         }
       } catch (e_1_1) {
@@ -23406,7 +23415,7 @@ var __extends$h = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __values$c = function(o) {
+var __values$d = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -23429,7 +23438,7 @@ var DetectionResultRowIndicatorColumn = (
     DetectionResultRowIndicatorColumn2.prototype.setRowNumbers = function() {
       var e_1, _a2;
       try {
-        for (var _b = __values$c(this.getCodewords()), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$d(this.getCodewords()), _c = _b.next(); !_c.done; _c = _b.next()) {
           var codeword = _c.value;
           if (codeword != null) {
             codeword.setRowNumberAsRowIndicatorColumn();
@@ -23500,7 +23509,7 @@ var DetectionResultRowIndicatorColumn = (
       this.adjustIncompleteIndicatorColumnRowNumbers(barcodeMetadata);
       var result = new Int32Array(barcodeMetadata.getRowCount());
       try {
-        for (var _b = __values$c(this.getCodewords()), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$d(this.getCodewords()), _c = _b.next(); !_c.done; _c = _b.next()) {
           var codeword = _c.value;
           if (codeword != null) {
             var rowNumber = codeword.getRowNumber();
@@ -23554,7 +23563,7 @@ var DetectionResultRowIndicatorColumn = (
       var barcodeRowCountLowerPart = new BarcodeValue();
       var barcodeECLevel = new BarcodeValue();
       try {
-        for (var codewords_1 = __values$c(codewords), codewords_1_1 = codewords_1.next(); !codewords_1_1.done; codewords_1_1 = codewords_1.next()) {
+        for (var codewords_1 = __values$d(codewords), codewords_1_1 = codewords_1.next(); !codewords_1_1.done; codewords_1_1 = codewords_1.next()) {
           var codeword = codewords_1_1.value;
           if (codeword == null) {
             continue;
@@ -23637,7 +23646,7 @@ var DetectionResultRowIndicatorColumn = (
     return DetectionResultRowIndicatorColumn2;
   })(DetectionResultColumn)
 );
-var __values$b = function(o) {
+var __values$c = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -23815,7 +23824,7 @@ var DetectionResult = (
         otherCodewords[13] = nextColumnCodewords[codewordsRow + 2];
       }
       try {
-        for (var otherCodewords_1 = __values$b(otherCodewords), otherCodewords_1_1 = otherCodewords_1.next(); !otherCodewords_1_1.done; otherCodewords_1_1 = otherCodewords_1.next()) {
+        for (var otherCodewords_1 = __values$c(otherCodewords), otherCodewords_1_1 = otherCodewords_1.next(); !otherCodewords_1_1.done; otherCodewords_1_1 = otherCodewords_1.next()) {
           var otherCodeword = otherCodewords_1_1.value;
           if (DetectionResult2.adjustRowNumber(codeword, otherCodeword)) {
             return;
@@ -24865,7 +24874,7 @@ var DecodedBitStreamParser = (
     return DecodedBitStreamParser2;
   })()
 );
-var __values$a = function(o) {
+var __values$b = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -24966,7 +24975,7 @@ var PDF417ScanningDecoder = (
       var maxRowHeight = PDF417ScanningDecoder2.getMax(rowHeights);
       var missingStartRows = 0;
       try {
-        for (var rowHeights_1 = __values$a(rowHeights), rowHeights_1_1 = rowHeights_1.next(); !rowHeights_1_1.done; rowHeights_1_1 = rowHeights_1.next()) {
+        for (var rowHeights_1 = __values$b(rowHeights), rowHeights_1_1 = rowHeights_1.next(); !rowHeights_1_1.done; rowHeights_1_1 = rowHeights_1.next()) {
           var rowHeight = rowHeights_1_1.value;
           missingStartRows += maxRowHeight - rowHeight;
           if (rowHeight > 0) {
@@ -25002,7 +25011,7 @@ var PDF417ScanningDecoder = (
       var e_2, _a2;
       var maxValue = -1;
       try {
-        for (var values_1 = __values$a(values), values_1_1 = values_1.next(); !values_1_1.done; values_1_1 = values_1.next()) {
+        for (var values_1 = __values$b(values), values_1_1 = values_1.next(); !values_1_1.done; values_1_1 = values_1.next()) {
           var value = values_1_1.value;
           maxValue = Math.max(maxValue, value);
         }
@@ -25134,11 +25143,11 @@ var PDF417ScanningDecoder = (
       }
       var column = 0;
       try {
-        for (var _c = __values$a(detectionResult.getDetectionResultColumns()), _d = _c.next(); !_d.done; _d = _c.next()) {
+        for (var _c = __values$b(detectionResult.getDetectionResultColumns()), _d = _c.next(); !_d.done; _d = _c.next()) {
           var detectionResultColumn = _d.value;
           if (detectionResultColumn != null) {
             try {
-              for (var _e = (e_4 = void 0, __values$a(detectionResultColumn.getCodewords())), _f = _e.next(); !_f.done; _f = _e.next()) {
+              for (var _e = (e_4 = void 0, __values$b(detectionResultColumn.getCodewords())), _f = _e.next(); !_f.done; _f = _e.next()) {
                 var codeword = _f.value;
                 if (codeword != null) {
                   var rowNumber = codeword.getRowNumber();
@@ -25200,7 +25209,7 @@ var PDF417ScanningDecoder = (
       while (PDF417ScanningDecoder2.isValidBarcodeColumn(detectionResult, barcodeColumn - offset)) {
         barcodeColumn -= offset;
         try {
-          for (var _b = (e_5 = void 0, __values$a(detectionResult.getDetectionResultColumn(barcodeColumn).getCodewords())), _c = _b.next(); !_c.done; _c = _b.next()) {
+          for (var _b = (e_5 = void 0, __values$b(detectionResult.getDetectionResultColumn(barcodeColumn).getCodewords())), _c = _b.next(); !_c.done; _c = _b.next()) {
             var previousRowCodeword = _c.value;
             if (previousRowCodeword != null) {
               return (leftToRight ? previousRowCodeword.getEndX() : previousRowCodeword.getStartX()) + offset * skippedColumns * (previousRowCodeword.getEndX() - previousRowCodeword.getStartX());
@@ -25371,11 +25380,11 @@ var PDF417ScanningDecoder = (
     PDF417ScanningDecoder2.CODEWORD_SKEW_SIZE = 2;
     PDF417ScanningDecoder2.MAX_ERRORS = 3;
     PDF417ScanningDecoder2.MAX_EC_CODEWORDS = 512;
-    PDF417ScanningDecoder2.errorCorrection = new ErrorCorrection();
+    PDF417ScanningDecoder2.errorCorrection = new ErrorCorrection$1();
     return PDF417ScanningDecoder2;
   })()
 );
-var __values$9 = function(o) {
+var __values$a = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -25419,10 +25428,10 @@ var PDF417Reader = (
       var results = new Array();
       var detectorResult = Detector.detectMultiple(image, hints, multiple);
       try {
-        for (var _b = __values$9(detectorResult.getPoints()), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$a(detectorResult.getPoints()), _c = _b.next(); !_c.done; _c = _b.next()) {
           var points = _c.value;
           var decoderResult = PDF417ScanningDecoder.decode(detectorResult.getBits(), points[4], points[5], points[6], points[7], PDF417Reader2.getMinCodewordWidth(points), PDF417Reader2.getMaxCodewordWidth(points));
-          var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), void 0, points, BarcodeFormat.PDF_417);
+          var result = new Result$1(decoderResult.getText(), decoderResult.getRawBytes(), void 0, points, BarcodeFormat.PDF_417);
           result.putMetadata(ResultMetadataType.ERROR_CORRECTION_LEVEL, decoderResult.getECLevel());
           var pdf417ResultMetadata = decoderResult.getOther();
           if (pdf417ResultMetadata != null) {
@@ -25496,7 +25505,7 @@ var ReaderException = (
     return ReaderException2;
   })(Exception)
 );
-var __values$8 = function(o) {
+var __values$9 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -25578,7 +25587,7 @@ var MultiFormatReader = (
       var e_1, _a2;
       if (this.readers !== null) {
         try {
-          for (var _b = __values$8(this.readers), _c = _b.next(); !_c.done; _c = _b.next()) {
+          for (var _b = __values$9(this.readers), _c = _b.next(); !_c.done; _c = _b.next()) {
             var reader = _c.value;
             reader.reset();
           }
@@ -25599,7 +25608,7 @@ var MultiFormatReader = (
         throw new ReaderException("No readers where selected, nothing can be read.");
       }
       try {
-        for (var _b = __values$8(this.readers), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$9(this.readers), _c = _b.next(); !_c.done; _c = _b.next()) {
           var reader = _c.value;
           try {
             return reader.decode(image, this.hints);
@@ -25644,36 +25653,39 @@ var __extends$c = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$c(BrowserMultiFormatReader, _super);
-  function BrowserMultiFormatReader(hints, timeBetweenScansMillis) {
-    if (hints === void 0) {
-      hints = null;
+var BrowserMultiFormatReader = (
+  /** @class */
+  (function(_super) {
+    __extends$c(BrowserMultiFormatReader2, _super);
+    function BrowserMultiFormatReader2(hints, timeBetweenScansMillis) {
+      if (hints === void 0) {
+        hints = null;
+      }
+      if (timeBetweenScansMillis === void 0) {
+        timeBetweenScansMillis = 500;
+      }
+      var reader = new MultiFormatReader();
+      reader.setHints(hints);
+      return _super.call(this, reader, timeBetweenScansMillis) || this;
     }
-    if (timeBetweenScansMillis === void 0) {
-      timeBetweenScansMillis = 500;
-    }
-    var reader = new MultiFormatReader();
-    reader.setHints(hints);
-    return _super.call(this, reader, timeBetweenScansMillis) || this;
-  }
-  Object.defineProperty(BrowserMultiFormatReader.prototype, "hints", {
-    set: function(hints) {
-      this._hints = hints || null;
-      this.reader.setHints(hints);
-    },
-    enumerable: false,
-    configurable: true
-  });
-  BrowserMultiFormatReader.prototype.decodeBitmap = function(binaryBitmap) {
-    try {
-      return this.reader.decodeWithState(binaryBitmap);
-    } finally {
-      this.reader.reset();
-    }
-  };
-  return BrowserMultiFormatReader;
-})(BrowserCodeReader);
+    Object.defineProperty(BrowserMultiFormatReader2.prototype, "hints", {
+      set: function(hints) {
+        this._hints = hints || null;
+        this.reader.setHints(hints);
+      },
+      enumerable: false,
+      configurable: true
+    });
+    BrowserMultiFormatReader2.prototype.decodeBitmap = function(binaryBitmap) {
+      try {
+        return this.reader.decodeWithState(binaryBitmap);
+      } finally {
+        this.reader.reset();
+      }
+    };
+    return BrowserMultiFormatReader2;
+  })(BrowserCodeReader)
+);
 var __extends$b = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -25693,16 +25705,19 @@ var __extends$b = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$b(BrowserPDF417Reader, _super);
-  function BrowserPDF417Reader(timeBetweenScansMillis) {
-    if (timeBetweenScansMillis === void 0) {
-      timeBetweenScansMillis = 500;
+var BrowserPDF417Reader = (
+  /** @class */
+  (function(_super) {
+    __extends$b(BrowserPDF417Reader2, _super);
+    function BrowserPDF417Reader2(timeBetweenScansMillis) {
+      if (timeBetweenScansMillis === void 0) {
+        timeBetweenScansMillis = 500;
+      }
+      return _super.call(this, new PDF417Reader(), timeBetweenScansMillis) || this;
     }
-    return _super.call(this, new PDF417Reader(), timeBetweenScansMillis) || this;
-  }
-  return BrowserPDF417Reader;
-})(BrowserCodeReader);
+    return BrowserPDF417Reader2;
+  })(BrowserCodeReader)
+);
 var __extends$a = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -25722,16 +25737,19 @@ var __extends$a = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$a(BrowserQRCodeReader, _super);
-  function BrowserQRCodeReader(timeBetweenScansMillis) {
-    if (timeBetweenScansMillis === void 0) {
-      timeBetweenScansMillis = 500;
+var BrowserQRCodeReader = (
+  /** @class */
+  (function(_super) {
+    __extends$a(BrowserQRCodeReader2, _super);
+    function BrowserQRCodeReader2(timeBetweenScansMillis) {
+      if (timeBetweenScansMillis === void 0) {
+        timeBetweenScansMillis = 500;
+      }
+      return _super.call(this, new QRCodeReader(), timeBetweenScansMillis) || this;
     }
-    return _super.call(this, new QRCodeReader(), timeBetweenScansMillis) || this;
-  }
-  return BrowserQRCodeReader;
-})(BrowserCodeReader);
+    return BrowserQRCodeReader2;
+  })(BrowserCodeReader)
+);
 var EncodeHintType;
 (function(EncodeHintType2) {
   EncodeHintType2[EncodeHintType2["ERROR_CORRECTION"] = 0] = "ERROR_CORRECTION";
@@ -25942,7 +25960,7 @@ var MaskUtil = (
     return MaskUtil2;
   })()
 );
-var __values$7 = function(o) {
+var __values$8 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -25987,7 +26005,7 @@ var ByteMatrix = (
     ByteMatrix2.prototype.clear = function(value) {
       var e_1, _a2;
       try {
-        for (var _b = __values$7(this.bytes), _c = _b.next(); !_c.done; _c = _b.next()) {
+        for (var _b = __values$8(this.bytes), _c = _b.next(); !_c.done; _c = _b.next()) {
           var aByte = _c.value;
           Arrays.fill(aByte, value);
         }
@@ -26496,7 +26514,7 @@ var BlockPair = (
     return BlockPair2;
   })()
 );
-var __values$6 = function(o) {
+var __values$7 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -26507,7 +26525,7 @@ var __values$6 = function(o) {
   };
   throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
-var Encoder = (
+var Encoder$1 = (
   /** @class */
   (function() {
     function Encoder2() {
@@ -26737,7 +26755,7 @@ var Encoder = (
       var result = new BitArray();
       for (var i = 0; i < maxNumDataBytes; ++i) {
         try {
-          for (var blocks_1 = (e_1 = void 0, __values$6(blocks)), blocks_1_1 = blocks_1.next(); !blocks_1_1.done; blocks_1_1 = blocks_1.next()) {
+          for (var blocks_1 = (e_1 = void 0, __values$7(blocks)), blocks_1_1 = blocks_1.next(); !blocks_1_1.done; blocks_1_1 = blocks_1.next()) {
             var block = blocks_1_1.value;
             var dataBytes = block.getDataBytes();
             if (i < dataBytes.length) {
@@ -26756,7 +26774,7 @@ var Encoder = (
       }
       for (var i = 0; i < maxNumEcBytes; ++i) {
         try {
-          for (var blocks_2 = (e_2 = void 0, __values$6(blocks)), blocks_2_1 = blocks_2.next(); !blocks_2_1.done; blocks_2_1 = blocks_2.next()) {
+          for (var blocks_2 = (e_2 = void 0, __values$7(blocks)), blocks_2_1 = blocks_2.next(); !blocks_2_1.done; blocks_2_1 = blocks_2.next()) {
             var block = blocks_2_1.value;
             var ecBytes = block.getErrorCorrectionBytes();
             if (i < ecBytes.length) {
@@ -27017,6 +27035,201 @@ var Encoder = (
     return Encoder2;
   })()
 );
+var BrowserQRCodeSvgWriter = (
+  /** @class */
+  (function() {
+    function BrowserQRCodeSvgWriter2() {
+    }
+    BrowserQRCodeSvgWriter2.prototype.write = function(contents, width, height, hints) {
+      if (hints === void 0) {
+        hints = null;
+      }
+      if (contents.length === 0) {
+        throw new IllegalArgumentException("Found empty contents");
+      }
+      if (width < 0 || height < 0) {
+        throw new IllegalArgumentException("Requested dimensions are too small: " + width + "x" + height);
+      }
+      var errorCorrectionLevel = ErrorCorrectionLevel.L;
+      var quietZone = BrowserQRCodeSvgWriter2.QUIET_ZONE_SIZE;
+      if (hints !== null) {
+        if (void 0 !== hints.get(EncodeHintType.ERROR_CORRECTION)) {
+          errorCorrectionLevel = ErrorCorrectionLevel.fromString(hints.get(EncodeHintType.ERROR_CORRECTION).toString());
+        }
+        if (void 0 !== hints.get(EncodeHintType.MARGIN)) {
+          quietZone = Number.parseInt(hints.get(EncodeHintType.MARGIN).toString(), 10);
+        }
+      }
+      var code = Encoder$1.encode(contents, errorCorrectionLevel, hints);
+      return this.renderResult(code, width, height, quietZone);
+    };
+    BrowserQRCodeSvgWriter2.prototype.writeToDom = function(containerElement, contents, width, height, hints) {
+      if (hints === void 0) {
+        hints = null;
+      }
+      if (typeof containerElement === "string") {
+        containerElement = document.querySelector(containerElement);
+      }
+      var svgElement = this.write(contents, width, height, hints);
+      if (containerElement)
+        containerElement.appendChild(svgElement);
+    };
+    BrowserQRCodeSvgWriter2.prototype.renderResult = function(code, width, height, quietZone) {
+      var input = code.getMatrix();
+      if (input === null) {
+        throw new IllegalStateException();
+      }
+      var inputWidth = input.getWidth();
+      var inputHeight = input.getHeight();
+      var qrWidth = inputWidth + quietZone * 2;
+      var qrHeight = inputHeight + quietZone * 2;
+      var outputWidth = Math.max(width, qrWidth);
+      var outputHeight = Math.max(height, qrHeight);
+      var multiple = Math.min(Math.floor(outputWidth / qrWidth), Math.floor(outputHeight / qrHeight));
+      var leftPadding = Math.floor((outputWidth - inputWidth * multiple) / 2);
+      var topPadding = Math.floor((outputHeight - inputHeight * multiple) / 2);
+      var svgElement = this.createSVGElement(outputWidth, outputHeight);
+      for (var inputY = 0, outputY = topPadding; inputY < inputHeight; inputY++, outputY += multiple) {
+        for (var inputX = 0, outputX = leftPadding; inputX < inputWidth; inputX++, outputX += multiple) {
+          if (input.get(inputX, inputY) === 1) {
+            var svgRectElement = this.createSvgRectElement(outputX, outputY, multiple, multiple);
+            svgElement.appendChild(svgRectElement);
+          }
+        }
+      }
+      return svgElement;
+    };
+    BrowserQRCodeSvgWriter2.prototype.createSVGElement = function(w, h) {
+      var svgElement = document.createElementNS(BrowserQRCodeSvgWriter2.SVG_NS, "svg");
+      svgElement.setAttributeNS(null, "height", w.toString());
+      svgElement.setAttributeNS(null, "width", h.toString());
+      return svgElement;
+    };
+    BrowserQRCodeSvgWriter2.prototype.createSvgRectElement = function(x, y, w, h) {
+      var rect = document.createElementNS(BrowserQRCodeSvgWriter2.SVG_NS, "rect");
+      rect.setAttributeNS(null, "x", x.toString());
+      rect.setAttributeNS(null, "y", y.toString());
+      rect.setAttributeNS(null, "height", w.toString());
+      rect.setAttributeNS(null, "width", h.toString());
+      rect.setAttributeNS(null, "fill", "#000000");
+      return rect;
+    };
+    BrowserQRCodeSvgWriter2.QUIET_ZONE_SIZE = 4;
+    BrowserQRCodeSvgWriter2.SVG_NS = "http://www.w3.org/2000/svg";
+    return BrowserQRCodeSvgWriter2;
+  })()
+);
+var QRCodeWriter = (
+  /** @class */
+  (function() {
+    function QRCodeWriter2() {
+    }
+    QRCodeWriter2.prototype.encode = function(contents, format, width, height, hints) {
+      if (contents.length === 0) {
+        throw new IllegalArgumentException("Found empty contents");
+      }
+      if (format !== BarcodeFormat.QR_CODE) {
+        throw new IllegalArgumentException("Can only encode QR_CODE, but got " + format);
+      }
+      if (width < 0 || height < 0) {
+        throw new IllegalArgumentException("Requested dimensions are too small: ".concat(width, "x").concat(height));
+      }
+      var errorCorrectionLevel = ErrorCorrectionLevel.L;
+      var quietZone = QRCodeWriter2.QUIET_ZONE_SIZE;
+      if (hints !== null) {
+        if (void 0 !== hints.get(EncodeHintType.ERROR_CORRECTION)) {
+          errorCorrectionLevel = ErrorCorrectionLevel.fromString(hints.get(EncodeHintType.ERROR_CORRECTION).toString());
+        }
+        if (void 0 !== hints.get(EncodeHintType.MARGIN)) {
+          quietZone = Number.parseInt(hints.get(EncodeHintType.MARGIN).toString(), 10);
+        }
+      }
+      var code = Encoder$1.encode(contents, errorCorrectionLevel, hints);
+      return QRCodeWriter2.renderResult(code, width, height, quietZone);
+    };
+    QRCodeWriter2.renderResult = function(code, width, height, quietZone) {
+      var input = code.getMatrix();
+      if (input === null) {
+        throw new IllegalStateException();
+      }
+      var inputWidth = input.getWidth();
+      var inputHeight = input.getHeight();
+      var qrWidth = inputWidth + quietZone * 2;
+      var qrHeight = inputHeight + quietZone * 2;
+      var outputWidth = Math.max(width, qrWidth);
+      var outputHeight = Math.max(height, qrHeight);
+      var multiple = Math.min(Math.floor(outputWidth / qrWidth), Math.floor(outputHeight / qrHeight));
+      var leftPadding = Math.floor((outputWidth - inputWidth * multiple) / 2);
+      var topPadding = Math.floor((outputHeight - inputHeight * multiple) / 2);
+      var output = new BitMatrix(outputWidth, outputHeight);
+      for (var inputY = 0, outputY = topPadding; inputY < inputHeight; inputY++, outputY += multiple) {
+        for (var inputX = 0, outputX = leftPadding; inputX < inputWidth; inputX++, outputX += multiple) {
+          if (input.get(inputX, inputY) === 1) {
+            output.setRegion(outputX, outputY, multiple, multiple);
+          }
+        }
+      }
+      return output;
+    };
+    QRCodeWriter2.QUIET_ZONE_SIZE = 4;
+    return QRCodeWriter2;
+  })()
+);
+var MultiFormatWriter = (
+  /** @class */
+  (function() {
+    function MultiFormatWriter2() {
+    }
+    MultiFormatWriter2.prototype.encode = function(contents, format, width, height, hints) {
+      var writer;
+      switch (format) {
+        // case BarcodeFormat.EAN_8:
+        //   writer = new EAN8Writer()
+        //   break
+        // case BarcodeFormat.UPC_E:
+        //   writer = new UPCEWriter()
+        //   break
+        // case BarcodeFormat.EAN_13:
+        //   writer = new EAN13Writer()
+        //   break
+        // case BarcodeFormat.UPC_A:
+        //   writer = new UPCAWriter()
+        //   break
+        case BarcodeFormat.QR_CODE:
+          writer = new QRCodeWriter();
+          break;
+        // case BarcodeFormat.CODE_39:
+        //   writer = new Code39Writer()
+        //   break
+        // case BarcodeFormat.CODE_93:
+        //   writer = new Code93Writer()
+        //   break
+        // case BarcodeFormat.CODE_128:
+        //   writer = new Code128Writer()
+        //   break
+        // case BarcodeFormat.ITF:
+        //   writer = new ITFWriter()
+        //   break
+        // case BarcodeFormat.PDF_417:
+        //   writer = new PDF417Writer()
+        //   break
+        // case BarcodeFormat.CODABAR:
+        //   writer = new CodaBarWriter()
+        //   break
+        // case BarcodeFormat.DATA_MATRIX:
+        //   writer = new DataMatrixWriter()
+        //   break
+        // case BarcodeFormat.AZTEC:
+        //   writer = new AztecWriter()
+        //   break
+        default:
+          throw new IllegalArgumentException("No encoder available for format " + format);
+      }
+      return writer.encode(contents, format, width, height, hints);
+    };
+    return MultiFormatWriter2;
+  })()
+);
 var __extends$8 = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -27036,100 +27249,103 @@ var __extends$8 = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$8(PlanarYUVLuminanceSource, _super);
-  function PlanarYUVLuminanceSource(yuvData, dataWidth, dataHeight, left, top, width, height, reverseHorizontal) {
-    var _this = _super.call(this, width, height) || this;
-    _this.yuvData = yuvData;
-    _this.dataWidth = dataWidth;
-    _this.dataHeight = dataHeight;
-    _this.left = left;
-    _this.top = top;
-    if (left + width > dataWidth || top + height > dataHeight) {
-      throw new IllegalArgumentException("Crop rectangle does not fit within image data.");
+var PlanarYUVLuminanceSource = (
+  /** @class */
+  (function(_super) {
+    __extends$8(PlanarYUVLuminanceSource2, _super);
+    function PlanarYUVLuminanceSource2(yuvData, dataWidth, dataHeight, left, top, width, height, reverseHorizontal) {
+      var _this = _super.call(this, width, height) || this;
+      _this.yuvData = yuvData;
+      _this.dataWidth = dataWidth;
+      _this.dataHeight = dataHeight;
+      _this.left = left;
+      _this.top = top;
+      if (left + width > dataWidth || top + height > dataHeight) {
+        throw new IllegalArgumentException("Crop rectangle does not fit within image data.");
+      }
+      if (reverseHorizontal) {
+        _this.reverseHorizontal(width, height);
+      }
+      return _this;
     }
-    if (reverseHorizontal) {
-      _this.reverseHorizontal(width, height);
-    }
-    return _this;
-  }
-  PlanarYUVLuminanceSource.prototype.getRow = function(y, row) {
-    if (y < 0 || y >= this.getHeight()) {
-      throw new IllegalArgumentException("Requested row is outside the image: " + y);
-    }
-    var width = this.getWidth();
-    if (row === null || row === void 0 || row.length < width) {
-      row = new Uint8ClampedArray(width);
-    }
-    var offset = (y + this.top) * this.dataWidth + this.left;
-    System.arraycopy(this.yuvData, offset, row, 0, width);
-    return row;
-  };
-  PlanarYUVLuminanceSource.prototype.getMatrix = function() {
-    var width = this.getWidth();
-    var height = this.getHeight();
-    if (width === this.dataWidth && height === this.dataHeight) {
-      return this.yuvData;
-    }
-    var area = width * height;
-    var matrix = new Uint8ClampedArray(area);
-    var inputOffset = this.top * this.dataWidth + this.left;
-    if (width === this.dataWidth) {
-      System.arraycopy(this.yuvData, inputOffset, matrix, 0, area);
+    PlanarYUVLuminanceSource2.prototype.getRow = function(y, row) {
+      if (y < 0 || y >= this.getHeight()) {
+        throw new IllegalArgumentException("Requested row is outside the image: " + y);
+      }
+      var width = this.getWidth();
+      if (row === null || row === void 0 || row.length < width) {
+        row = new Uint8ClampedArray(width);
+      }
+      var offset = (y + this.top) * this.dataWidth + this.left;
+      System.arraycopy(this.yuvData, offset, row, 0, width);
+      return row;
+    };
+    PlanarYUVLuminanceSource2.prototype.getMatrix = function() {
+      var width = this.getWidth();
+      var height = this.getHeight();
+      if (width === this.dataWidth && height === this.dataHeight) {
+        return this.yuvData;
+      }
+      var area = width * height;
+      var matrix = new Uint8ClampedArray(area);
+      var inputOffset = this.top * this.dataWidth + this.left;
+      if (width === this.dataWidth) {
+        System.arraycopy(this.yuvData, inputOffset, matrix, 0, area);
+        return matrix;
+      }
+      for (var y = 0; y < height; y++) {
+        var outputOffset = y * width;
+        System.arraycopy(this.yuvData, inputOffset, matrix, outputOffset, width);
+        inputOffset += this.dataWidth;
+      }
       return matrix;
-    }
-    for (var y = 0; y < height; y++) {
-      var outputOffset = y * width;
-      System.arraycopy(this.yuvData, inputOffset, matrix, outputOffset, width);
-      inputOffset += this.dataWidth;
-    }
-    return matrix;
-  };
-  PlanarYUVLuminanceSource.prototype.isCropSupported = function() {
-    return true;
-  };
-  PlanarYUVLuminanceSource.prototype.crop = function(left, top, width, height) {
-    return new PlanarYUVLuminanceSource(this.yuvData, this.dataWidth, this.dataHeight, this.left + left, this.top + top, width, height, false);
-  };
-  PlanarYUVLuminanceSource.prototype.renderThumbnail = function() {
-    var width = this.getWidth() / PlanarYUVLuminanceSource.THUMBNAIL_SCALE_FACTOR;
-    var height = this.getHeight() / PlanarYUVLuminanceSource.THUMBNAIL_SCALE_FACTOR;
-    var pixels = new Int32Array(width * height);
-    var yuv = this.yuvData;
-    var inputOffset = this.top * this.dataWidth + this.left;
-    for (var y = 0; y < height; y++) {
-      var outputOffset = y * width;
-      for (var x = 0; x < width; x++) {
-        var grey = yuv[inputOffset + x * PlanarYUVLuminanceSource.THUMBNAIL_SCALE_FACTOR] & 255;
-        pixels[outputOffset + x] = 4278190080 | grey * 65793;
+    };
+    PlanarYUVLuminanceSource2.prototype.isCropSupported = function() {
+      return true;
+    };
+    PlanarYUVLuminanceSource2.prototype.crop = function(left, top, width, height) {
+      return new PlanarYUVLuminanceSource2(this.yuvData, this.dataWidth, this.dataHeight, this.left + left, this.top + top, width, height, false);
+    };
+    PlanarYUVLuminanceSource2.prototype.renderThumbnail = function() {
+      var width = this.getWidth() / PlanarYUVLuminanceSource2.THUMBNAIL_SCALE_FACTOR;
+      var height = this.getHeight() / PlanarYUVLuminanceSource2.THUMBNAIL_SCALE_FACTOR;
+      var pixels = new Int32Array(width * height);
+      var yuv = this.yuvData;
+      var inputOffset = this.top * this.dataWidth + this.left;
+      for (var y = 0; y < height; y++) {
+        var outputOffset = y * width;
+        for (var x = 0; x < width; x++) {
+          var grey = yuv[inputOffset + x * PlanarYUVLuminanceSource2.THUMBNAIL_SCALE_FACTOR] & 255;
+          pixels[outputOffset + x] = 4278190080 | grey * 65793;
+        }
+        inputOffset += this.dataWidth * PlanarYUVLuminanceSource2.THUMBNAIL_SCALE_FACTOR;
       }
-      inputOffset += this.dataWidth * PlanarYUVLuminanceSource.THUMBNAIL_SCALE_FACTOR;
-    }
-    return pixels;
-  };
-  PlanarYUVLuminanceSource.prototype.getThumbnailWidth = function() {
-    return this.getWidth() / PlanarYUVLuminanceSource.THUMBNAIL_SCALE_FACTOR;
-  };
-  PlanarYUVLuminanceSource.prototype.getThumbnailHeight = function() {
-    return this.getHeight() / PlanarYUVLuminanceSource.THUMBNAIL_SCALE_FACTOR;
-  };
-  PlanarYUVLuminanceSource.prototype.reverseHorizontal = function(width, height) {
-    var yuvData = this.yuvData;
-    for (var y = 0, rowStart = this.top * this.dataWidth + this.left; y < height; y++, rowStart += this.dataWidth) {
-      var middle = rowStart + width / 2;
-      for (var x1 = rowStart, x2 = rowStart + width - 1; x1 < middle; x1++, x2--) {
-        var temp = yuvData[x1];
-        yuvData[x1] = yuvData[x2];
-        yuvData[x2] = temp;
+      return pixels;
+    };
+    PlanarYUVLuminanceSource2.prototype.getThumbnailWidth = function() {
+      return this.getWidth() / PlanarYUVLuminanceSource2.THUMBNAIL_SCALE_FACTOR;
+    };
+    PlanarYUVLuminanceSource2.prototype.getThumbnailHeight = function() {
+      return this.getHeight() / PlanarYUVLuminanceSource2.THUMBNAIL_SCALE_FACTOR;
+    };
+    PlanarYUVLuminanceSource2.prototype.reverseHorizontal = function(width, height) {
+      var yuvData = this.yuvData;
+      for (var y = 0, rowStart = this.top * this.dataWidth + this.left; y < height; y++, rowStart += this.dataWidth) {
+        var middle = rowStart + width / 2;
+        for (var x1 = rowStart, x2 = rowStart + width - 1; x1 < middle; x1++, x2--) {
+          var temp = yuvData[x1];
+          yuvData[x1] = yuvData[x2];
+          yuvData[x2] = temp;
+        }
       }
-    }
-  };
-  PlanarYUVLuminanceSource.prototype.invert = function() {
-    return new InvertedLuminanceSource(this);
-  };
-  PlanarYUVLuminanceSource.THUMBNAIL_SCALE_FACTOR = 2;
-  return PlanarYUVLuminanceSource;
-})(LuminanceSource);
+    };
+    PlanarYUVLuminanceSource2.prototype.invert = function() {
+      return new InvertedLuminanceSource(this);
+    };
+    PlanarYUVLuminanceSource2.THUMBNAIL_SCALE_FACTOR = 2;
+    return PlanarYUVLuminanceSource2;
+  })(LuminanceSource)
+);
 var __extends$7 = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -27149,89 +27365,92 @@ var __extends$7 = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$7(RGBLuminanceSource, _super);
-  function RGBLuminanceSource(luminances, width, height, dataWidth, dataHeight, left, top) {
-    var _this = _super.call(this, width, height) || this;
-    _this.dataWidth = dataWidth;
-    _this.dataHeight = dataHeight;
-    _this.left = left;
-    _this.top = top;
-    if (luminances.BYTES_PER_ELEMENT === 4) {
-      var size = width * height;
-      var luminancesUint8Array = new Uint8ClampedArray(size);
-      for (var offset = 0; offset < size; offset++) {
-        var pixel = luminances[offset];
-        var r = pixel >> 16 & 255;
-        var g2 = pixel >> 7 & 510;
-        var b = pixel & 255;
-        luminancesUint8Array[offset] = /*(byte) */
-        (r + g2 + b) / 4 & 255;
+var RGBLuminanceSource = (
+  /** @class */
+  (function(_super) {
+    __extends$7(RGBLuminanceSource2, _super);
+    function RGBLuminanceSource2(luminances, width, height, dataWidth, dataHeight, left, top) {
+      var _this = _super.call(this, width, height) || this;
+      _this.dataWidth = dataWidth;
+      _this.dataHeight = dataHeight;
+      _this.left = left;
+      _this.top = top;
+      if (luminances.BYTES_PER_ELEMENT === 4) {
+        var size = width * height;
+        var luminancesUint8Array = new Uint8ClampedArray(size);
+        for (var offset = 0; offset < size; offset++) {
+          var pixel = luminances[offset];
+          var r = pixel >> 16 & 255;
+          var g2 = pixel >> 7 & 510;
+          var b = pixel & 255;
+          luminancesUint8Array[offset] = /*(byte) */
+          (r + g2 + b) / 4 & 255;
+        }
+        _this.luminances = luminancesUint8Array;
+      } else {
+        _this.luminances = luminances;
       }
-      _this.luminances = luminancesUint8Array;
-    } else {
-      _this.luminances = luminances;
+      if (void 0 === dataWidth) {
+        _this.dataWidth = width;
+      }
+      if (void 0 === dataHeight) {
+        _this.dataHeight = height;
+      }
+      if (void 0 === left) {
+        _this.left = 0;
+      }
+      if (void 0 === top) {
+        _this.top = 0;
+      }
+      if (_this.left + width > _this.dataWidth || _this.top + height > _this.dataHeight) {
+        throw new IllegalArgumentException("Crop rectangle does not fit within image data.");
+      }
+      return _this;
     }
-    if (void 0 === dataWidth) {
-      _this.dataWidth = width;
-    }
-    if (void 0 === dataHeight) {
-      _this.dataHeight = height;
-    }
-    if (void 0 === left) {
-      _this.left = 0;
-    }
-    if (void 0 === top) {
-      _this.top = 0;
-    }
-    if (_this.left + width > _this.dataWidth || _this.top + height > _this.dataHeight) {
-      throw new IllegalArgumentException("Crop rectangle does not fit within image data.");
-    }
-    return _this;
-  }
-  RGBLuminanceSource.prototype.getRow = function(y, row) {
-    if (y < 0 || y >= this.getHeight()) {
-      throw new IllegalArgumentException("Requested row is outside the image: " + y);
-    }
-    var width = this.getWidth();
-    if (row === null || row === void 0 || row.length < width) {
-      row = new Uint8ClampedArray(width);
-    }
-    var offset = (y + this.top) * this.dataWidth + this.left;
-    System.arraycopy(this.luminances, offset, row, 0, width);
-    return row;
-  };
-  RGBLuminanceSource.prototype.getMatrix = function() {
-    var width = this.getWidth();
-    var height = this.getHeight();
-    if (width === this.dataWidth && height === this.dataHeight) {
-      return this.luminances;
-    }
-    var area = width * height;
-    var matrix = new Uint8ClampedArray(area);
-    var inputOffset = this.top * this.dataWidth + this.left;
-    if (width === this.dataWidth) {
-      System.arraycopy(this.luminances, inputOffset, matrix, 0, area);
+    RGBLuminanceSource2.prototype.getRow = function(y, row) {
+      if (y < 0 || y >= this.getHeight()) {
+        throw new IllegalArgumentException("Requested row is outside the image: " + y);
+      }
+      var width = this.getWidth();
+      if (row === null || row === void 0 || row.length < width) {
+        row = new Uint8ClampedArray(width);
+      }
+      var offset = (y + this.top) * this.dataWidth + this.left;
+      System.arraycopy(this.luminances, offset, row, 0, width);
+      return row;
+    };
+    RGBLuminanceSource2.prototype.getMatrix = function() {
+      var width = this.getWidth();
+      var height = this.getHeight();
+      if (width === this.dataWidth && height === this.dataHeight) {
+        return this.luminances;
+      }
+      var area = width * height;
+      var matrix = new Uint8ClampedArray(area);
+      var inputOffset = this.top * this.dataWidth + this.left;
+      if (width === this.dataWidth) {
+        System.arraycopy(this.luminances, inputOffset, matrix, 0, area);
+        return matrix;
+      }
+      for (var y = 0; y < height; y++) {
+        var outputOffset = y * width;
+        System.arraycopy(this.luminances, inputOffset, matrix, outputOffset, width);
+        inputOffset += this.dataWidth;
+      }
       return matrix;
-    }
-    for (var y = 0; y < height; y++) {
-      var outputOffset = y * width;
-      System.arraycopy(this.luminances, inputOffset, matrix, outputOffset, width);
-      inputOffset += this.dataWidth;
-    }
-    return matrix;
-  };
-  RGBLuminanceSource.prototype.isCropSupported = function() {
-    return true;
-  };
-  RGBLuminanceSource.prototype.crop = function(left, top, width, height) {
-    return new RGBLuminanceSource(this.luminances, width, height, this.dataWidth, this.dataHeight, this.left + left, this.top + top);
-  };
-  RGBLuminanceSource.prototype.invert = function() {
-    return new InvertedLuminanceSource(this);
-  };
-  return RGBLuminanceSource;
-})(LuminanceSource);
+    };
+    RGBLuminanceSource2.prototype.isCropSupported = function() {
+      return true;
+    };
+    RGBLuminanceSource2.prototype.crop = function(left, top, width, height) {
+      return new RGBLuminanceSource2(this.luminances, width, height, this.dataWidth, this.dataHeight, this.left + left, this.top + top);
+    };
+    RGBLuminanceSource2.prototype.invert = function() {
+      return new InvertedLuminanceSource(this);
+    };
+    return RGBLuminanceSource2;
+  })(LuminanceSource)
+);
 var __extends$6 = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -27273,25 +27492,607 @@ var StandardCharsets = (
     return StandardCharsets2;
   })()
 );
+var DefaultPlacement = (
+  /** @class */
+  (function() {
+    function DefaultPlacement2(codewords, numcols, numrows) {
+      this.codewords = codewords;
+      this.numcols = numcols;
+      this.numrows = numrows;
+      this.bits = new Uint8Array(numcols * numrows);
+      Arrays.fill(this.bits, 2);
+    }
+    DefaultPlacement2.prototype.getNumrows = function() {
+      return this.numrows;
+    };
+    DefaultPlacement2.prototype.getNumcols = function() {
+      return this.numcols;
+    };
+    DefaultPlacement2.prototype.getBits = function() {
+      return this.bits;
+    };
+    DefaultPlacement2.prototype.getBit = function(col, row) {
+      return this.bits[row * this.numcols + col] === 1;
+    };
+    DefaultPlacement2.prototype.setBit = function(col, row, bit) {
+      this.bits[row * this.numcols + col] = bit ? 1 : 0;
+    };
+    DefaultPlacement2.prototype.noBit = function(col, row) {
+      return this.bits[row * this.numcols + col] === 2;
+    };
+    DefaultPlacement2.prototype.place = function() {
+      var pos = 0;
+      var row = 4;
+      var col = 0;
+      do {
+        if (row === this.numrows && col === 0) {
+          this.corner1(pos++);
+        }
+        if (row === this.numrows - 2 && col === 0 && this.numcols % 4 !== 0) {
+          this.corner2(pos++);
+        }
+        if (row === this.numrows - 2 && col === 0 && this.numcols % 8 === 4) {
+          this.corner3(pos++);
+        }
+        if (row === this.numrows + 4 && col === 2 && this.numcols % 8 === 0) {
+          this.corner4(pos++);
+        }
+        do {
+          if (row < this.numrows && col >= 0 && this.noBit(col, row)) {
+            this.utah(row, col, pos++);
+          }
+          row -= 2;
+          col += 2;
+        } while (row >= 0 && col < this.numcols);
+        row++;
+        col += 3;
+        do {
+          if (row >= 0 && col < this.numcols && this.noBit(col, row)) {
+            this.utah(row, col, pos++);
+          }
+          row += 2;
+          col -= 2;
+        } while (row < this.numrows && col >= 0);
+        row += 3;
+        col++;
+      } while (row < this.numrows || col < this.numcols);
+      if (this.noBit(this.numcols - 1, this.numrows - 1)) {
+        this.setBit(this.numcols - 1, this.numrows - 1, true);
+        this.setBit(this.numcols - 2, this.numrows - 2, true);
+      }
+    };
+    DefaultPlacement2.prototype.module = function(row, col, pos, bit) {
+      if (row < 0) {
+        row += this.numrows;
+        col += 4 - (this.numrows + 4) % 8;
+      }
+      if (col < 0) {
+        col += this.numcols;
+        row += 4 - (this.numcols + 4) % 8;
+      }
+      var v = this.codewords.charCodeAt(pos);
+      v &= 1 << 8 - bit;
+      this.setBit(col, row, v !== 0);
+    };
+    DefaultPlacement2.prototype.utah = function(row, col, pos) {
+      this.module(row - 2, col - 2, pos, 1);
+      this.module(row - 2, col - 1, pos, 2);
+      this.module(row - 1, col - 2, pos, 3);
+      this.module(row - 1, col - 1, pos, 4);
+      this.module(row - 1, col, pos, 5);
+      this.module(row, col - 2, pos, 6);
+      this.module(row, col - 1, pos, 7);
+      this.module(row, col, pos, 8);
+    };
+    DefaultPlacement2.prototype.corner1 = function(pos) {
+      this.module(this.numrows - 1, 0, pos, 1);
+      this.module(this.numrows - 1, 1, pos, 2);
+      this.module(this.numrows - 1, 2, pos, 3);
+      this.module(0, this.numcols - 2, pos, 4);
+      this.module(0, this.numcols - 1, pos, 5);
+      this.module(1, this.numcols - 1, pos, 6);
+      this.module(2, this.numcols - 1, pos, 7);
+      this.module(3, this.numcols - 1, pos, 8);
+    };
+    DefaultPlacement2.prototype.corner2 = function(pos) {
+      this.module(this.numrows - 3, 0, pos, 1);
+      this.module(this.numrows - 2, 0, pos, 2);
+      this.module(this.numrows - 1, 0, pos, 3);
+      this.module(0, this.numcols - 4, pos, 4);
+      this.module(0, this.numcols - 3, pos, 5);
+      this.module(0, this.numcols - 2, pos, 6);
+      this.module(0, this.numcols - 1, pos, 7);
+      this.module(1, this.numcols - 1, pos, 8);
+    };
+    DefaultPlacement2.prototype.corner3 = function(pos) {
+      this.module(this.numrows - 3, 0, pos, 1);
+      this.module(this.numrows - 2, 0, pos, 2);
+      this.module(this.numrows - 1, 0, pos, 3);
+      this.module(0, this.numcols - 2, pos, 4);
+      this.module(0, this.numcols - 1, pos, 5);
+      this.module(1, this.numcols - 1, pos, 6);
+      this.module(2, this.numcols - 1, pos, 7);
+      this.module(3, this.numcols - 1, pos, 8);
+    };
+    DefaultPlacement2.prototype.corner4 = function(pos) {
+      this.module(this.numrows - 1, 0, pos, 1);
+      this.module(this.numrows - 1, this.numcols - 1, pos, 2);
+      this.module(0, this.numcols - 3, pos, 3);
+      this.module(0, this.numcols - 2, pos, 4);
+      this.module(0, this.numcols - 1, pos, 5);
+      this.module(1, this.numcols - 3, pos, 6);
+      this.module(1, this.numcols - 2, pos, 7);
+      this.module(1, this.numcols - 1, pos, 8);
+    };
+    return DefaultPlacement2;
+  })()
+);
 var _a;
+var FACTOR_SETS = [
+  5,
+  7,
+  10,
+  11,
+  12,
+  14,
+  18,
+  20,
+  24,
+  28,
+  36,
+  42,
+  48,
+  56,
+  62,
+  68
+];
+var FACTORS = [
+  [228, 48, 15, 111, 62],
+  [23, 68, 144, 134, 240, 92, 254],
+  [28, 24, 185, 166, 223, 248, 116, 255, 110, 61],
+  [175, 138, 205, 12, 194, 168, 39, 245, 60, 97, 120],
+  [41, 153, 158, 91, 61, 42, 142, 213, 97, 178, 100, 242],
+  [156, 97, 192, 252, 95, 9, 157, 119, 138, 45, 18, 186, 83, 185],
+  [
+    83,
+    195,
+    100,
+    39,
+    188,
+    75,
+    66,
+    61,
+    241,
+    213,
+    109,
+    129,
+    94,
+    254,
+    225,
+    48,
+    90,
+    188
+  ],
+  [
+    15,
+    195,
+    244,
+    9,
+    233,
+    71,
+    168,
+    2,
+    188,
+    160,
+    153,
+    145,
+    253,
+    79,
+    108,
+    82,
+    27,
+    174,
+    186,
+    172
+  ],
+  [
+    52,
+    190,
+    88,
+    205,
+    109,
+    39,
+    176,
+    21,
+    155,
+    197,
+    251,
+    223,
+    155,
+    21,
+    5,
+    172,
+    254,
+    124,
+    12,
+    181,
+    184,
+    96,
+    50,
+    193
+  ],
+  [
+    211,
+    231,
+    43,
+    97,
+    71,
+    96,
+    103,
+    174,
+    37,
+    151,
+    170,
+    53,
+    75,
+    34,
+    249,
+    121,
+    17,
+    138,
+    110,
+    213,
+    141,
+    136,
+    120,
+    151,
+    233,
+    168,
+    93,
+    255
+  ],
+  [
+    245,
+    127,
+    242,
+    218,
+    130,
+    250,
+    162,
+    181,
+    102,
+    120,
+    84,
+    179,
+    220,
+    251,
+    80,
+    182,
+    229,
+    18,
+    2,
+    4,
+    68,
+    33,
+    101,
+    137,
+    95,
+    119,
+    115,
+    44,
+    175,
+    184,
+    59,
+    25,
+    225,
+    98,
+    81,
+    112
+  ],
+  [
+    77,
+    193,
+    137,
+    31,
+    19,
+    38,
+    22,
+    153,
+    247,
+    105,
+    122,
+    2,
+    245,
+    133,
+    242,
+    8,
+    175,
+    95,
+    100,
+    9,
+    167,
+    105,
+    214,
+    111,
+    57,
+    121,
+    21,
+    1,
+    253,
+    57,
+    54,
+    101,
+    248,
+    202,
+    69,
+    50,
+    150,
+    177,
+    226,
+    5,
+    9,
+    5
+  ],
+  [
+    245,
+    132,
+    172,
+    223,
+    96,
+    32,
+    117,
+    22,
+    238,
+    133,
+    238,
+    231,
+    205,
+    188,
+    237,
+    87,
+    191,
+    106,
+    16,
+    147,
+    118,
+    23,
+    37,
+    90,
+    170,
+    205,
+    131,
+    88,
+    120,
+    100,
+    66,
+    138,
+    186,
+    240,
+    82,
+    44,
+    176,
+    87,
+    187,
+    147,
+    160,
+    175,
+    69,
+    213,
+    92,
+    253,
+    225,
+    19
+  ],
+  [
+    175,
+    9,
+    223,
+    238,
+    12,
+    17,
+    220,
+    208,
+    100,
+    29,
+    175,
+    170,
+    230,
+    192,
+    215,
+    235,
+    150,
+    159,
+    36,
+    223,
+    38,
+    200,
+    132,
+    54,
+    228,
+    146,
+    218,
+    234,
+    117,
+    203,
+    29,
+    232,
+    144,
+    238,
+    22,
+    150,
+    201,
+    117,
+    62,
+    207,
+    164,
+    13,
+    137,
+    245,
+    127,
+    67,
+    247,
+    28,
+    155,
+    43,
+    203,
+    107,
+    233,
+    53,
+    143,
+    46
+  ],
+  [
+    242,
+    93,
+    169,
+    50,
+    144,
+    210,
+    39,
+    118,
+    202,
+    188,
+    201,
+    189,
+    143,
+    108,
+    196,
+    37,
+    185,
+    112,
+    134,
+    230,
+    245,
+    63,
+    197,
+    190,
+    250,
+    106,
+    185,
+    221,
+    175,
+    64,
+    114,
+    71,
+    161,
+    44,
+    147,
+    6,
+    27,
+    218,
+    51,
+    63,
+    87,
+    10,
+    40,
+    130,
+    188,
+    17,
+    163,
+    31,
+    176,
+    170,
+    4,
+    107,
+    232,
+    7,
+    94,
+    166,
+    224,
+    124,
+    86,
+    47,
+    11,
+    204
+  ],
+  [
+    220,
+    228,
+    173,
+    89,
+    251,
+    149,
+    159,
+    56,
+    89,
+    33,
+    147,
+    244,
+    154,
+    36,
+    73,
+    127,
+    213,
+    136,
+    248,
+    180,
+    234,
+    197,
+    158,
+    177,
+    68,
+    122,
+    93,
+    213,
+    15,
+    160,
+    227,
+    236,
+    66,
+    139,
+    153,
+    185,
+    202,
+    167,
+    179,
+    25,
+    220,
+    232,
+    96,
+    210,
+    231,
+    136,
+    223,
+    239,
+    181,
+    241,
+    59,
+    52,
+    172,
+    25,
+    49,
+    232,
+    211,
+    189,
+    64,
+    54,
+    108,
+    153,
+    132,
+    63,
+    96,
+    103,
+    82,
+    186
+  ]
+];
 var MODULO_VALUE = 301;
-var static_LOG = function(LOG, ALOG) {
+var static_LOG = function(LOG2, ALOG2) {
   var p = 1;
   for (var i = 0; i < 255; i++) {
-    ALOG[i] = p;
-    LOG[p] = i;
+    ALOG2[i] = p;
+    LOG2[p] = i;
     p *= 2;
     if (p >= 256) {
       p ^= MODULO_VALUE;
     }
   }
   return {
-    LOG,
-    ALOG
+    LOG: LOG2,
+    ALOG: ALOG2
   };
 };
-_a = static_LOG([], []), _a.LOG;
-_a.ALOG;
+var LOG = (_a = static_LOG([], []), _a.LOG), ALOG = _a.ALOG;
 var SymbolShapeHint;
 (function(SymbolShapeHint2) {
   SymbolShapeHint2[SymbolShapeHint2["FORCE_NONE"] = 0] = "FORCE_NONE";
@@ -27318,6 +28119,84 @@ var TEXT_ENCODATION = 2;
 var X12_ENCODATION = 3;
 var EDIFACT_ENCODATION = 4;
 var BASE256_ENCODATION = 5;
+var ErrorCorrection = (
+  /** @class */
+  (function() {
+    function ErrorCorrection2() {
+    }
+    ErrorCorrection2.encodeECC200 = function(codewords, symbolInfo) {
+      if (codewords.length !== symbolInfo.getDataCapacity()) {
+        throw new Error("The number of codewords does not match the selected symbol");
+      }
+      var sb = new StringBuilder();
+      sb.append(codewords);
+      var blockCount = symbolInfo.getInterleavedBlockCount();
+      if (blockCount === 1) {
+        var ecc = this.createECCBlock(codewords, symbolInfo.getErrorCodewords());
+        sb.append(ecc);
+      } else {
+        var dataSizes = [];
+        var errorSizes = [];
+        for (var i = 0; i < blockCount; i++) {
+          dataSizes[i] = symbolInfo.getDataLengthForInterleavedBlock(i + 1);
+          errorSizes[i] = symbolInfo.getErrorLengthForInterleavedBlock(i + 1);
+        }
+        for (var block = 0; block < blockCount; block++) {
+          var temp = new StringBuilder();
+          for (var d = block; d < symbolInfo.getDataCapacity(); d += blockCount) {
+            temp.append(codewords.charAt(d));
+          }
+          var ecc = this.createECCBlock(temp.toString(), errorSizes[block]);
+          var pos = 0;
+          for (var e = block; e < errorSizes[block] * blockCount; e += blockCount) {
+            sb.setCharAt(symbolInfo.getDataCapacity() + e, ecc.charAt(pos++));
+          }
+        }
+      }
+      return sb.toString();
+    };
+    ErrorCorrection2.createECCBlock = function(codewords, numECWords) {
+      var table = -1;
+      for (var i = 0; i < FACTOR_SETS.length; i++) {
+        if (FACTOR_SETS[i] === numECWords) {
+          table = i;
+          break;
+        }
+      }
+      if (table < 0) {
+        throw new Error("Illegal number of error correction codewords specified: " + numECWords);
+      }
+      var poly = FACTORS[table];
+      var ecc = [];
+      for (var i = 0; i < numECWords; i++) {
+        ecc[i] = 0;
+      }
+      for (var i = 0; i < codewords.length; i++) {
+        var m = ecc[numECWords - 1] ^ codewords.charAt(i).charCodeAt(0);
+        for (var k = numECWords - 1; k > 0; k--) {
+          if (m !== 0 && poly[k] !== 0) {
+            ecc[k] = ecc[k - 1] ^ ALOG[(LOG[m] + LOG[poly[k]]) % 255];
+          } else {
+            ecc[k] = ecc[k - 1];
+          }
+        }
+        if (m !== 0 && poly[0] !== 0) {
+          ecc[0] = ALOG[(LOG[m] + LOG[poly[0]]) % 255];
+        } else {
+          ecc[0] = 0;
+        }
+      }
+      var eccReversed = [];
+      for (var i = 0; i < numECWords; i++) {
+        eccReversed[i] = ecc[numECWords - i - 1];
+      }
+      return eccReversed.map(function(c) {
+        return String.fromCharCode(c);
+      }).join("");
+    };
+    return ErrorCorrection2;
+  })()
+);
 var ASCIIEncoder = (
   /** @class */
   (function() {
@@ -27732,7 +28611,7 @@ var __extends$5 = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-var __values$5 = function(o) {
+var __values$6 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -27777,7 +28656,7 @@ var SymbolInfo = (
         fail = true;
       }
       try {
-        for (var PROD_SYMBOLS_1 = __values$5(PROD_SYMBOLS), PROD_SYMBOLS_1_1 = PROD_SYMBOLS_1.next(); !PROD_SYMBOLS_1_1.done; PROD_SYMBOLS_1_1 = PROD_SYMBOLS_1.next()) {
+        for (var PROD_SYMBOLS_1 = __values$6(PROD_SYMBOLS), PROD_SYMBOLS_1_1 = PROD_SYMBOLS_1.next(); !PROD_SYMBOLS_1_1.done; PROD_SYMBOLS_1_1 = PROD_SYMBOLS_1.next()) {
           var symbol = PROD_SYMBOLS_1_1.value;
           if (shape === 1 && symbol.rectangular) {
             continue;
@@ -28477,7 +29356,7 @@ var HighLevelEncoder$1 = (
     return HighLevelEncoder2;
   })()
 );
-var __values$4 = function(o) {
+var __values$5 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -28541,7 +29420,7 @@ var ECIEncoderSet = (
       for (var i = 0; i < stringToEncode.length; i++) {
         var canEncode = false;
         try {
-          for (var neededEncoders_1 = (e_1 = void 0, __values$4(neededEncoders)), neededEncoders_1_1 = neededEncoders_1.next(); !neededEncoders_1_1.done; neededEncoders_1_1 = neededEncoders_1.next()) {
+          for (var neededEncoders_1 = (e_1 = void 0, __values$5(neededEncoders)), neededEncoders_1_1 = neededEncoders_1.next(); !neededEncoders_1_1.done; neededEncoders_1_1 = neededEncoders_1.next()) {
             var encoder = neededEncoders_1_1.value;
             var singleCharacter = stringToEncode.charAt(i);
             var c = singleCharacter.charCodeAt(0);
@@ -28561,7 +29440,7 @@ var ECIEncoderSet = (
         }
         if (!canEncode) {
           try {
-            for (var _d = (e_2 = void 0, __values$4(this.ENCODERS)), _e = _d.next(); !_e.done; _e = _d.next()) {
+            for (var _d = (e_2 = void 0, __values$5(this.ENCODERS)), _e = _d.next(); !_e.done; _e = _d.next()) {
               var encoder = _e.value;
               if (encoder.canEncode(stringToEncode.charAt(i))) {
                 neededEncoders.push(encoder);
@@ -28589,7 +29468,7 @@ var ECIEncoderSet = (
         this.encoders = [];
         var index = 0;
         try {
-          for (var neededEncoders_2 = __values$4(neededEncoders), neededEncoders_2_1 = neededEncoders_2.next(); !neededEncoders_2_1.done; neededEncoders_2_1 = neededEncoders_2.next()) {
+          for (var neededEncoders_2 = __values$5(neededEncoders), neededEncoders_2_1 = neededEncoders_2.next(); !neededEncoders_2_1.done; neededEncoders_2_1 = neededEncoders_2.next()) {
             var encoder = neededEncoders_2_1.value;
             this.encoders[index++] = encoder;
           }
@@ -28844,7 +29723,7 @@ var __extends$2 = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(o) {
+var __values$4 = function(o) {
   var s = typeof Symbol === "function" && Symbol.iterator, m = s && o[s], i = 0;
   if (m) return m.call(o);
   if (o && typeof o.length === "number") return {
@@ -28854,8 +29733,8 @@ var __extends$2 = /* @__PURE__ */ (function() {
     }
   };
   throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
-});
-(function(o, n) {
+};
+var __read = function(o, n) {
   var m = typeof Symbol === "function" && o[Symbol.iterator];
   if (!m) return o;
   var i = m.call(o), r, ar = [], e;
@@ -28871,8 +29750,8 @@ var __extends$2 = /* @__PURE__ */ (function() {
     }
   }
   return ar;
-});
-(function(to, from, pack) {
+};
+var __spreadArray = function(to, from, pack) {
   if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
     if (ar || !(i in from)) {
       if (!ar) ar = Array.prototype.slice.call(from, 0, i);
@@ -28880,7 +29759,7 @@ var __extends$2 = /* @__PURE__ */ (function() {
     }
   }
   return to.concat(ar || Array.prototype.slice.call(from));
-});
+};
 var Mode;
 (function(Mode2) {
   Mode2[Mode2["ASCII"] = 0] = "ASCII";
@@ -28890,22 +29769,873 @@ var Mode;
   Mode2[Mode2["EDF"] = 4] = "EDF";
   Mode2[Mode2["B256"] = 5] = "B256";
 })(Mode || (Mode = {}));
-(function(_super) {
-  __extends$2(Input, _super);
-  function Input(stringToEncode, priorityCharset, fnc1, shape, macroId) {
-    var _this = _super.call(this, stringToEncode, priorityCharset, fnc1) || this;
-    _this.shape = shape;
-    _this.macroId = macroId;
-    return _this;
-  }
-  Input.prototype.getMacroId = function() {
-    return this.macroId;
-  };
-  Input.prototype.getShapeHint = function() {
-    return this.shape;
-  };
-  return Input;
-})(MinimalECIInput);
+var C40_SHIFT2_CHARS = [
+  "!",
+  '"',
+  "#",
+  "$",
+  "%",
+  "&",
+  "'",
+  "(",
+  ")",
+  "*",
+  "+",
+  ",",
+  "-",
+  ".",
+  "/",
+  ":",
+  ";",
+  "<",
+  "=",
+  ">",
+  "?",
+  "@",
+  "[",
+  "\\",
+  "]",
+  "^",
+  "_"
+];
+var MinimalEncoder = (
+  /** @class */
+  (function() {
+    function MinimalEncoder2() {
+    }
+    MinimalEncoder2.isExtendedASCII = function(ch, fnc1) {
+      return ch !== fnc1 && ch >= 128 && ch <= 255;
+    };
+    MinimalEncoder2.isInC40Shift1Set = function(ch) {
+      return ch <= 31;
+    };
+    MinimalEncoder2.isInC40Shift2Set = function(ch, fnc1) {
+      var e_1, _a2;
+      try {
+        for (var C40_SHIFT2_CHARS_1 = __values$4(C40_SHIFT2_CHARS), C40_SHIFT2_CHARS_1_1 = C40_SHIFT2_CHARS_1.next(); !C40_SHIFT2_CHARS_1_1.done; C40_SHIFT2_CHARS_1_1 = C40_SHIFT2_CHARS_1.next()) {
+          var c40Shift2Char = C40_SHIFT2_CHARS_1_1.value;
+          if (c40Shift2Char.charCodeAt(0) === ch) {
+            return true;
+          }
+        }
+      } catch (e_1_1) {
+        e_1 = { error: e_1_1 };
+      } finally {
+        try {
+          if (C40_SHIFT2_CHARS_1_1 && !C40_SHIFT2_CHARS_1_1.done && (_a2 = C40_SHIFT2_CHARS_1.return)) _a2.call(C40_SHIFT2_CHARS_1);
+        } finally {
+          if (e_1) throw e_1.error;
+        }
+      }
+      return ch === fnc1;
+    };
+    MinimalEncoder2.isInTextShift1Set = function(ch) {
+      return this.isInC40Shift1Set(ch);
+    };
+    MinimalEncoder2.isInTextShift2Set = function(ch, fnc1) {
+      return this.isInC40Shift2Set(ch, fnc1);
+    };
+    MinimalEncoder2.encodeHighLevel = function(msg, priorityCharset, fnc1, shape) {
+      if (priorityCharset === void 0) {
+        priorityCharset = null;
+      }
+      if (fnc1 === void 0) {
+        fnc1 = -1;
+      }
+      if (shape === void 0) {
+        shape = 0;
+      }
+      var macroId = 0;
+      if (msg.startsWith(MACRO_05_HEADER) && msg.endsWith(MACRO_TRAILER)) {
+        macroId = 5;
+        msg = msg.substring(MACRO_05_HEADER.length, msg.length - 2);
+      } else if (msg.startsWith(MACRO_06_HEADER) && msg.endsWith(MACRO_TRAILER)) {
+        macroId = 6;
+        msg = msg.substring(MACRO_06_HEADER.length, msg.length - 2);
+      }
+      return decodeURIComponent(escape(String.fromCharCode.apply(String, __spreadArray([], __read(this.encode(msg, priorityCharset, fnc1, shape, macroId)), false))));
+    };
+    MinimalEncoder2.encode = function(input, priorityCharset, fnc1, shape, macroId) {
+      return this.encodeMinimally(new Input(input, priorityCharset, fnc1, shape, macroId)).getBytes();
+    };
+    MinimalEncoder2.addEdge = function(edges, edge) {
+      var vertexIndex = edge.fromPosition + edge.characterLength;
+      if (edges[vertexIndex][edge.getEndMode()] === null || edges[vertexIndex][edge.getEndMode()].cachedTotalSize > edge.cachedTotalSize) {
+        edges[vertexIndex][edge.getEndMode()] = edge;
+      }
+    };
+    MinimalEncoder2.getNumberOfC40Words = function(input, from, c40, characterLength) {
+      var thirdsCount = 0;
+      for (var i = from; i < input.length(); i++) {
+        if (input.isECI(i)) {
+          characterLength[0] = 0;
+          return 0;
+        }
+        var ci = input.charAt(i);
+        if (c40 && HighLevelEncoder$1.isNativeC40(ci) || !c40 && HighLevelEncoder$1.isNativeText(ci)) {
+          thirdsCount++;
+        } else if (!MinimalEncoder2.isExtendedASCII(ci, input.getFNC1Character())) {
+          thirdsCount += 2;
+        } else {
+          var asciiValue = ci & 255;
+          if (asciiValue >= 128 && (c40 && HighLevelEncoder$1.isNativeC40(asciiValue - 128) || !c40 && HighLevelEncoder$1.isNativeText(asciiValue - 128))) {
+            thirdsCount += 3;
+          } else {
+            thirdsCount += 4;
+          }
+        }
+        if (thirdsCount % 3 === 0 || (thirdsCount - 2) % 3 === 0 && i + 1 === input.length()) {
+          characterLength[0] = i - from + 1;
+          return Math.ceil(thirdsCount / 3);
+        }
+      }
+      characterLength[0] = 0;
+      return 0;
+    };
+    MinimalEncoder2.addEdges = function(input, edges, from, previous) {
+      var e_2, _a2;
+      if (input.isECI(from)) {
+        this.addEdge(edges, new Edge(input, Mode.ASCII, from, 1, previous));
+        return;
+      }
+      var ch = input.charAt(from);
+      if (previous === null || previous.getEndMode() !== Mode.EDF) {
+        if (HighLevelEncoder$1.isDigit(ch) && input.haveNCharacters(from, 2) && HighLevelEncoder$1.isDigit(input.charAt(from + 1))) {
+          this.addEdge(edges, new Edge(input, Mode.ASCII, from, 2, previous));
+        } else {
+          this.addEdge(edges, new Edge(input, Mode.ASCII, from, 1, previous));
+        }
+        var modes = [Mode.C40, Mode.TEXT];
+        try {
+          for (var modes_1 = __values$4(modes), modes_1_1 = modes_1.next(); !modes_1_1.done; modes_1_1 = modes_1.next()) {
+            var mode = modes_1_1.value;
+            var characterLength = [];
+            if (MinimalEncoder2.getNumberOfC40Words(input, from, mode === Mode.C40, characterLength) > 0) {
+              this.addEdge(edges, new Edge(input, mode, from, characterLength[0], previous));
+            }
+          }
+        } catch (e_2_1) {
+          e_2 = { error: e_2_1 };
+        } finally {
+          try {
+            if (modes_1_1 && !modes_1_1.done && (_a2 = modes_1.return)) _a2.call(modes_1);
+          } finally {
+            if (e_2) throw e_2.error;
+          }
+        }
+        if (input.haveNCharacters(from, 3) && HighLevelEncoder$1.isNativeX12(input.charAt(from)) && HighLevelEncoder$1.isNativeX12(input.charAt(from + 1)) && HighLevelEncoder$1.isNativeX12(input.charAt(from + 2))) {
+          this.addEdge(edges, new Edge(input, Mode.X12, from, 3, previous));
+        }
+        this.addEdge(edges, new Edge(input, Mode.B256, from, 1, previous));
+      }
+      var i;
+      for (i = 0; i < 3; i++) {
+        var pos = from + i;
+        if (input.haveNCharacters(pos, 1) && HighLevelEncoder$1.isNativeEDIFACT(input.charAt(pos))) {
+          this.addEdge(edges, new Edge(input, Mode.EDF, from, i + 1, previous));
+        } else {
+          break;
+        }
+      }
+      if (i === 3 && input.haveNCharacters(from, 4) && HighLevelEncoder$1.isNativeEDIFACT(input.charAt(from + 3))) {
+        this.addEdge(edges, new Edge(input, Mode.EDF, from, 4, previous));
+      }
+    };
+    MinimalEncoder2.encodeMinimally = function(input) {
+      var inputLength = input.length();
+      var edges = Array(inputLength + 1).fill(null).map(function() {
+        return Array(6).fill(0);
+      });
+      this.addEdges(input, edges, 0, null);
+      for (var i = 1; i <= inputLength; i++) {
+        for (var j = 0; j < 6; j++) {
+          if (edges[i][j] !== null && i < inputLength) {
+            this.addEdges(input, edges, i, edges[i][j]);
+          }
+        }
+        for (var j = 0; j < 6; j++) {
+          edges[i - 1][j] = null;
+        }
+      }
+      var minimalJ = -1;
+      var minimalSize = Integer.MAX_VALUE;
+      for (var j = 0; j < 6; j++) {
+        if (edges[inputLength][j] !== null) {
+          var edge = edges[inputLength][j];
+          var size = j >= 1 && j <= 3 ? edge.cachedTotalSize + 1 : edge.cachedTotalSize;
+          if (size < minimalSize) {
+            minimalSize = size;
+            minimalJ = j;
+          }
+        }
+      }
+      if (minimalJ < 0) {
+        throw new Error('Failed to encode "' + input + '"');
+      }
+      return new Result(edges[inputLength][minimalJ]);
+    };
+    return MinimalEncoder2;
+  })()
+);
+var Result = (
+  /** @class */
+  (function() {
+    function Result2(solution) {
+      var input = solution.input;
+      var size = 0;
+      var bytesAL = [];
+      var randomizePostfixLength = [];
+      var randomizeLengths = [];
+      if ((solution.mode === Mode.C40 || solution.mode === Mode.TEXT || solution.mode === Mode.X12) && solution.getEndMode() !== Mode.ASCII) {
+        size += this.prepend(Edge.getBytes(254), bytesAL);
+      }
+      var current = solution;
+      while (current !== null) {
+        size += this.prepend(current.getDataBytes(), bytesAL);
+        if (current.previous === null || current.getPreviousStartMode() !== current.getMode()) {
+          if (current.getMode() === Mode.B256) {
+            if (size <= 249) {
+              bytesAL.unshift(size);
+              size++;
+            } else {
+              bytesAL.unshift(size % 250);
+              bytesAL.unshift(size / 250 + 249);
+              size += 2;
+            }
+            randomizePostfixLength.push(bytesAL.length);
+            randomizeLengths.push(size);
+          }
+          this.prepend(current.getLatchBytes(), bytesAL);
+          size = 0;
+        }
+        current = current.previous;
+      }
+      if (input.getMacroId() === 5) {
+        size += this.prepend(Edge.getBytes(236), bytesAL);
+      } else if (input.getMacroId() === 6) {
+        size += this.prepend(Edge.getBytes(237), bytesAL);
+      }
+      if (input.getFNC1Character() > 0) {
+        size += this.prepend(Edge.getBytes(232), bytesAL);
+      }
+      for (var i = 0; i < randomizePostfixLength.length; i++) {
+        this.applyRandomPattern(bytesAL, bytesAL.length - randomizePostfixLength[i], randomizeLengths[i]);
+      }
+      var capacity = solution.getMinSymbolSize(bytesAL.length);
+      if (bytesAL.length < capacity) {
+        bytesAL.push(129);
+      }
+      while (bytesAL.length < capacity) {
+        bytesAL.push(this.randomize253State(bytesAL.length + 1));
+      }
+      this.bytes = new Uint8Array(bytesAL.length);
+      for (var i = 0; i < this.bytes.length; i++) {
+        this.bytes[i] = bytesAL[i];
+      }
+    }
+    Result2.prototype.prepend = function(bytes, into) {
+      for (var i = bytes.length - 1; i >= 0; i--) {
+        into.unshift(bytes[i]);
+      }
+      return bytes.length;
+    };
+    Result2.prototype.randomize253State = function(codewordPosition) {
+      var pseudoRandom = 149 * codewordPosition % 253 + 1;
+      var tempVariable = 129 + pseudoRandom;
+      return tempVariable <= 254 ? tempVariable : tempVariable - 254;
+    };
+    Result2.prototype.applyRandomPattern = function(bytesAL, startPosition, length) {
+      for (var i = 0; i < length; i++) {
+        var Pad_codeword_position = startPosition + i;
+        var Pad_codeword_value = bytesAL[Pad_codeword_position] & 255;
+        var pseudo_random_number = 149 * (Pad_codeword_position + 1) % 255 + 1;
+        var temp_variable = Pad_codeword_value + pseudo_random_number;
+        bytesAL[Pad_codeword_position] = temp_variable <= 255 ? temp_variable : temp_variable - 256;
+      }
+    };
+    Result2.prototype.getBytes = function() {
+      return this.bytes;
+    };
+    return Result2;
+  })()
+);
+var Edge = (
+  /** @class */
+  (function() {
+    function Edge2(input, mode, fromPosition, characterLength, previous) {
+      this.input = input;
+      this.mode = mode;
+      this.fromPosition = fromPosition;
+      this.characterLength = characterLength;
+      this.previous = previous;
+      this.allCodewordCapacities = [
+        3,
+        5,
+        8,
+        10,
+        12,
+        16,
+        18,
+        22,
+        30,
+        32,
+        36,
+        44,
+        49,
+        62,
+        86,
+        114,
+        144,
+        174,
+        204,
+        280,
+        368,
+        456,
+        576,
+        696,
+        816,
+        1050,
+        1304,
+        1558
+      ];
+      this.squareCodewordCapacities = [
+        3,
+        5,
+        8,
+        12,
+        18,
+        22,
+        30,
+        36,
+        44,
+        62,
+        86,
+        114,
+        144,
+        174,
+        204,
+        280,
+        368,
+        456,
+        576,
+        696,
+        816,
+        1050,
+        1304,
+        1558
+      ];
+      this.rectangularCodewordCapacities = [5, 10, 16, 33, 32, 49];
+      if (!(fromPosition + characterLength <= input.length())) {
+        throw new Error("Invalid edge");
+      }
+      var size = previous !== null ? previous.cachedTotalSize : 0;
+      var previousMode = this.getPreviousMode();
+      switch (mode) {
+        case Mode.ASCII:
+          size++;
+          if (input.isECI(fromPosition) || MinimalEncoder.isExtendedASCII(input.charAt(fromPosition), input.getFNC1Character())) {
+            size++;
+          }
+          if (previousMode === Mode.C40 || previousMode === Mode.TEXT || previousMode === Mode.X12) {
+            size++;
+          }
+          break;
+        case Mode.B256:
+          size++;
+          if (previousMode !== Mode.B256) {
+            size++;
+          } else if (this.getB256Size() === 250) {
+            size++;
+          }
+          if (previousMode === Mode.ASCII) {
+            size++;
+          } else if (previousMode === Mode.C40 || previousMode === Mode.TEXT || previousMode === Mode.X12) {
+            size += 2;
+          }
+          break;
+        case Mode.C40:
+        case Mode.TEXT:
+        case Mode.X12:
+          if (mode === Mode.X12) {
+            size += 2;
+          } else {
+            var charLen = [];
+            size += MinimalEncoder.getNumberOfC40Words(input, fromPosition, mode === Mode.C40, charLen) * 2;
+          }
+          if (previousMode === Mode.ASCII || previousMode === Mode.B256) {
+            size++;
+          } else if (previousMode !== mode && (previousMode === Mode.C40 || previousMode === Mode.TEXT || previousMode === Mode.X12)) {
+            size += 2;
+          }
+          break;
+        case Mode.EDF:
+          size += 3;
+          if (previousMode === Mode.ASCII || previousMode === Mode.B256) {
+            size++;
+          } else if (previousMode === Mode.C40 || previousMode === Mode.TEXT || previousMode === Mode.X12) {
+            size += 2;
+          }
+          break;
+      }
+      this.cachedTotalSize = size;
+    }
+    Edge2.prototype.getB256Size = function() {
+      var cnt = 0;
+      var current = this;
+      while (current !== null && current.mode === Mode.B256 && cnt <= 250) {
+        cnt++;
+        current = current.previous;
+      }
+      return cnt;
+    };
+    Edge2.prototype.getPreviousStartMode = function() {
+      return this.previous === null ? Mode.ASCII : this.previous.mode;
+    };
+    Edge2.prototype.getPreviousMode = function() {
+      return this.previous === null ? Mode.ASCII : this.previous.getEndMode();
+    };
+    Edge2.prototype.getEndMode = function() {
+      if (this.mode === Mode.EDF) {
+        if (this.characterLength < 4) {
+          return Mode.ASCII;
+        }
+        var lastASCII = this.getLastASCII();
+        if (lastASCII > 0 && this.getCodewordsRemaining(this.cachedTotalSize + lastASCII) <= 2 - lastASCII) {
+          return Mode.ASCII;
+        }
+      }
+      if (this.mode === Mode.C40 || this.mode === Mode.TEXT || this.mode === Mode.X12) {
+        if (this.fromPosition + this.characterLength >= this.input.length() && this.getCodewordsRemaining(this.cachedTotalSize) === 0) {
+          return Mode.ASCII;
+        }
+        var lastASCII = this.getLastASCII();
+        if (lastASCII === 1 && this.getCodewordsRemaining(this.cachedTotalSize + 1) === 0) {
+          return Mode.ASCII;
+        }
+      }
+      return this.mode;
+    };
+    Edge2.prototype.getMode = function() {
+      return this.mode;
+    };
+    Edge2.prototype.getLastASCII = function() {
+      var length = this.input.length();
+      var from = this.fromPosition + this.characterLength;
+      if (length - from > 4 || from >= length) {
+        return 0;
+      }
+      if (length - from === 1) {
+        if (MinimalEncoder.isExtendedASCII(this.input.charAt(from), this.input.getFNC1Character())) {
+          return 0;
+        }
+        return 1;
+      }
+      if (length - from === 2) {
+        if (MinimalEncoder.isExtendedASCII(this.input.charAt(from), this.input.getFNC1Character()) || MinimalEncoder.isExtendedASCII(this.input.charAt(from + 1), this.input.getFNC1Character())) {
+          return 0;
+        }
+        if (HighLevelEncoder$1.isDigit(this.input.charAt(from)) && HighLevelEncoder$1.isDigit(this.input.charAt(from + 1))) {
+          return 1;
+        }
+        return 2;
+      }
+      if (length - from === 3) {
+        if (HighLevelEncoder$1.isDigit(this.input.charAt(from)) && HighLevelEncoder$1.isDigit(this.input.charAt(from + 1)) && !MinimalEncoder.isExtendedASCII(this.input.charAt(from + 2), this.input.getFNC1Character())) {
+          return 2;
+        }
+        if (HighLevelEncoder$1.isDigit(this.input.charAt(from + 1)) && HighLevelEncoder$1.isDigit(this.input.charAt(from + 2)) && !MinimalEncoder.isExtendedASCII(this.input.charAt(from), this.input.getFNC1Character())) {
+          return 2;
+        }
+        return 0;
+      }
+      if (HighLevelEncoder$1.isDigit(this.input.charAt(from)) && HighLevelEncoder$1.isDigit(this.input.charAt(from + 1)) && HighLevelEncoder$1.isDigit(this.input.charAt(from + 2)) && HighLevelEncoder$1.isDigit(this.input.charAt(from + 3))) {
+        return 2;
+      }
+      return 0;
+    };
+    Edge2.prototype.getMinSymbolSize = function(minimum) {
+      var e_3, _a2, e_4, _b, e_5, _c;
+      switch (this.input.getShapeHint()) {
+        case 1:
+          try {
+            for (var _d = __values$4(this.squareCodewordCapacities), _e = _d.next(); !_e.done; _e = _d.next()) {
+              var capacity = _e.value;
+              if (capacity >= minimum) {
+                return capacity;
+              }
+            }
+          } catch (e_3_1) {
+            e_3 = { error: e_3_1 };
+          } finally {
+            try {
+              if (_e && !_e.done && (_a2 = _d.return)) _a2.call(_d);
+            } finally {
+              if (e_3) throw e_3.error;
+            }
+          }
+          break;
+        case 2:
+          try {
+            for (var _f = __values$4(this.rectangularCodewordCapacities), _g = _f.next(); !_g.done; _g = _f.next()) {
+              var capacity = _g.value;
+              if (capacity >= minimum) {
+                return capacity;
+              }
+            }
+          } catch (e_4_1) {
+            e_4 = { error: e_4_1 };
+          } finally {
+            try {
+              if (_g && !_g.done && (_b = _f.return)) _b.call(_f);
+            } finally {
+              if (e_4) throw e_4.error;
+            }
+          }
+          break;
+      }
+      try {
+        for (var _h = __values$4(this.allCodewordCapacities), _j = _h.next(); !_j.done; _j = _h.next()) {
+          var capacity = _j.value;
+          if (capacity >= minimum) {
+            return capacity;
+          }
+        }
+      } catch (e_5_1) {
+        e_5 = { error: e_5_1 };
+      } finally {
+        try {
+          if (_j && !_j.done && (_c = _h.return)) _c.call(_h);
+        } finally {
+          if (e_5) throw e_5.error;
+        }
+      }
+      return this.allCodewordCapacities[this.allCodewordCapacities.length - 1];
+    };
+    Edge2.prototype.getCodewordsRemaining = function(minimum) {
+      return this.getMinSymbolSize(minimum) - minimum;
+    };
+    Edge2.getBytes = function(c1, c2) {
+      var result = new Uint8Array(c2 ? 2 : 1);
+      result[0] = c1;
+      if (c2) {
+        result[1] = c2;
+      }
+      return result;
+    };
+    Edge2.prototype.setC40Word = function(bytes, offset, c1, c2, c3) {
+      var val16 = 1600 * (c1 & 255) + 40 * (c2 & 255) + (c3 & 255) + 1;
+      bytes[offset] = val16 / 256;
+      bytes[offset + 1] = val16 % 256;
+    };
+    Edge2.prototype.getX12Value = function(c) {
+      return c === 13 ? 0 : c === 42 ? 1 : c === 62 ? 2 : c === 32 ? 3 : c >= 48 && c <= 57 ? c - 44 : c >= 65 && c <= 90 ? c - 51 : c;
+    };
+    Edge2.prototype.getX12Words = function() {
+      if (!(this.characterLength % 3 === 0)) {
+        throw new Error("X12 words must be a multiple of 3");
+      }
+      var result = new Uint8Array(this.characterLength / 3 * 2);
+      for (var i = 0; i < result.length; i += 2) {
+        this.setC40Word(result, i, this.getX12Value(this.input.charAt(this.fromPosition + i / 2 * 3)), this.getX12Value(this.input.charAt(this.fromPosition + i / 2 * 3 + 1)), this.getX12Value(this.input.charAt(this.fromPosition + i / 2 * 3 + 2)));
+      }
+      return result;
+    };
+    Edge2.prototype.getShiftValue = function(c, c40, fnc1) {
+      return c40 && MinimalEncoder.isInC40Shift1Set(c) || !c40 && MinimalEncoder.isInTextShift1Set(c) ? 0 : c40 && MinimalEncoder.isInC40Shift2Set(c, fnc1) || !c40 && MinimalEncoder.isInTextShift2Set(c, fnc1) ? 1 : 2;
+    };
+    Edge2.prototype.getC40Value = function(c40, setIndex, c, fnc1) {
+      if (c === fnc1) {
+        if (!(setIndex === 2)) {
+          throw new Error("FNC1 cannot be used in C40 shift 2");
+        }
+        return 27;
+      }
+      if (c40) {
+        return c <= 31 ? c : c === 32 ? 3 : c <= 47 ? c - 33 : c <= 57 ? c - 44 : c <= 64 ? c - 43 : c <= 90 ? c - 51 : c <= 95 ? c - 69 : c <= 127 ? c - 96 : c;
+      } else {
+        return c === 0 ? 0 : setIndex === 0 && c <= 3 ? c - 1 : setIndex === 1 && c <= 31 ? c : c === 32 ? 3 : c >= 33 && c <= 47 ? c - 33 : c >= 48 && c <= 57 ? c - 44 : c >= 58 && c <= 64 ? c - 43 : c >= 65 && c <= 90 ? c - 64 : c >= 91 && c <= 95 ? c - 69 : c === 96 ? 0 : c >= 97 && c <= 122 ? c - 83 : c >= 123 && c <= 127 ? c - 96 : c;
+      }
+    };
+    Edge2.prototype.getC40Words = function(c40, fnc1) {
+      var c40Values = [];
+      for (var i = 0; i < this.characterLength; i++) {
+        var ci = this.input.charAt(this.fromPosition + i);
+        if (c40 && HighLevelEncoder$1.isNativeC40(ci) || !c40 && HighLevelEncoder$1.isNativeText(ci)) {
+          c40Values.push(this.getC40Value(c40, 0, ci, fnc1));
+        } else if (!MinimalEncoder.isExtendedASCII(ci, fnc1)) {
+          var shiftValue = this.getShiftValue(ci, c40, fnc1);
+          c40Values.push(shiftValue);
+          c40Values.push(this.getC40Value(c40, shiftValue, ci, fnc1));
+        } else {
+          var asciiValue = (ci & 255) - 128;
+          if (c40 && HighLevelEncoder$1.isNativeC40(asciiValue) || !c40 && HighLevelEncoder$1.isNativeText(asciiValue)) {
+            c40Values.push(1);
+            c40Values.push(30);
+            c40Values.push(this.getC40Value(c40, 0, asciiValue, fnc1));
+          } else {
+            c40Values.push(1);
+            c40Values.push(30);
+            var shiftValue = this.getShiftValue(asciiValue, c40, fnc1);
+            c40Values.push(shiftValue);
+            c40Values.push(this.getC40Value(c40, shiftValue, asciiValue, fnc1));
+          }
+        }
+      }
+      if (c40Values.length % 3 !== 0) {
+        if (!((c40Values.length - 2) % 3 === 0 && this.fromPosition + this.characterLength === this.input.length())) {
+          throw new Error("C40 words must be a multiple of 3");
+        }
+        c40Values.push(0);
+      }
+      var result = new Uint8Array(c40Values.length / 3 * 2);
+      var byteIndex = 0;
+      for (var i = 0; i < c40Values.length; i += 3) {
+        this.setC40Word(result, byteIndex, c40Values[i] & 255, c40Values[i + 1] & 255, c40Values[i + 2] & 255);
+        byteIndex += 2;
+      }
+      return result;
+    };
+    Edge2.prototype.getEDFBytes = function() {
+      var numberOfThirds = Math.ceil(this.characterLength / 4);
+      var result = new Uint8Array(numberOfThirds * 3);
+      var pos = this.fromPosition;
+      var endPos = Math.min(this.fromPosition + this.characterLength - 1, this.input.length() - 1);
+      for (var i = 0; i < numberOfThirds; i += 3) {
+        var edfValues = [];
+        for (var j = 0; j < 4; j++) {
+          if (pos <= endPos) {
+            edfValues[j] = this.input.charAt(pos++) & 63;
+          } else {
+            edfValues[j] = pos === endPos + 1 ? 31 : 0;
+          }
+        }
+        var val24 = edfValues[0] << 18;
+        val24 |= edfValues[1] << 12;
+        val24 |= edfValues[2] << 6;
+        val24 |= edfValues[3];
+        result[i] = val24 >> 16 & 255;
+        result[i + 1] = val24 >> 8 & 255;
+        result[i + 2] = val24 & 255;
+      }
+      return result;
+    };
+    Edge2.prototype.getLatchBytes = function() {
+      switch (this.getPreviousMode()) {
+        case Mode.ASCII:
+        case Mode.B256:
+          switch (this.mode) {
+            case Mode.B256:
+              return Edge2.getBytes(231);
+            case Mode.C40:
+              return Edge2.getBytes(230);
+            case Mode.TEXT:
+              return Edge2.getBytes(239);
+            case Mode.X12:
+              return Edge2.getBytes(238);
+            case Mode.EDF:
+              return Edge2.getBytes(240);
+          }
+          break;
+        case Mode.C40:
+        case Mode.TEXT:
+        case Mode.X12:
+          if (this.mode !== this.getPreviousMode()) {
+            switch (this.mode) {
+              case Mode.ASCII:
+                return Edge2.getBytes(254);
+              case Mode.B256:
+                return Edge2.getBytes(254, 231);
+              case Mode.C40:
+                return Edge2.getBytes(254, 230);
+              case Mode.TEXT:
+                return Edge2.getBytes(254, 239);
+              case Mode.X12:
+                return Edge2.getBytes(254, 238);
+              case Mode.EDF:
+                return Edge2.getBytes(254, 240);
+            }
+          }
+          break;
+        case Mode.EDF:
+          if (this.mode !== Mode.EDF) {
+            throw new Error("Cannot switch from EDF to " + this.mode);
+          }
+          break;
+      }
+      return new Uint8Array(0);
+    };
+    Edge2.prototype.getDataBytes = function() {
+      switch (this.mode) {
+        case Mode.ASCII:
+          if (this.input.isECI(this.fromPosition)) {
+            return Edge2.getBytes(241, this.input.getECIValue(this.fromPosition) + 1);
+          } else if (MinimalEncoder.isExtendedASCII(this.input.charAt(this.fromPosition), this.input.getFNC1Character())) {
+            return Edge2.getBytes(235, this.input.charAt(this.fromPosition) - 127);
+          } else if (this.characterLength === 2) {
+            return Edge2.getBytes(this.input.charAt(this.fromPosition) * 10 + this.input.charAt(this.fromPosition + 1) + 130);
+          } else if (this.input.isFNC1(this.fromPosition)) {
+            return Edge2.getBytes(232);
+          } else {
+            return Edge2.getBytes(this.input.charAt(this.fromPosition) + 1);
+          }
+        case Mode.B256:
+          return Edge2.getBytes(this.input.charAt(this.fromPosition));
+        case Mode.C40:
+          return this.getC40Words(true, this.input.getFNC1Character());
+        case Mode.TEXT:
+          return this.getC40Words(false, this.input.getFNC1Character());
+        case Mode.X12:
+          return this.getX12Words();
+        case Mode.EDF:
+          return this.getEDFBytes();
+      }
+    };
+    return Edge2;
+  })()
+);
+var Input = (
+  /** @class */
+  (function(_super) {
+    __extends$2(Input2, _super);
+    function Input2(stringToEncode, priorityCharset, fnc1, shape, macroId) {
+      var _this = _super.call(this, stringToEncode, priorityCharset, fnc1) || this;
+      _this.shape = shape;
+      _this.macroId = macroId;
+      return _this;
+    }
+    Input2.prototype.getMacroId = function() {
+      return this.macroId;
+    };
+    Input2.prototype.getShapeHint = function() {
+      return this.shape;
+    };
+    return Input2;
+  })(MinimalECIInput)
+);
+var DataMatrixWriter = (
+  /** @class */
+  (function() {
+    function DataMatrixWriter2() {
+    }
+    DataMatrixWriter2.prototype.encode = function(contents, format, width, height, hints) {
+      if (hints === void 0) {
+        hints = null;
+      }
+      if (contents.trim() === "") {
+        throw new Error("Found empty contents");
+      }
+      if (format !== BarcodeFormat.DATA_MATRIX) {
+        throw new Error("Can only encode DATA_MATRIX, but got " + format);
+      }
+      if (width < 0 || height < 0) {
+        throw new Error("Requested dimensions can't be negative: " + width + "x" + height);
+      }
+      var shape = 0;
+      var minSize = null;
+      var maxSize = null;
+      if (hints != null) {
+        var requestedShape = hints.get(EncodeHintType.DATA_MATRIX_SHAPE);
+        if (requestedShape != null) {
+          shape = requestedShape;
+        }
+        var requestedMinSize = hints.get(EncodeHintType.MIN_SIZE);
+        if (requestedMinSize != null) {
+          minSize = requestedMinSize;
+        }
+        var requestedMaxSize = hints.get(EncodeHintType.MAX_SIZE);
+        if (requestedMaxSize != null) {
+          maxSize = requestedMaxSize;
+        }
+      }
+      var encoded;
+      var hasCompactionHint = hints != null && hints.has(EncodeHintType.DATA_MATRIX_COMPACT) && Boolean(hints.get(EncodeHintType.DATA_MATRIX_COMPACT).toString());
+      if (hasCompactionHint) {
+        var hasGS1FormatHint = hints.has(EncodeHintType.GS1_FORMAT) && Boolean(hints.get(EncodeHintType.GS1_FORMAT).toString());
+        var charset = null;
+        var hasEncodingHint = hints.has(EncodeHintType.CHARACTER_SET);
+        if (hasEncodingHint) {
+          charset = Charset.forName(hints.get(EncodeHintType.CHARACTER_SET).toString());
+        }
+        encoded = MinimalEncoder.encodeHighLevel(contents, charset, hasGS1FormatHint ? 29 : -1, shape);
+      } else {
+        var hasForceC40Hint = hints != null && hints.has(EncodeHintType.FORCE_C40) && Boolean(hints.get(EncodeHintType.FORCE_C40).toString());
+        encoded = HighLevelEncoder$1.encodeHighLevel(contents, shape, minSize, maxSize, hasForceC40Hint);
+      }
+      var symbolInfo = SymbolInfo.lookup(encoded.length, shape, minSize, maxSize, true);
+      var codewords = ErrorCorrection.encodeECC200(encoded, symbolInfo);
+      var placement = new DefaultPlacement(codewords, symbolInfo.getSymbolDataWidth(), symbolInfo.getSymbolDataHeight());
+      placement.place();
+      return this.encodeLowLevel(placement, symbolInfo, width, height);
+    };
+    DataMatrixWriter2.prototype.encodeLowLevel = function(placement, symbolInfo, width, height) {
+      var symbolWidth = symbolInfo.getSymbolDataWidth();
+      var symbolHeight = symbolInfo.getSymbolDataHeight();
+      var matrix = new ByteMatrix(symbolInfo.getSymbolWidth(), symbolInfo.getSymbolHeight());
+      var matrixY = 0;
+      for (var y = 0; y < symbolHeight; y++) {
+        var matrixX = void 0;
+        if (y % symbolInfo.matrixHeight === 0) {
+          matrixX = 0;
+          for (var x = 0; x < symbolInfo.getSymbolWidth(); x++) {
+            matrix.setBoolean(matrixX, matrixY, x % 2 === 0);
+            matrixX++;
+          }
+          matrixY++;
+        }
+        matrixX = 0;
+        for (var x = 0; x < symbolWidth; x++) {
+          if (x % symbolInfo.matrixWidth === 0) {
+            matrix.setBoolean(matrixX, matrixY, true);
+            matrixX++;
+          }
+          matrix.setBoolean(matrixX, matrixY, placement.getBit(x, y));
+          matrixX++;
+          if (x % symbolInfo.matrixWidth === symbolInfo.matrixWidth - 1) {
+            matrix.setBoolean(matrixX, matrixY, y % 2 === 0);
+            matrixX++;
+          }
+        }
+        matrixY++;
+        if (y % symbolInfo.matrixHeight === symbolInfo.matrixHeight - 1) {
+          matrixX = 0;
+          for (var x = 0; x < symbolInfo.getSymbolWidth(); x++) {
+            matrix.setBoolean(matrixX, matrixY, true);
+            matrixX++;
+          }
+          matrixY++;
+        }
+      }
+      return this.convertByteMatrixToBitMatrix(matrix, width, height);
+    };
+    DataMatrixWriter2.prototype.convertByteMatrixToBitMatrix = function(matrix, reqWidth, reqHeight) {
+      var matrixWidth = matrix.getWidth();
+      var matrixHeight = matrix.getHeight();
+      var outputWidth = Math.max(reqWidth, matrixWidth);
+      var outputHeight = Math.max(reqHeight, matrixHeight);
+      var multiple = Math.min(outputWidth / matrixWidth, outputHeight / matrixHeight);
+      var leftPadding = (outputWidth - matrixWidth * multiple) / 2;
+      var topPadding = (outputHeight - matrixHeight * multiple) / 2;
+      var output;
+      if (reqHeight < matrixHeight || reqWidth < matrixWidth) {
+        leftPadding = 0;
+        topPadding = 0;
+        output = new BitMatrix(matrixWidth, matrixHeight);
+      } else {
+        output = new BitMatrix(reqWidth, reqHeight);
+      }
+      output.clear();
+      for (var inputY = 0, outputY = topPadding; inputY < matrixHeight; inputY++, outputY += multiple) {
+        for (var inputX = 0, outputX = leftPadding; inputX < matrixWidth; inputX++, outputX += multiple) {
+          if (matrix.get(inputX, inputY) === 1) {
+            output.setRegion(outputX, outputY, multiple, multiple);
+          }
+        }
+      }
+      return output;
+    };
+    return DataMatrixWriter2;
+  })()
+);
 var AztecCode = (
   /** @class */
   (function() {
@@ -29600,335 +31330,490 @@ var __values = function(o) {
   };
   throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
-(function() {
-  function Encoder2() {
-  }
-  Encoder2.encodeBytes = function(data) {
-    return Encoder2.encode(data, Encoder2.DEFAULT_EC_PERCENT, Encoder2.DEFAULT_AZTEC_LAYERS);
-  };
-  Encoder2.encode = function(data, minECCPercent, userSpecifiedLayers) {
-    var bits = new HighLevelEncoder(data).encode();
-    var eccBits = Integer.truncDivision(bits.getSize() * minECCPercent, 100) + 11;
-    var totalSizeBits = bits.getSize() + eccBits;
-    var compact;
-    var layers;
-    var totalBitsInLayer;
-    var wordSize;
-    var stuffedBits;
-    if (userSpecifiedLayers !== Encoder2.DEFAULT_AZTEC_LAYERS) {
-      compact = userSpecifiedLayers < 0;
-      layers = Math.abs(userSpecifiedLayers);
-      if (layers > (compact ? Encoder2.MAX_NB_BITS_COMPACT : Encoder2.MAX_NB_BITS)) {
-        throw new IllegalArgumentException(StringUtils.format("Illegal value %s for layers", userSpecifiedLayers));
-      }
-      totalBitsInLayer = Encoder2.totalBitsInLayer(layers, compact);
-      wordSize = Encoder2.WORD_SIZE[layers];
-      var usableBitsInLayers = totalBitsInLayer - totalBitsInLayer % wordSize;
-      stuffedBits = Encoder2.stuffBits(bits, wordSize);
-      if (stuffedBits.getSize() + eccBits > usableBitsInLayers) {
-        throw new IllegalArgumentException("Data to large for user specified layer");
-      }
-      if (compact && stuffedBits.getSize() > wordSize * 64) {
-        throw new IllegalArgumentException("Data to large for user specified layer");
-      }
-    } else {
-      wordSize = 0;
-      stuffedBits = null;
-      for (var i = 0; ; i++) {
-        if (i > Encoder2.MAX_NB_BITS) {
-          throw new IllegalArgumentException("Data too large for an Aztec code");
+var Encoder = (
+  /** @class */
+  (function() {
+    function Encoder2() {
+    }
+    Encoder2.encodeBytes = function(data) {
+      return Encoder2.encode(data, Encoder2.DEFAULT_EC_PERCENT, Encoder2.DEFAULT_AZTEC_LAYERS);
+    };
+    Encoder2.encode = function(data, minECCPercent, userSpecifiedLayers) {
+      var bits = new HighLevelEncoder(data).encode();
+      var eccBits = Integer.truncDivision(bits.getSize() * minECCPercent, 100) + 11;
+      var totalSizeBits = bits.getSize() + eccBits;
+      var compact;
+      var layers;
+      var totalBitsInLayer;
+      var wordSize;
+      var stuffedBits;
+      if (userSpecifiedLayers !== Encoder2.DEFAULT_AZTEC_LAYERS) {
+        compact = userSpecifiedLayers < 0;
+        layers = Math.abs(userSpecifiedLayers);
+        if (layers > (compact ? Encoder2.MAX_NB_BITS_COMPACT : Encoder2.MAX_NB_BITS)) {
+          throw new IllegalArgumentException(StringUtils.format("Illegal value %s for layers", userSpecifiedLayers));
         }
-        compact = i <= 3;
-        layers = compact ? i + 1 : i;
         totalBitsInLayer = Encoder2.totalBitsInLayer(layers, compact);
-        if (totalSizeBits > totalBitsInLayer) {
-          continue;
-        }
-        if (stuffedBits == null || wordSize !== Encoder2.WORD_SIZE[layers]) {
-          wordSize = Encoder2.WORD_SIZE[layers];
-          stuffedBits = Encoder2.stuffBits(bits, wordSize);
-        }
+        wordSize = Encoder2.WORD_SIZE[layers];
         var usableBitsInLayers = totalBitsInLayer - totalBitsInLayer % wordSize;
+        stuffedBits = Encoder2.stuffBits(bits, wordSize);
+        if (stuffedBits.getSize() + eccBits > usableBitsInLayers) {
+          throw new IllegalArgumentException("Data to large for user specified layer");
+        }
         if (compact && stuffedBits.getSize() > wordSize * 64) {
-          continue;
+          throw new IllegalArgumentException("Data to large for user specified layer");
         }
-        if (stuffedBits.getSize() + eccBits <= usableBitsInLayers) {
-          break;
-        }
-      }
-    }
-    var messageBits = Encoder2.generateCheckWords(stuffedBits, totalBitsInLayer, wordSize);
-    var messageSizeInWords = stuffedBits.getSize() / wordSize;
-    var modeMessage = Encoder2.generateModeMessage(compact, layers, messageSizeInWords);
-    var baseMatrixSize = (compact ? 11 : 14) + layers * 4;
-    var alignmentMap = new Int32Array(baseMatrixSize);
-    var matrixSize;
-    if (compact) {
-      matrixSize = baseMatrixSize;
-      for (var i = 0; i < alignmentMap.length; i++) {
-        alignmentMap[i] = i;
-      }
-    } else {
-      matrixSize = baseMatrixSize + 1 + 2 * Integer.truncDivision(Integer.truncDivision(baseMatrixSize, 2) - 1, 15);
-      var origCenter = Integer.truncDivision(baseMatrixSize, 2);
-      var center = Integer.truncDivision(matrixSize, 2);
-      for (var i = 0; i < origCenter; i++) {
-        var newOffset = i + Integer.truncDivision(i, 15);
-        alignmentMap[origCenter - i - 1] = center - newOffset - 1;
-        alignmentMap[origCenter + i] = center + newOffset + 1;
-      }
-    }
-    var matrix = new BitMatrix(matrixSize);
-    for (var i = 0, rowOffset = 0; i < layers; i++) {
-      var rowSize = (layers - i) * 4 + (compact ? 9 : 12);
-      for (var j = 0; j < rowSize; j++) {
-        var columnOffset = j * 2;
-        for (var k = 0; k < 2; k++) {
-          if (messageBits.get(rowOffset + columnOffset + k)) {
-            matrix.set(alignmentMap[i * 2 + k], alignmentMap[i * 2 + j]);
-          }
-          if (messageBits.get(rowOffset + rowSize * 2 + columnOffset + k)) {
-            matrix.set(alignmentMap[i * 2 + j], alignmentMap[baseMatrixSize - 1 - i * 2 - k]);
-          }
-          if (messageBits.get(rowOffset + rowSize * 4 + columnOffset + k)) {
-            matrix.set(alignmentMap[baseMatrixSize - 1 - i * 2 - k], alignmentMap[baseMatrixSize - 1 - i * 2 - j]);
-          }
-          if (messageBits.get(rowOffset + rowSize * 6 + columnOffset + k)) {
-            matrix.set(alignmentMap[baseMatrixSize - 1 - i * 2 - j], alignmentMap[i * 2 + k]);
-          }
-        }
-      }
-      rowOffset += rowSize * 8;
-    }
-    Encoder2.drawModeMessage(matrix, compact, matrixSize, modeMessage);
-    if (compact) {
-      Encoder2.drawBullsEye(matrix, Integer.truncDivision(matrixSize, 2), 5);
-    } else {
-      Encoder2.drawBullsEye(matrix, Integer.truncDivision(matrixSize, 2), 7);
-      for (var i = 0, j = 0; i < Integer.truncDivision(baseMatrixSize, 2) - 1; i += 15, j += 16) {
-        for (var k = Integer.truncDivision(matrixSize, 2) & 1; k < matrixSize; k += 2) {
-          matrix.set(Integer.truncDivision(matrixSize, 2) - j, k);
-          matrix.set(Integer.truncDivision(matrixSize, 2) + j, k);
-          matrix.set(k, Integer.truncDivision(matrixSize, 2) - j);
-          matrix.set(k, Integer.truncDivision(matrixSize, 2) + j);
-        }
-      }
-    }
-    var aztec = new AztecCode();
-    aztec.setCompact(compact);
-    aztec.setSize(matrixSize);
-    aztec.setLayers(layers);
-    aztec.setCodeWords(messageSizeInWords);
-    aztec.setMatrix(matrix);
-    return aztec;
-  };
-  Encoder2.drawBullsEye = function(matrix, center, size) {
-    for (var i = 0; i < size; i += 2) {
-      for (var j = center - i; j <= center + i; j++) {
-        matrix.set(j, center - i);
-        matrix.set(j, center + i);
-        matrix.set(center - i, j);
-        matrix.set(center + i, j);
-      }
-    }
-    matrix.set(center - size, center - size);
-    matrix.set(center - size + 1, center - size);
-    matrix.set(center - size, center - size + 1);
-    matrix.set(center + size, center - size);
-    matrix.set(center + size, center - size + 1);
-    matrix.set(center + size, center + size - 1);
-  };
-  Encoder2.generateModeMessage = function(compact, layers, messageSizeInWords) {
-    var modeMessage = new BitArray();
-    if (compact) {
-      modeMessage.appendBits(layers - 1, 2);
-      modeMessage.appendBits(messageSizeInWords - 1, 6);
-      modeMessage = Encoder2.generateCheckWords(modeMessage, 28, 4);
-    } else {
-      modeMessage.appendBits(layers - 1, 5);
-      modeMessage.appendBits(messageSizeInWords - 1, 11);
-      modeMessage = Encoder2.generateCheckWords(modeMessage, 40, 4);
-    }
-    return modeMessage;
-  };
-  Encoder2.drawModeMessage = function(matrix, compact, matrixSize, modeMessage) {
-    var center = Integer.truncDivision(matrixSize, 2);
-    if (compact) {
-      for (var i = 0; i < 7; i++) {
-        var offset = center - 3 + i;
-        if (modeMessage.get(i)) {
-          matrix.set(offset, center - 5);
-        }
-        if (modeMessage.get(i + 7)) {
-          matrix.set(center + 5, offset);
-        }
-        if (modeMessage.get(20 - i)) {
-          matrix.set(offset, center + 5);
-        }
-        if (modeMessage.get(27 - i)) {
-          matrix.set(center - 5, offset);
-        }
-      }
-    } else {
-      for (var i = 0; i < 10; i++) {
-        var offset = center - 5 + i + Integer.truncDivision(i, 5);
-        if (modeMessage.get(i)) {
-          matrix.set(offset, center - 7);
-        }
-        if (modeMessage.get(i + 10)) {
-          matrix.set(center + 7, offset);
-        }
-        if (modeMessage.get(29 - i)) {
-          matrix.set(offset, center + 7);
-        }
-        if (modeMessage.get(39 - i)) {
-          matrix.set(center - 7, offset);
-        }
-      }
-    }
-  };
-  Encoder2.generateCheckWords = function(bitArray, totalBits, wordSize) {
-    var e_1, _a2;
-    var messageSizeInWords = bitArray.getSize() / wordSize;
-    var rs = new ReedSolomonEncoder(Encoder2.getGF(wordSize));
-    var totalWords = Integer.truncDivision(totalBits, wordSize);
-    var messageWords = Encoder2.bitsToWords(bitArray, wordSize, totalWords);
-    rs.encode(messageWords, totalWords - messageSizeInWords);
-    var startPad = totalBits % wordSize;
-    var messageBits = new BitArray();
-    messageBits.appendBits(0, startPad);
-    try {
-      for (var _b = __values(Array.from(messageWords)), _c = _b.next(); !_c.done; _c = _b.next()) {
-        var messageWord = _c.value;
-        messageBits.appendBits(messageWord, wordSize);
-      }
-    } catch (e_1_1) {
-      e_1 = { error: e_1_1 };
-    } finally {
-      try {
-        if (_c && !_c.done && (_a2 = _b.return)) _a2.call(_b);
-      } finally {
-        if (e_1) throw e_1.error;
-      }
-    }
-    return messageBits;
-  };
-  Encoder2.bitsToWords = function(stuffedBits, wordSize, totalWords) {
-    var message = new Int32Array(totalWords);
-    var i;
-    var n;
-    for (i = 0, n = stuffedBits.getSize() / wordSize; i < n; i++) {
-      var value = 0;
-      for (var j = 0; j < wordSize; j++) {
-        value |= stuffedBits.get(i * wordSize + j) ? 1 << wordSize - j - 1 : 0;
-      }
-      message[i] = value;
-    }
-    return message;
-  };
-  Encoder2.getGF = function(wordSize) {
-    switch (wordSize) {
-      case 4:
-        return GenericGF.AZTEC_PARAM;
-      case 6:
-        return GenericGF.AZTEC_DATA_6;
-      case 8:
-        return GenericGF.AZTEC_DATA_8;
-      case 10:
-        return GenericGF.AZTEC_DATA_10;
-      case 12:
-        return GenericGF.AZTEC_DATA_12;
-      default:
-        throw new IllegalArgumentException("Unsupported word size " + wordSize);
-    }
-  };
-  Encoder2.stuffBits = function(bits, wordSize) {
-    var out = new BitArray();
-    var n = bits.getSize();
-    var mask = (1 << wordSize) - 2;
-    for (var i = 0; i < n; i += wordSize) {
-      var word = 0;
-      for (var j = 0; j < wordSize; j++) {
-        if (i + j >= n || bits.get(i + j)) {
-          word |= 1 << wordSize - 1 - j;
-        }
-      }
-      if ((word & mask) === mask) {
-        out.appendBits(word & mask, wordSize);
-        i--;
-      } else if ((word & mask) === 0) {
-        out.appendBits(word | 1, wordSize);
-        i--;
       } else {
-        out.appendBits(word, wordSize);
+        wordSize = 0;
+        stuffedBits = null;
+        for (var i = 0; ; i++) {
+          if (i > Encoder2.MAX_NB_BITS) {
+            throw new IllegalArgumentException("Data too large for an Aztec code");
+          }
+          compact = i <= 3;
+          layers = compact ? i + 1 : i;
+          totalBitsInLayer = Encoder2.totalBitsInLayer(layers, compact);
+          if (totalSizeBits > totalBitsInLayer) {
+            continue;
+          }
+          if (stuffedBits == null || wordSize !== Encoder2.WORD_SIZE[layers]) {
+            wordSize = Encoder2.WORD_SIZE[layers];
+            stuffedBits = Encoder2.stuffBits(bits, wordSize);
+          }
+          var usableBitsInLayers = totalBitsInLayer - totalBitsInLayer % wordSize;
+          if (compact && stuffedBits.getSize() > wordSize * 64) {
+            continue;
+          }
+          if (stuffedBits.getSize() + eccBits <= usableBitsInLayers) {
+            break;
+          }
+        }
       }
+      var messageBits = Encoder2.generateCheckWords(stuffedBits, totalBitsInLayer, wordSize);
+      var messageSizeInWords = stuffedBits.getSize() / wordSize;
+      var modeMessage = Encoder2.generateModeMessage(compact, layers, messageSizeInWords);
+      var baseMatrixSize = (compact ? 11 : 14) + layers * 4;
+      var alignmentMap = new Int32Array(baseMatrixSize);
+      var matrixSize;
+      if (compact) {
+        matrixSize = baseMatrixSize;
+        for (var i = 0; i < alignmentMap.length; i++) {
+          alignmentMap[i] = i;
+        }
+      } else {
+        matrixSize = baseMatrixSize + 1 + 2 * Integer.truncDivision(Integer.truncDivision(baseMatrixSize, 2) - 1, 15);
+        var origCenter = Integer.truncDivision(baseMatrixSize, 2);
+        var center = Integer.truncDivision(matrixSize, 2);
+        for (var i = 0; i < origCenter; i++) {
+          var newOffset = i + Integer.truncDivision(i, 15);
+          alignmentMap[origCenter - i - 1] = center - newOffset - 1;
+          alignmentMap[origCenter + i] = center + newOffset + 1;
+        }
+      }
+      var matrix = new BitMatrix(matrixSize);
+      for (var i = 0, rowOffset = 0; i < layers; i++) {
+        var rowSize = (layers - i) * 4 + (compact ? 9 : 12);
+        for (var j = 0; j < rowSize; j++) {
+          var columnOffset = j * 2;
+          for (var k = 0; k < 2; k++) {
+            if (messageBits.get(rowOffset + columnOffset + k)) {
+              matrix.set(alignmentMap[i * 2 + k], alignmentMap[i * 2 + j]);
+            }
+            if (messageBits.get(rowOffset + rowSize * 2 + columnOffset + k)) {
+              matrix.set(alignmentMap[i * 2 + j], alignmentMap[baseMatrixSize - 1 - i * 2 - k]);
+            }
+            if (messageBits.get(rowOffset + rowSize * 4 + columnOffset + k)) {
+              matrix.set(alignmentMap[baseMatrixSize - 1 - i * 2 - k], alignmentMap[baseMatrixSize - 1 - i * 2 - j]);
+            }
+            if (messageBits.get(rowOffset + rowSize * 6 + columnOffset + k)) {
+              matrix.set(alignmentMap[baseMatrixSize - 1 - i * 2 - j], alignmentMap[i * 2 + k]);
+            }
+          }
+        }
+        rowOffset += rowSize * 8;
+      }
+      Encoder2.drawModeMessage(matrix, compact, matrixSize, modeMessage);
+      if (compact) {
+        Encoder2.drawBullsEye(matrix, Integer.truncDivision(matrixSize, 2), 5);
+      } else {
+        Encoder2.drawBullsEye(matrix, Integer.truncDivision(matrixSize, 2), 7);
+        for (var i = 0, j = 0; i < Integer.truncDivision(baseMatrixSize, 2) - 1; i += 15, j += 16) {
+          for (var k = Integer.truncDivision(matrixSize, 2) & 1; k < matrixSize; k += 2) {
+            matrix.set(Integer.truncDivision(matrixSize, 2) - j, k);
+            matrix.set(Integer.truncDivision(matrixSize, 2) + j, k);
+            matrix.set(k, Integer.truncDivision(matrixSize, 2) - j);
+            matrix.set(k, Integer.truncDivision(matrixSize, 2) + j);
+          }
+        }
+      }
+      var aztec = new AztecCode();
+      aztec.setCompact(compact);
+      aztec.setSize(matrixSize);
+      aztec.setLayers(layers);
+      aztec.setCodeWords(messageSizeInWords);
+      aztec.setMatrix(matrix);
+      return aztec;
+    };
+    Encoder2.drawBullsEye = function(matrix, center, size) {
+      for (var i = 0; i < size; i += 2) {
+        for (var j = center - i; j <= center + i; j++) {
+          matrix.set(j, center - i);
+          matrix.set(j, center + i);
+          matrix.set(center - i, j);
+          matrix.set(center + i, j);
+        }
+      }
+      matrix.set(center - size, center - size);
+      matrix.set(center - size + 1, center - size);
+      matrix.set(center - size, center - size + 1);
+      matrix.set(center + size, center - size);
+      matrix.set(center + size, center - size + 1);
+      matrix.set(center + size, center + size - 1);
+    };
+    Encoder2.generateModeMessage = function(compact, layers, messageSizeInWords) {
+      var modeMessage = new BitArray();
+      if (compact) {
+        modeMessage.appendBits(layers - 1, 2);
+        modeMessage.appendBits(messageSizeInWords - 1, 6);
+        modeMessage = Encoder2.generateCheckWords(modeMessage, 28, 4);
+      } else {
+        modeMessage.appendBits(layers - 1, 5);
+        modeMessage.appendBits(messageSizeInWords - 1, 11);
+        modeMessage = Encoder2.generateCheckWords(modeMessage, 40, 4);
+      }
+      return modeMessage;
+    };
+    Encoder2.drawModeMessage = function(matrix, compact, matrixSize, modeMessage) {
+      var center = Integer.truncDivision(matrixSize, 2);
+      if (compact) {
+        for (var i = 0; i < 7; i++) {
+          var offset = center - 3 + i;
+          if (modeMessage.get(i)) {
+            matrix.set(offset, center - 5);
+          }
+          if (modeMessage.get(i + 7)) {
+            matrix.set(center + 5, offset);
+          }
+          if (modeMessage.get(20 - i)) {
+            matrix.set(offset, center + 5);
+          }
+          if (modeMessage.get(27 - i)) {
+            matrix.set(center - 5, offset);
+          }
+        }
+      } else {
+        for (var i = 0; i < 10; i++) {
+          var offset = center - 5 + i + Integer.truncDivision(i, 5);
+          if (modeMessage.get(i)) {
+            matrix.set(offset, center - 7);
+          }
+          if (modeMessage.get(i + 10)) {
+            matrix.set(center + 7, offset);
+          }
+          if (modeMessage.get(29 - i)) {
+            matrix.set(offset, center + 7);
+          }
+          if (modeMessage.get(39 - i)) {
+            matrix.set(center - 7, offset);
+          }
+        }
+      }
+    };
+    Encoder2.generateCheckWords = function(bitArray, totalBits, wordSize) {
+      var e_1, _a2;
+      var messageSizeInWords = bitArray.getSize() / wordSize;
+      var rs = new ReedSolomonEncoder(Encoder2.getGF(wordSize));
+      var totalWords = Integer.truncDivision(totalBits, wordSize);
+      var messageWords = Encoder2.bitsToWords(bitArray, wordSize, totalWords);
+      rs.encode(messageWords, totalWords - messageSizeInWords);
+      var startPad = totalBits % wordSize;
+      var messageBits = new BitArray();
+      messageBits.appendBits(0, startPad);
+      try {
+        for (var _b = __values(Array.from(messageWords)), _c = _b.next(); !_c.done; _c = _b.next()) {
+          var messageWord = _c.value;
+          messageBits.appendBits(messageWord, wordSize);
+        }
+      } catch (e_1_1) {
+        e_1 = { error: e_1_1 };
+      } finally {
+        try {
+          if (_c && !_c.done && (_a2 = _b.return)) _a2.call(_b);
+        } finally {
+          if (e_1) throw e_1.error;
+        }
+      }
+      return messageBits;
+    };
+    Encoder2.bitsToWords = function(stuffedBits, wordSize, totalWords) {
+      var message = new Int32Array(totalWords);
+      var i;
+      var n;
+      for (i = 0, n = stuffedBits.getSize() / wordSize; i < n; i++) {
+        var value = 0;
+        for (var j = 0; j < wordSize; j++) {
+          value |= stuffedBits.get(i * wordSize + j) ? 1 << wordSize - j - 1 : 0;
+        }
+        message[i] = value;
+      }
+      return message;
+    };
+    Encoder2.getGF = function(wordSize) {
+      switch (wordSize) {
+        case 4:
+          return GenericGF.AZTEC_PARAM;
+        case 6:
+          return GenericGF.AZTEC_DATA_6;
+        case 8:
+          return GenericGF.AZTEC_DATA_8;
+        case 10:
+          return GenericGF.AZTEC_DATA_10;
+        case 12:
+          return GenericGF.AZTEC_DATA_12;
+        default:
+          throw new IllegalArgumentException("Unsupported word size " + wordSize);
+      }
+    };
+    Encoder2.stuffBits = function(bits, wordSize) {
+      var out = new BitArray();
+      var n = bits.getSize();
+      var mask = (1 << wordSize) - 2;
+      for (var i = 0; i < n; i += wordSize) {
+        var word = 0;
+        for (var j = 0; j < wordSize; j++) {
+          if (i + j >= n || bits.get(i + j)) {
+            word |= 1 << wordSize - 1 - j;
+          }
+        }
+        if ((word & mask) === mask) {
+          out.appendBits(word & mask, wordSize);
+          i--;
+        } else if ((word & mask) === 0) {
+          out.appendBits(word | 1, wordSize);
+          i--;
+        } else {
+          out.appendBits(word, wordSize);
+        }
+      }
+      return out;
+    };
+    Encoder2.totalBitsInLayer = function(layers, compact) {
+      return ((compact ? 88 : 112) + 16 * layers) * layers;
+    };
+    Encoder2.DEFAULT_EC_PERCENT = 33;
+    Encoder2.DEFAULT_AZTEC_LAYERS = 0;
+    Encoder2.MAX_NB_BITS = 32;
+    Encoder2.MAX_NB_BITS_COMPACT = 4;
+    Encoder2.WORD_SIZE = Int32Array.from([
+      4,
+      6,
+      6,
+      8,
+      8,
+      8,
+      8,
+      8,
+      8,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      10,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12,
+      12
+    ]);
+    return Encoder2;
+  })()
+);
+var AztecWriter = (
+  /** @class */
+  (function() {
+    function AztecWriter2() {
     }
-    return out;
-  };
-  Encoder2.totalBitsInLayer = function(layers, compact) {
-    return ((compact ? 88 : 112) + 16 * layers) * layers;
-  };
-  Encoder2.DEFAULT_EC_PERCENT = 33;
-  Encoder2.DEFAULT_AZTEC_LAYERS = 0;
-  Encoder2.MAX_NB_BITS = 32;
-  Encoder2.MAX_NB_BITS_COMPACT = 4;
-  Encoder2.WORD_SIZE = Int32Array.from([
-    4,
-    6,
-    6,
-    8,
-    8,
-    8,
-    8,
-    8,
-    8,
-    10,
-    10,
-    10,
-    10,
-    10,
-    10,
-    10,
-    10,
-    10,
-    10,
-    10,
-    10,
-    10,
-    10,
-    12,
-    12,
-    12,
-    12,
-    12,
-    12,
-    12,
-    12,
-    12,
-    12
-  ]);
-  return Encoder2;
-})();
+    AztecWriter2.prototype.encode = function(contents, format, width, height) {
+      return this.encodeWithHints(contents, format, width, height, null);
+    };
+    AztecWriter2.prototype.encodeWithHints = function(contents, format, width, height, hints) {
+      var charset = StandardCharsets.ISO_8859_1;
+      var eccPercent = Encoder.DEFAULT_EC_PERCENT;
+      var layers = Encoder.DEFAULT_AZTEC_LAYERS;
+      if (hints != null) {
+        if (hints.has(EncodeHintType.CHARACTER_SET)) {
+          charset = Charset.forName(hints.get(EncodeHintType.CHARACTER_SET).toString());
+        }
+        if (hints.has(EncodeHintType.ERROR_CORRECTION)) {
+          eccPercent = Integer.parseInt(hints.get(EncodeHintType.ERROR_CORRECTION).toString());
+        }
+        if (hints.has(EncodeHintType.AZTEC_LAYERS)) {
+          layers = Integer.parseInt(hints.get(EncodeHintType.AZTEC_LAYERS).toString());
+        }
+      }
+      return AztecWriter2.encodeLayers(contents, format, width, height, charset, eccPercent, layers);
+    };
+    AztecWriter2.encodeLayers = function(contents, format, width, height, charset, eccPercent, layers) {
+      if (format !== BarcodeFormat.AZTEC) {
+        throw new IllegalArgumentException("Can only encode AZTEC, but got " + format);
+      }
+      var aztec = Encoder.encode(StringUtils.getBytes(contents, charset), eccPercent, layers);
+      return AztecWriter2.renderResult(aztec, width, height);
+    };
+    AztecWriter2.renderResult = function(code, width, height) {
+      var input = code.getMatrix();
+      if (input == null) {
+        throw new IllegalStateException();
+      }
+      var inputWidth = input.getWidth();
+      var inputHeight = input.getHeight();
+      var outputWidth = Math.max(width, inputWidth);
+      var outputHeight = Math.max(height, inputHeight);
+      var multiple = Math.min(outputWidth / inputWidth, outputHeight / inputHeight);
+      var leftPadding = (outputWidth - inputWidth * multiple) / 2;
+      var topPadding = (outputHeight - inputHeight * multiple) / 2;
+      var output = new BitMatrix(outputWidth, outputHeight);
+      for (var inputY = 0, outputY = topPadding; inputY < inputHeight; inputY++, outputY += multiple) {
+        for (var inputX = 0, outputX = leftPadding; inputX < inputWidth; inputX++, outputX += multiple) {
+          if (input.get(inputX, inputY)) {
+            output.setRegion(outputX, outputY, multiple, multiple);
+          }
+        }
+      }
+      return output;
+    };
+    return AztecWriter2;
+  })()
+);
 export {
-  ArgumentException as A,
-  BinaryBitmap as B,
-  ChecksumException as C,
-  DecodeHintType as D,
-  EncodeHintType as E,
-  FormatException as F,
-  HybridBinarizer as H,
-  IllegalArgumentException as I,
-  LuminanceSource as L,
-  MultiFormatOneDReader as M,
-  NotFoundException as N,
-  PDF417Reader as P,
-  QRCodeReader as Q,
-  InvertedLuminanceSource as a,
-  AztecReader as b,
-  DataMatrixReader as c,
-  MultiFormatReader as d,
-  ErrorCorrectionLevel as e,
-  Encoder as f,
-  IllegalStateException as g,
-  BarcodeFormat as h
+  AbstractExpandedDecoder,
+  ArgumentException,
+  ArithmeticException,
+  AztecCode,
+  AztecReader as AztecCodeReader,
+  AztecWriter as AztecCodeWriter,
+  Decoder$3 as AztecDecoder,
+  Detector$3 as AztecDetector,
+  AztecDetectorResult,
+  Encoder as AztecEncoder,
+  HighLevelEncoder as AztecHighLevelEncoder,
+  Point as AztecPoint,
+  BarcodeFormat,
+  Binarizer,
+  BinaryBitmap,
+  BitArray,
+  BitMatrix,
+  BitSource,
+  BrowserAztecCodeReader,
+  BrowserBarcodeReader,
+  BrowserCodeReader,
+  BrowserDatamatrixCodeReader,
+  BrowserMultiFormatReader,
+  BrowserPDF417Reader,
+  BrowserQRCodeReader,
+  BrowserQRCodeSvgWriter,
+  CharacterSetECI,
+  ChecksumException,
+  CodaBarReader,
+  Code128Reader,
+  Code39Reader,
+  Code93Reader,
+  DecodedBitStreamParser$3 as DataMatrixDecodedBitStreamParser,
+  DefaultPlacement as DataMatrixDefaultPlacement,
+  ErrorCorrection as DataMatrixErrorCorrection,
+  HighLevelEncoder$1 as DataMatrixHighLevelEncoder,
+  DataMatrixReader,
+  SymbolInfo as DataMatrixSymbolInfo,
+  SymbolShapeHint as DataMatrixSymbolShapeHint,
+  DataMatrixWriter,
+  DecodeHintType,
+  DecoderResult,
+  DefaultGridSampler,
+  DetectorResult,
+  EAN13Reader,
+  EncodeHintType,
+  Exception,
+  FinderPattern$1 as FinderPattern,
+  FormatException,
+  GenericGF,
+  GenericGFPoly,
+  GlobalHistogramBinarizer,
+  GridSampler,
+  GridSamplerInstance,
+  HTMLCanvasElementLuminanceSource,
+  HybridBinarizer,
+  ITFReader,
+  IllegalArgumentException,
+  IllegalStateException,
+  InvertedLuminanceSource,
+  LuminanceSource,
+  MathUtils,
+  DecodedBitStreamParser$1 as MaxiCodeDecodedBitStreamParser,
+  Decoder as MaxiCodeDecoder,
+  MaxiCodeReader,
+  MicroQRCodeReader,
+  MicroQRDetector,
+  MicroQRFormatInformation,
+  MicroQRVersion,
+  MultiFormatOneDReader,
+  MultiFormatReader,
+  MultiFormatWriter,
+  NotFoundException,
+  OneDReader,
+  DecodedBitStreamParser as PDF417DecodedBitStreamParser,
+  ErrorCorrection$1 as PDF417DecoderErrorCorrection,
+  PDF417Reader,
+  PDF417ResultMetadata,
+  PerspectiveTransform,
+  PlanarYUVLuminanceSource,
+  ByteMatrix as QRCodeByteMatrix,
+  DataMask as QRCodeDataMask,
+  DecodedBitStreamParser$2 as QRCodeDecodedBitStreamParser,
+  ErrorCorrectionLevel as QRCodeDecoderErrorCorrectionLevel,
+  FormatInformation as QRCodeDecoderFormatInformation,
+  Encoder$1 as QRCodeEncoder,
+  QRCode as QRCodeEncoderQRCode,
+  MaskUtil as QRCodeMaskUtil,
+  MatrixUtil as QRCodeMatrixUtil,
+  Mode$2 as QRCodeMode,
+  QRCodeReader,
+  Version as QRCodeVersion,
+  QRCodeWriter,
+  RGBLuminanceSource,
+  RSS14Reader,
+  RSSExpandedReader,
+  ReaderException,
+  ReedSolomonDecoder,
+  ReedSolomonEncoder,
+  ReedSolomonException,
+  Result$1 as Result,
+  ResultMetadataType,
+  ResultPoint,
+  StringUtils,
+  UnsupportedOperationException,
+  VideoInputDevice,
+  WhiteRectangleDetector,
+  WriterException,
+  Arrays as ZXingArrays,
+  Charset as ZXingCharset,
+  Integer as ZXingInteger,
+  StandardCharsets as ZXingStandardCharsets,
+  StringBuilder as ZXingStringBuilder,
+  StringEncoding as ZXingStringEncoding,
+  System as ZXingSystem,
+  createDecoder as createAbstractExpandedDecoder
 };

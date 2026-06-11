@@ -1,27 +1,188 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 
 type Controls = { stop: () => void };
 
+export type ScannerHandle = {
+  errorRef: React.MutableRefObject<string | null>;
+  hasTorch: boolean;
+  torchOn: boolean;
+  toggleTorch: () => void;
+};
+
+// ── Native BarcodeDetector ───────────────────────────────────────────────────
+
+const NATIVE_FORMATS = [
+  "code_128", "code_39", "code_93", "codabar",
+  "ean_13", "ean_8", "itf", "upc_a", "upc_e",
+  "qr_code", "data_matrix", "aztec", "pdf417",
+];
+
+declare global {
+  interface Window {
+    BarcodeDetector?: new (opts?: { formats?: string[] }) => {
+      detect(src: CanvasImageSource): Promise<Array<{ rawValue: string }>>;
+    };
+  }
+}
+
+async function hasNativeDetector(): Promise<boolean> {
+  if (typeof window === "undefined" || !window.BarcodeDetector) return false;
+  try {
+    new window.BarcodeDetector({ formats: ["code_128"] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function startNativeDetector(
+  video: HTMLVideoElement,
+  onResult: (text: string) => void,
+): Controls {
+  const detector = new window.BarcodeDetector!({ formats: NATIVE_FORMATS });
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+  let running = true;
+
+  function tick() {
+    if (!running) return;
+    if (video.readyState >= 2 && video.videoWidth > 0) {
+      if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
+      if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      detector.detect(canvas).then((codes) => {
+        if (codes.length > 0 && running) onResult(codes[0].rawValue);
+      }).catch(() => {}).finally(() => { if (running) requestAnimationFrame(tick); });
+    } else {
+      requestAnimationFrame(tick);
+    }
+  }
+
+  requestAnimationFrame(tick);
+  return { stop: () => { running = false; } };
+}
+
+// ── ZXing fallback ───────────────────────────────────────────────────────────
+
+async function startZxingScanner(
+  video: HTMLVideoElement,
+  deviceId: string | undefined,
+  onResult: (text: string) => void,
+): Promise<Controls> {
+  const [{ BrowserMultiFormatReader }, lib] = await Promise.all([
+    import("@zxing/browser"),
+    import("@zxing/library"),
+  ]);
+
+  const hints = new Map<number, unknown>();
+  hints.set(lib.DecodeHintType.POSSIBLE_FORMATS, [
+    lib.BarcodeFormat.CODE_128,
+    lib.BarcodeFormat.CODE_39,
+    lib.BarcodeFormat.CODE_93,
+    lib.BarcodeFormat.EAN_13,
+    lib.BarcodeFormat.EAN_8,
+    lib.BarcodeFormat.ITF,
+    lib.BarcodeFormat.UPC_A,
+    lib.BarcodeFormat.UPC_E,
+    lib.BarcodeFormat.QR_CODE,
+    lib.BarcodeFormat.DATA_MATRIX,
+    lib.BarcodeFormat.PDF_417,
+  ]);
+  hints.set(lib.DecodeHintType.TRY_HARDER, true);
+
+  const reader = new BrowserMultiFormatReader(hints, {
+    delayBetweenScanAttempts: 20,
+    delayBetweenScanSuccess: 300,
+  });
+
+  const videoConstraints: MediaTrackConstraints = {
+    width: { ideal: 1920 },
+    height: { ideal: 1080 },
+    ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: "environment" } }),
+  };
+
+  const controls = await reader.decodeFromConstraints(
+    { video: videoConstraints },
+    video,
+    (result) => { if (result) onResult(result.getText().trim()); },
+  );
+
+  return { stop: () => controls.stop() };
+}
+
+// ── Camera helpers ───────────────────────────────────────────────────────────
+
 async function getBestDeviceId(): Promise<string | undefined> {
   try {
-    const { BrowserCodeReader } = await import("@zxing/browser");
-    const devices = await BrowserCodeReader.listVideoInputDevices();
-    const back = devices.find((d: MediaDeviceInfo) =>
-      /back|rear|environment/i.test(d.label),
-    );
-    return back?.deviceId ?? devices[devices.length - 1]?.deviceId;
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cameras = devices.filter((d) => d.kind === "videoinput");
+    const back = cameras.find((d) => /back|rear|environment/i.test(d.label));
+    return back?.deviceId ?? cameras[cameras.length - 1]?.deviceId;
   } catch {
     return undefined;
   }
 }
 
+async function openCamera(deviceId: string | undefined): Promise<MediaStream> {
+  const base: MediaTrackConstraints = {
+    width: { ideal: 3840 },
+    height: { ideal: 2160 },
+    aspectRatio: { ideal: 16 / 9 },
+  };
+
+  if (deviceId) {
+    base.deviceId = { exact: deviceId };
+  } else {
+    base.facingMode = { ideal: "environment" };
+  }
+
+  try {
+    return await navigator.mediaDevices.getUserMedia({ video: base });
+  } catch {
+    return await navigator.mediaDevices.getUserMedia({
+      video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" },
+    });
+  }
+}
+
+// ── Hook ─────────────────────────────────────────────────────────────────────
+
 export function useScanner(
   videoRef: React.RefObject<HTMLVideoElement | null>,
   onDecode: (text: string) => void,
   enabled: boolean,
-) {
+): ScannerHandle {
   const lastRef = useRef<{ text: string; at: number }>({ text: "", at: 0 });
   const errorRef = useRef<string | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const trackRef = useRef<MediaStreamTrack | null>(null);
+  const [hasTorch, setHasTorch] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
+
+  const dedupe = useCallback(
+    (text: string) => {
+      if (!text) return;
+      const now = Date.now();
+      if (lastRef.current.text === text && now - lastRef.current.at < 500) return;
+      lastRef.current = { text, at: now };
+      onDecode(text);
+    },
+    [onDecode],
+  );
+
+  const toggleTorch = useCallback(async () => {
+    const track = trackRef.current;
+    if (!track) return;
+    try {
+      const next = !torchOn;
+      await (track as MediaStreamTrack & {
+        applyConstraints(c: { advanced: { torch: boolean }[] }): Promise<void>;
+      }).applyConstraints({ advanced: [{ torch: next }] });
+      setTorchOn(next);
+    } catch {
+      /* torch not supported */
+    }
+  }, [torchOn]);
 
   useEffect(() => {
     if (!enabled || !videoRef.current) return;
@@ -31,53 +192,58 @@ export function useScanner(
 
     (async () => {
       try {
-        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        const [useNative, deviceId] = await Promise.all([
+          hasNativeDetector(),
+          getBestDeviceId(),
+        ]);
 
-        const reader = new BrowserMultiFormatReader(undefined, {
-          delayBetweenScanAttempts: 40,
-          delayBetweenScanSuccess: 500,
-        });
+        if (cancelled) return;
 
-        const deviceId = await getBestDeviceId();
+        const stream = await openCamera(deviceId);
+        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
 
-        const videoConstraints: MediaTrackConstraints = {
-          width: { ideal: 1920 },
-          height: { ideal: 1080 },
-        };
+        streamRef.current = stream;
+        const track = stream.getVideoTracks()[0];
+        trackRef.current = track ?? null;
 
-        if (deviceId) {
-          videoConstraints.deviceId = { exact: deviceId };
-        } else {
-          videoConstraints.facingMode = { ideal: "environment" };
+        if (track) {
+          const caps = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+          setHasTorch(!!caps.torch);
         }
 
-        controls = await reader.decodeFromConstraints(
-          { video: videoConstraints },
-          videoRef.current!,
-          (result: unknown) => {
-            if (!result) return;
-            const text = (result as { getText(): string }).getText().trim();
-            if (!text) return;
-            const now = Date.now();
-            if (lastRef.current.text === text && now - lastRef.current.at < 600)
-              return;
-            lastRef.current = { text, at: now };
-            onDecode(text);
-          },
-        );
+        const video = videoRef.current!;
+        video.srcObject = stream;
+        video.setAttribute("playsinline", "true");
+        await video.play().catch(() => {});
 
-        if (cancelled) controls?.stop();
+        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
+
+        if (useNative) {
+          controls = startNativeDetector(video, dedupe);
+        } else {
+          controls = await startZxingScanner(video, deviceId, dedupe);
+        }
+
+        if (cancelled) controls.stop();
       } catch (e) {
-        errorRef.current = (e as Error).message;
-        console.error("Scanner init failed", e);
+        if (!cancelled) {
+          errorRef.current = (e as Error).message;
+          console.error("Scanner init failed", e);
+        }
       }
     })();
 
     return () => {
       cancelled = true;
       controls?.stop();
+      streamRef.current?.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+      trackRef.current = null;
+      if (videoRef.current) {
+        videoRef.current.srcObject = null;
+      }
     };
-  }, [enabled, videoRef, onDecode]);
+  }, [enabled, videoRef, dedupe]);
 
-  return errorRef;
+  return { errorRef, hasTorch, torchOn, toggleTorch };
 }

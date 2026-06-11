@@ -1,5 +1,5 @@
-import { I as IllegalArgumentException, a as InvertedLuminanceSource, L as LuminanceSource, D as DecodeHintType, A as ArgumentException, H as HybridBinarizer, B as BinaryBitmap, N as NotFoundException, C as ChecksumException, F as FormatException, b as AztecReader, M as MultiFormatOneDReader, c as DataMatrixReader, d as MultiFormatReader, P as PDF417Reader, Q as QRCodeReader, E as EncodeHintType, e as ErrorCorrectionLevel, f as Encoder, g as IllegalStateException } from "./zxing__library.mjs";
-import { h } from "./zxing__library.mjs";
+import { IllegalArgumentException, InvertedLuminanceSource, LuminanceSource, DecodeHintType, ArgumentException, HybridBinarizer, BinaryBitmap, NotFoundException, ChecksumException, FormatException, AztecCodeReader as AztecReader, MultiFormatOneDReader, DataMatrixReader, MultiFormatReader, PDF417Reader, QRCodeReader, EncodeHintType, QRCodeDecoderErrorCorrectionLevel as ErrorCorrectionLevel, QRCodeEncoder as Encoder, IllegalStateException } from "./zxing__library.mjs";
+import { BarcodeFormat } from "./zxing__library.mjs";
 import "./ts-custom-error.mjs";
 var __extends$6 = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
@@ -1411,24 +1411,24 @@ var BrowserCodeSvgWriter = (
       var code = this.encode(hints, contents);
       return this.renderResult(code, width, height, quietZone);
     };
-    BrowserCodeSvgWriter2.prototype.createSVGElement = function(w, h2) {
+    BrowserCodeSvgWriter2.prototype.createSVGElement = function(w, h) {
       var el = document.createElementNS(BrowserCodeSvgWriter2.SVG_NS, "svg");
-      el.setAttributeNS(svgNs$1, "width", h2.toString());
+      el.setAttributeNS(svgNs$1, "width", h.toString());
       el.setAttributeNS(svgNs$1, "height", w.toString());
       return el;
     };
-    BrowserCodeSvgWriter2.prototype.createSvgPathPlaceholderElement = function(w, h2) {
+    BrowserCodeSvgWriter2.prototype.createSvgPathPlaceholderElement = function(w, h) {
       var el = document.createElementNS(BrowserCodeSvgWriter2.SVG_NS, "path");
-      el.setAttributeNS(svgNs$1, "d", "M0 0h".concat(w, "v").concat(h2, "H0z"));
+      el.setAttributeNS(svgNs$1, "d", "M0 0h".concat(w, "v").concat(h, "H0z"));
       el.setAttributeNS(svgNs$1, "fill", "none");
       return el;
     };
-    BrowserCodeSvgWriter2.prototype.createSvgRectElement = function(x, y, w, h2) {
+    BrowserCodeSvgWriter2.prototype.createSvgRectElement = function(x, y, w, h) {
       var el = document.createElementNS(BrowserCodeSvgWriter2.SVG_NS, "rect");
       el.setAttributeNS(svgNs$1, "x", x.toString());
       el.setAttributeNS(svgNs$1, "y", y.toString());
       el.setAttributeNS(svgNs$1, "height", w.toString());
-      el.setAttributeNS(svgNs$1, "width", h2.toString());
+      el.setAttributeNS(svgNs$1, "width", h.toString());
       el.setAttributeNS(svgNs$1, "fill", "#000000");
       return el;
     };
@@ -1539,21 +1539,21 @@ var BrowserQRCodeSvgWriter = (
       }
       return svgElement;
     };
-    BrowserQRCodeSvgWriter2.prototype.createSVGElement = function(w, h2) {
+    BrowserQRCodeSvgWriter2.prototype.createSVGElement = function(w, h) {
       var svgElement = document.createElementNS(svgNs, "svg");
       var width = w.toString();
-      var height = h2.toString();
+      var height = h.toString();
       svgElement.setAttribute("height", height);
       svgElement.setAttribute("width", width);
       svgElement.setAttribute("viewBox", "0 0 " + width + " " + height);
       return svgElement;
     };
-    BrowserQRCodeSvgWriter2.prototype.createSvgRectElement = function(x, y, w, h2) {
+    BrowserQRCodeSvgWriter2.prototype.createSvgRectElement = function(x, y, w, h) {
       var rect = document.createElementNS(svgNs, "rect");
       rect.setAttribute("x", x.toString());
       rect.setAttribute("y", y.toString());
       rect.setAttribute("height", w.toString());
-      rect.setAttribute("width", h2.toString());
+      rect.setAttribute("width", h.toString());
       rect.setAttribute("fill", "#000000");
       return rect;
     };
@@ -1562,7 +1562,7 @@ var BrowserQRCodeSvgWriter = (
   })()
 );
 export {
-  h as BarcodeFormat,
+  BarcodeFormat,
   BrowserAztecCodeReader,
   BrowserCodeReader,
   BrowserCodeSvgWriter,
