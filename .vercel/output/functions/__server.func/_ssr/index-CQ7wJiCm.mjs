@@ -116,7 +116,7 @@ async function readMasterRows(storagePath) {
   await new Promise((r) => setTimeout(r, 0));
   const workbook = XLSX.read(bytes, { type: "array" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(sheet, { defval: "" });
+  return XLSX.utils.sheet_to_json(sheet, { defval: "", raw: false });
 }
 async function writeMasterRows(storagePath, rows) {
   const XLSX = await getXLSX();
@@ -130,14 +130,55 @@ async function writeMasterRows(storagePath, rows) {
     contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
   });
 }
-const normalize = (s) => String(s ?? "").trim().toLowerCase();
-function findRowByAwb(rows, awb) {
-  const n = normalize(awb);
-  return rows.findIndex((r) => {
-    const keys = Object.keys(r);
-    const awbKey = keys.find((k) => k.toLowerCase().trim() === "awb");
-    return awbKey ? normalize(r[awbKey]) === n : false;
+const AWB_PATTERNS = [
+  /^awb$/,
+  /^awb[\s._-]*(no|num|number)\.?$/,
+  /^air[\s._-]*way[\s._-]*bill[\s._-]*(no|num|number)?\.?$/,
+  /^airway[\s._-]*bill[\s._-]*(no|num|number)?\.?$/,
+  /^tracking[\s._-]*(no|num|number|id|code)?\.?$/,
+  /^track[\s._-]*(no|num|number|id|code)?\.?$/,
+  /^waybill[\s._-]*(no|num|number)?\.?$/,
+  /^connote[\s._-]*(no|num|number)?\.?$/,
+  /^barcode[\s._-]*(no|num|number)?\.?$/,
+  /^shipment[\s._-]*(no|num|number|id)?\.?$/,
+  /^courier[\s._-]*(no|num|number|id)?\.?$/,
+  /^ref[\s._-]*(no|num|number|id)?\.?$/,
+  /^resi$/,
+  /^no[\s._-]*resi$/
+];
+function detectAwbKey(keys) {
+  return keys.find((k) => {
+    const n = k.toLowerCase().trim().replace(/\s+/g, " ");
+    return AWB_PATTERNS.some((p) => p.test(n));
   });
+}
+const normalize = (s) => {
+  if (s === null || s === void 0) return "";
+  if (typeof s === "number") {
+    return Number.isInteger(s) ? String(Math.trunc(s)) : String(s);
+  }
+  return String(s).trim().toLowerCase();
+};
+function findRowByAwb(rows, awb) {
+  if (!rows.length) return -1;
+  const needle = normalize(awb);
+  const awbKey = detectAwbKey(Object.keys(rows[0]));
+  if (awbKey) {
+    const idx = rows.findIndex((r) => normalize(r[awbKey]) === needle);
+    if (idx !== -1) return idx;
+  }
+  const fullScanIdx = rows.findIndex(
+    (r) => Object.values(r).some((v) => normalize(v) === needle)
+  );
+  if (fullScanIdx !== -1) return fullScanIdx;
+  const col = awbKey;
+  const containsIdx = rows.findIndex((r) => {
+    const vals = col ? [normalize(r[col])] : Object.values(r).map(normalize);
+    return vals.some(
+      (v) => v.length > 0 && (v.includes(needle) || needle.includes(v))
+    );
+  });
+  return containsIdx;
 }
 function getField(row, name) {
   const key = Object.keys(row).find((k) => k.toLowerCase().trim() === name.toLowerCase());
@@ -724,7 +765,7 @@ function SetupScreen({ onStart }) {
 function SectionLabel({ children }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground", children });
 }
-const ScannerScreen = reactExports.lazy(() => import("./ScannerScreen-3wwXJrrx.mjs").then((m) => ({
+const ScannerScreen = reactExports.lazy(() => import("./ScannerScreen-BClu1uMS.mjs").then((m) => ({
   default: m.ScannerScreen
 })));
 function Index() {

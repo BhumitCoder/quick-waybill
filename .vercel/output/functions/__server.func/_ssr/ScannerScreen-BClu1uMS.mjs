@@ -1,6 +1,6 @@
 import { r as reactExports, j as jsxRuntimeExports } from "../_libs/react.mjs";
 import { t as toast } from "../_libs/sonner.mjs";
-import { u as useAppDispatch, m as masterPath, a as useAppSelector, r as readMasterRows, s as setMaster, i as invalidate, f as findRowByAwb, g as getField, b as setField, c as updateRow, d as markScanned, w as writeMasterRows } from "./index-DQAxBpZX.mjs";
+import { u as useAppDispatch, m as masterPath, a as useAppSelector, r as readMasterRows, s as setMaster, i as invalidate, f as findRowByAwb, g as getField, b as setField, c as updateRow, d as markScanned, w as writeMasterRows } from "./index-CQ7wJiCm.mjs";
 import "../_libs/firebase__firestore.mjs";
 import "../_libs/firebase.mjs";
 import "../_libs/firebase__storage.mjs";
@@ -431,10 +431,10 @@ function ScannerScreen({ selection, onExit }) {
       errorBeep();
       vibrate(30);
       flash("error");
-      const r2 = { id: `${Date.now()}-${awb}`, awb, timestamp: /* @__PURE__ */ new Date(), success: false, error: "AWB not in master file" };
+      const r2 = { id: `${Date.now()}-${awb}`, awb, timestamp: /* @__PURE__ */ new Date(), success: false, error: `Not found in master file` };
       setLastScan(r2);
       setResults((p) => [r2, ...p].slice(0, 200));
-      toast.error("AWB not found", { description: awb });
+      toast.error("AWB not found", { description: `Scanned: ${awb}` });
       return;
     }
     const row = rowsRef.current[idx];

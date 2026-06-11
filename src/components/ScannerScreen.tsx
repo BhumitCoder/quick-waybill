@@ -114,10 +114,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     if (idx === -1) {
       errorBeep(); vibrate(30);
       flash("error");
-      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: "AWB not in master file" };
+      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Not found in master file` };
       setLastScan(r);
       setResults((p) => [r, ...p].slice(0, 200));
-      toast.error("AWB not found", { description: awb });
+      toast.error("AWB not found", { description: `Scanned: ${awb}` });
       return;
     }
 
