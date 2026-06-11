@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { getDocs } from "firebase/firestore";
-import { ScanLine, Building2, Layers, Tag, Loader2 } from "lucide-react";
+import { ScanLine, Building2, Layers, Tag, Loader2, Sun, Moon } from "lucide-react";
 import { companiesCollection } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InstallPrompt } from "./InstallPrompt";
+import { useTheme } from "@/hooks/useTheme";
 import {
   setCompany as setCompanyAction,
   setPlatform as setPlatformAction,
