@@ -199,7 +199,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   return (
     <div className="flex h-dvh flex-col bg-background">
       {/* Header */}
-      <header className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 border-b border-border bg-card/80 px-3 py-3 pt-[max(env(safe-area-inset-top),0.75rem)] backdrop-blur">
+      <header className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 border-b border-border bg-card/80 px-3 py-3 pt-[max(env(safe-area-inset-top),0.75rem)] backdrop-blur">
         <Button
           onClick={onExit}
           variant="ghost"
@@ -216,6 +216,15 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           </div>
           <h1 className="truncate text-sm font-bold">{selection.company.name}</h1>
         </div>
+        <Button
+          onClick={handleRefresh}
+          variant="ghost"
+          size="icon"
+          disabled={refreshing || loadingMaster}
+          className="h-10 w-10 rounded-xl"
+          title="Reload master file"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
         <div className="flex items-center gap-1.5 rounded-full bg-secondary px-2.5 py-1 text-xs font-semibold">
           <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
           <span>{successCount}</span>
