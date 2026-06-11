@@ -50,11 +50,18 @@ function startNativeDetector(
       if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
       if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
       ctx.drawImage(video, 0, 0);
-      detector.detect(canvas).then((codes) => {
-        if (codes.length > 0 && running) onResult(codes[0].rawValue);
-      }).catch(() => {}).finally(() => { if (running) requestAnimationFrame(tick); });
+      detector
+        .detect(canvas)
+        .then((codes) => {
+          if (codes.length > 0 && running) onResult(codes[0].rawValue);
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (running) requestAnimationFrame(tick);
+        });
     } else {
-      requestAnimationFrame(tick);
+      // Video not ready yet — wait and retry
+      setTimeout(() => { if (running) requestAnimationFrame(tick); }, 50);
     }
   }
 
@@ -66,7 +73,6 @@ function startNativeDetector(
 
 async function startZxingScanner(
   video: HTMLVideoElement,
-  deviceId: string | undefined,
   onResult: (text: string) => void,
 ): Promise<Controls> {
   const [{ BrowserMultiFormatReader }, lib] = await Promise.all([
@@ -87,6 +93,7 @@ async function startZxingScanner(
     lib.BarcodeFormat.QR_CODE,
     lib.BarcodeFormat.DATA_MATRIX,
     lib.BarcodeFormat.PDF_417,
+    lib.BarcodeFormat.AZTEC,
   ]);
   hints.set(lib.DecodeHintType.TRY_HARDER, true);
 
@@ -95,54 +102,23 @@ async function startZxingScanner(
     delayBetweenScanSuccess: 300,
   });
 
-  const videoConstraints: MediaTrackConstraints = {
-    width: { ideal: 1920 },
-    height: { ideal: 1080 },
-    ...(deviceId ? { deviceId: { exact: deviceId } } : { facingMode: { ideal: "environment" } }),
-  };
-
+  // ZXing manages the camera stream internally — do NOT open the stream
+  // yourself before calling this or it will conflict.
   const controls = await reader.decodeFromConstraints(
-    { video: videoConstraints },
+    {
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+      },
+    },
     video,
-    (result) => { if (result) onResult(result.getText().trim()); },
+    (result) => {
+      if (result) onResult(result.getText().trim());
+    },
   );
 
   return { stop: () => controls.stop() };
-}
-
-// ── Camera helpers ───────────────────────────────────────────────────────────
-
-async function getBestDeviceId(): Promise<string | undefined> {
-  try {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const cameras = devices.filter((d) => d.kind === "videoinput");
-    const back = cameras.find((d) => /back|rear|environment/i.test(d.label));
-    return back?.deviceId ?? cameras[cameras.length - 1]?.deviceId;
-  } catch {
-    return undefined;
-  }
-}
-
-async function openCamera(deviceId: string | undefined): Promise<MediaStream> {
-  const base: MediaTrackConstraints = {
-    width: { ideal: 3840 },
-    height: { ideal: 2160 },
-    aspectRatio: { ideal: 16 / 9 },
-  };
-
-  if (deviceId) {
-    base.deviceId = { exact: deviceId };
-  } else {
-    base.facingMode = { ideal: "environment" };
-  }
-
-  try {
-    return await navigator.mediaDevices.getUserMedia({ video: base });
-  } catch {
-    return await navigator.mediaDevices.getUserMedia({
-      video: deviceId ? { deviceId: { exact: deviceId } } : { facingMode: "environment" },
-    });
-  }
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
@@ -154,8 +130,9 @@ export function useScanner(
 ): ScannerHandle {
   const lastRef = useRef<{ text: string; at: number }>({ text: "", at: 0 });
   const errorRef = useRef<string | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const trackRef = useRef<MediaStreamTrack | null>(null);
+  // Only used in the native path where we own the stream
+  const ownStreamRef = useRef<MediaStream | null>(null);
   const [hasTorch, setHasTorch] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
 
@@ -192,39 +169,60 @@ export function useScanner(
 
     (async () => {
       try {
-        const [useNative, deviceId] = await Promise.all([
-          hasNativeDetector(),
-          getBestDeviceId(),
-        ]);
-
+        const useNative = await hasNativeDetector();
         if (cancelled) return;
 
-        const stream = await openCamera(deviceId);
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
-
-        streamRef.current = stream;
-        const track = stream.getVideoTracks()[0];
-        trackRef.current = track ?? null;
-
-        if (track) {
-          const caps = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
-          setHasTorch(!!caps.torch);
-        }
-
         const video = videoRef.current!;
-        video.srcObject = stream;
-        video.setAttribute("playsinline", "true");
-        await video.play().catch(() => {});
-
-        if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
 
         if (useNative) {
+          // ── Native path: we own the stream ───────────────────────────────
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: "environment" },
+              width: { ideal: 3840 },
+              height: { ideal: 2160 },
+            },
+          });
+          if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
+
+          ownStreamRef.current = stream;
+          const track = stream.getVideoTracks()[0];
+          if (track) {
+            trackRef.current = track;
+            try {
+              const caps = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+              setHasTorch(!!caps.torch);
+            } catch { /* getCapabilities not available in all browsers */ }
+          }
+
+          video.srcObject = stream;
+          video.muted = true;
+          video.playsInline = true;
+          await video.play().catch(() => {});
+          if (cancelled) return;
+
           controls = startNativeDetector(video, dedupe);
         } else {
-          controls = await startZxingScanner(video, deviceId, dedupe);
+          // ── ZXing path: ZXing owns the stream ────────────────────────────
+          // Important: do NOT set video.srcObject before this call.
+          // ZXing calls getUserMedia internally and sets it itself.
+          controls = await startZxingScanner(video, dedupe);
+          if (cancelled) { controls.stop(); return; }
+
+          // Grab stream reference for torch after ZXing has opened the camera
+          if (video.srcObject instanceof MediaStream) {
+            const track = video.srcObject.getVideoTracks()[0];
+            if (track) {
+              trackRef.current = track;
+              try {
+                const caps = track.getCapabilities() as MediaTrackCapabilities & { torch?: boolean };
+                setHasTorch(!!caps.torch);
+              } catch { /* ignore */ }
+            }
+          }
         }
 
-        if (cancelled) controls.stop();
+        if (cancelled) controls?.stop();
       } catch (e) {
         if (!cancelled) {
           errorRef.current = (e as Error).message;
@@ -236,12 +234,13 @@ export function useScanner(
     return () => {
       cancelled = true;
       controls?.stop();
-      streamRef.current?.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
+      // Only stop streams we opened ourselves (native path)
+      ownStreamRef.current?.getTracks().forEach((t) => t.stop());
+      ownStreamRef.current = null;
       trackRef.current = null;
-      if (videoRef.current) {
-        videoRef.current.srcObject = null;
-      }
+      setTorchOn(false);
+      setHasTorch(false);
+      if (videoRef.current) videoRef.current.srcObject = null;
     };
   }, [enabled, videoRef, dedupe]);
 
