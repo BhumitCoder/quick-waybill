@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2, ScanLine, Package, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2, ScanLine, Package, RefreshCw, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScanner } from "@/hooks/useScanner";
+import { useTheme } from "@/hooks/useTheme";
 import {
   findRowByAwb,
   getField,
