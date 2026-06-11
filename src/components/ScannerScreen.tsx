@@ -2,11 +2,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle,
-  Loader2, ScanLine, Package, RefreshCw, Sun, Moon, CloudUpload,
+  Loader2, RefreshCw, CloudUpload, Zap, Hash,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScanner } from "@/hooks/useScanner";
-import { useTheme } from "@/hooks/useTheme";
 import {
   findRowByAwb, getField, masterPath, readMasterRows,
   setField, writeMasterRows, type MasterRow,
@@ -22,19 +21,18 @@ type ScanResult = {
   error?: string;
 };
 
-const STATUS_CHIP: Record<string, string> = {
-  pending:    "bg-amber-500/20 text-amber-300",
-  processing: "bg-blue-500/20 text-blue-300",
-  shipped:    "bg-cyan-500/20 text-cyan-300",
-  delivered:  "bg-emerald-500/20 text-emerald-300",
-  cancelled:  "bg-rose-500/20 text-rose-300",
-  returned:   "bg-orange-500/20 text-orange-300",
-  lost:       "bg-red-500/20 text-red-300",
-  manifest:   "bg-violet-500/20 text-violet-300",
+const STATUS_COLOR: Record<string, { bg: string; text: string; glow: string }> = {
+  pending:    { bg: "bg-amber-500/20",   text: "text-amber-300",   glow: "#f59e0b" },
+  processing: { bg: "bg-blue-500/20",    text: "text-blue-300",    glow: "#3b82f6" },
+  shipped:    { bg: "bg-cyan-500/20",    text: "text-cyan-300",    glow: "#06b6d4" },
+  delivered:  { bg: "bg-emerald-500/20", text: "text-emerald-300", glow: "#10b981" },
+  cancelled:  { bg: "bg-rose-500/20",    text: "text-rose-300",    glow: "#f43f5e" },
+  returned:   { bg: "bg-orange-500/20",  text: "text-orange-300",  glow: "#f97316" },
+  lost:       { bg: "bg-red-500/20",     text: "text-red-300",     glow: "#ef4444" },
+  manifest:   { bg: "bg-violet-500/20",  text: "text-violet-300",  glow: "#8b5cf6" },
 };
 
 export function ScannerScreen({ selection, onExit }: { selection: SetupSelection; onExit: () => void }) {
-  const { isDark, toggle } = useTheme();
   const videoRef = useRef<HTMLVideoElement>(null);
   const dispatch = useAppDispatch();
 
@@ -49,7 +47,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [results, setResults] = useState<ScanResult[]>([]);
   const [uploading, setUploading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [flashColor, setFlashColor] = useState<"green" | "red" | null>(null);
+  const [lastScan, setLastScan] = useState<ScanResult | null>(null);
+  const [flashType, setFlashType] = useState<"success" | "error" | null>(null);
 
   useEffect(() => {
     if (cacheEntry) {
@@ -91,8 +90,9 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     } finally { setRefreshing(false); }
   }, [dispatch, path]);
 
-  const pushResult = useCallback((r: ScanResult) => {
-    setResults((p) => [r, ...p].slice(0, 200));
+  const flash = useCallback((type: "success" | "error") => {
+    setFlashType(type);
+    setTimeout(() => setFlashType(null), 400);
   }, []);
 
   const handleDecode = useCallback(async (text: string) => {
@@ -102,25 +102,29 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
     if (scannedRef.current.has(key)) {
       vibrate(30);
-      setFlashColor("red");
-      setTimeout(() => setFlashColor(null), 350);
-      toast.warning("Already updated this session", { description: awb });
-      pushResult({ id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, warning: true, error: "Already scanned" });
+      flash("error");
+      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, warning: true, error: "Already scanned this session" };
+      setLastScan(r);
+      setResults((p) => [r, ...p].slice(0, 200));
+      toast.warning("Already scanned", { description: awb });
       return;
     }
+
     const idx = findRowByAwb(rowsRef.current, awb);
     if (idx === -1) {
       errorBeep(); vibrate(30);
-      setFlashColor("red");
-      setTimeout(() => setFlashColor(null), 350);
+      flash("error");
+      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: "AWB not in master file" };
+      setLastScan(r);
+      setResults((p) => [r, ...p].slice(0, 200));
       toast.error("AWB not found", { description: awb });
-      pushResult({ id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: "Not in master file" });
       return;
     }
+
     const row = rowsRef.current[idx];
     const previousStatus = getField(row, "status") || "—";
-    const orderId = getField(row, "order_id") || getField(row, "orderId") || getField(row, "Order ID");
-    const productName = getField(row, "product_name") || getField(row, "productName") || getField(row, "Product Name") || getField(row, "product");
+    const orderId = getField(row, "order_id") || getField(row, "orderId") || getField(row, "Order ID") || "";
+    const productName = getField(row, "product_name") || getField(row, "productName") || getField(row, "Product Name") || getField(row, "product") || "";
 
     const updated = setField(row, "status", selection.status);
     rowsRef.current[idx] = updated;
@@ -129,218 +133,359 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     dispatch(markScanned({ path, awb: key }));
 
     beep(); vibrate(50);
-    setFlashColor("green");
-    setTimeout(() => setFlashColor(null), 350);
-    pushResult({ id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: true, orderInfo: { orderId, productName, previousStatus } });
-    toast.success(`→ ${selection.status}`, { description: productName || orderId || awb });
+    flash("success");
+
+    const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: true, orderInfo: { orderId, productName, previousStatus } };
+    setLastScan(r);
+    setResults((p) => [r, ...p].slice(0, 200));
+    toast.success(`Marked as ${selection.status}`, { description: productName || orderId || awb });
 
     if (!uploadingRef.current) {
       uploadingRef.current = true; setUploading(true);
       try {
-        await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r) => setTimeout(r, 500));
         await writeMasterRows(path, rowsRef.current!);
       } catch (e) {
         toast.error("Upload failed", { description: (e as Error).message });
       } finally { uploadingRef.current = false; setUploading(false); }
     }
-  }, [dispatch, path, pushResult, selection.status]);
+  }, [dispatch, flash, path, selection.status]);
 
   useScanner(videoRef, handleDecode, !loadingMaster && !masterError);
 
-  const ok = results.filter((r) => r.success).length;
+  const ok   = results.filter((r) => r.success).length;
   const fail = results.filter((r) => !r.success && !r.warning).length;
   const warn = results.filter((r) => !!r.warning).length;
-  const statusChipCls = STATUS_CHIP[selection.status] ?? "bg-white/10 text-white/70";
+  const total = results.length;
+
+  const statusColor = STATUS_COLOR[selection.status] ?? { bg: "bg-white/10", text: "text-white/70", glow: "#ffffff" };
+  const scanning = !loadingMaster && !masterError;
 
   return (
-    <div className="flex h-dvh flex-col bg-black">
-      {/* Safe area top */}
-      <div style={{ height: "env(safe-area-inset-top)" }} className="bg-black" />
+    <div className="flex h-dvh flex-col bg-[#080a0f]" onPointerDown={unlockAudio}>
+      {/* Safe-area top */}
+      <div style={{ height: "env(safe-area-inset-top)" }} />
 
       {/* ── Header ── */}
-      <header className="flex items-center gap-1.5 bg-black px-3 py-2">
-        <Button onClick={onExit} variant="ghost" size="icon"
-          className="h-9 w-9 shrink-0 rounded-xl text-white/60 hover:bg-white/10 hover:text-white">
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
+      <header className="flex items-center gap-2 px-3 py-2">
+        <button
+          onClick={onExit}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-white/50 hover:bg-white/10 hover:text-white active:scale-95 transition-all"
+        >
+          <ArrowLeft className="h-4.5 w-4.5" />
+        </button>
 
-        <div className="flex-1 min-w-0 px-1">
-          <p className="truncate text-[11px] font-medium leading-none text-white/40">
+        <div className="flex-1 min-w-0">
+          <p className="truncate text-[10px] font-medium text-white/30 tracking-wide uppercase">
             {selection.company.name} · {selection.platform.name}
           </p>
-          <div className="mt-1 flex items-center gap-2">
-            <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${statusChipCls}`}>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            <span
+              className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold capitalize tracking-wide ${statusColor.bg} ${statusColor.text}`}
+            >
+              <span
+                className="h-1.5 w-1.5 rounded-full animate-pulse"
+                style={{ backgroundColor: statusColor.glow, boxShadow: `0 0 4px ${statusColor.glow}` }}
+              />
               {selection.status}
             </span>
-            {loadingMaster && <Loader2 className="h-3 w-3 animate-spin text-white/40" />}
-            {uploading && <CloudUpload className="h-3 w-3 text-sky-400 animate-pulse" />}
-            {masterError && <AlertTriangle className="h-3 w-3 text-rose-400" />}
+            {uploading && (
+              <span className="flex items-center gap-1 text-[10px] text-sky-400">
+                <CloudUpload className="h-3 w-3 animate-pulse" /> syncing
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Stat chips */}
+        {/* Counts */}
         <div className="flex items-center gap-1">
           {ok > 0 && (
-            <span className="flex items-center gap-0.5 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-bold text-emerald-400">
-              <CheckCircle2 className="h-3 w-3" />{ok}
-            </span>
+            <StatBadge value={ok} color="emerald" />
           )}
           {fail > 0 && (
-            <span className="flex items-center gap-0.5 rounded-full bg-rose-500/15 px-2 py-1 text-[11px] font-bold text-rose-400">
-              <XCircle className="h-3 w-3" />{fail}
-            </span>
+            <StatBadge value={fail} color="rose" />
           )}
           {warn > 0 && (
-            <span className="flex items-center gap-0.5 rounded-full bg-amber-500/15 px-2 py-1 text-[11px] font-bold text-amber-400">
-              <AlertTriangle className="h-3 w-3" />{warn}
-            </span>
+            <StatBadge value={warn} color="amber" />
           )}
         </div>
 
-        <Button onClick={handleRefresh} variant="ghost" size="icon" disabled={refreshing || loadingMaster}
-          className="h-9 w-9 shrink-0 rounded-xl text-white/50 hover:bg-white/10 hover:text-white">
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing || loadingMaster}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-white/40 hover:bg-white/10 hover:text-white active:scale-95 transition-all disabled:opacity-30"
+        >
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-        </Button>
-        <Button onClick={toggle} variant="ghost" size="icon"
-          className="h-9 w-9 shrink-0 rounded-xl text-white/50 hover:bg-white/10 hover:text-white">
-          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-        </Button>
+        </button>
       </header>
 
-      {/* ── Camera ── */}
+      {/* ── Camera viewport ── */}
       <div
-        className="relative w-full shrink-0 overflow-hidden bg-black"
-        style={{ height: "clamp(200px, 55vw, 310px)" }}
-        onPointerDown={unlockAudio}
+        className="relative w-full shrink-0 overflow-hidden"
+        style={{ height: "clamp(230px, 58vw, 340px)", background: "#000" }}
       >
-        <video ref={videoRef} className="h-full w-full object-cover" playsInline muted />
+        <video ref={videoRef} className="h-full w-full object-cover" playsInline muted autoPlay />
 
-        {/* Scan flash overlay */}
-        {flashColor && (
-          <div
-            className="pointer-events-none absolute inset-0 transition-opacity duration-300"
-            style={{
-              backgroundColor: flashColor === "green" ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)",
-            }}
-          />
-        )}
-
-        {/* Vignette outside frame */}
-        <div className="pointer-events-none absolute inset-0 bg-black/50" />
-        {/* Clear window */}
+        {/* Flash overlay */}
         <div
-          className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl"
-          style={{ width: "68%", height: "78%", boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)" }}
+          className="pointer-events-none absolute inset-0 transition-opacity duration-300"
+          style={{
+            opacity: flashType ? 1 : 0,
+            backgroundColor: flashType === "success" ? "rgba(16,185,129,0.28)" : "rgba(239,68,68,0.28)",
+          }}
         />
 
-        {/* Frame corners */}
-        <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" style={{ width: "68%", height: "78%" }}>
-          {(["tl","tr","bl","br"] as const).map((p) => <Corner key={p} pos={p} />)}
-          {/* Scan line */}
-          {!loadingMaster && !masterError && (
-            <div className="absolute inset-x-0 top-1/2 h-px animate-scan bg-gradient-to-r from-transparent via-primary to-transparent" style={{ filter: "drop-shadow(0 0 4px var(--color-primary))" }} />
-          )}
-        </div>
+        {/* Dark vignette */}
+        <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,0.72) 100%)" }} />
 
-        {/* Center status */}
+        {/* Scan frame */}
+        <ScanFrame active={scanning} glowColor={statusColor.glow} flashType={flashType} />
+
+        {/* Status overlay */}
         {(loadingMaster || masterError) && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-2 rounded-2xl bg-black/70 px-5 py-4 backdrop-blur">
+          <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+            <div className="flex flex-col items-center gap-3 rounded-3xl bg-black/80 px-6 py-5 ring-1 ring-white/10">
               {loadingMaster ? (
-                <><Loader2 className="h-6 w-6 animate-spin text-primary" /><p className="text-[13px] font-medium text-white/80">Loading master file…</p></>
+                <>
+                  <Loader2 className="h-7 w-7 animate-spin text-white/60" />
+                  <p className="text-[13px] font-semibold text-white/70">Loading master file…</p>
+                </>
               ) : (
-                <><AlertTriangle className="h-6 w-6 text-rose-400" /><p className="text-[13px] font-medium text-white/80">{masterError}</p></>
+                <>
+                  <AlertTriangle className="h-7 w-7 text-rose-400" />
+                  <p className="text-[13px] font-semibold text-white/80">{masterError}</p>
+                  <button
+                    onClick={handleRefresh}
+                    className="mt-1 rounded-xl bg-white/10 px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-white/20 transition-colors"
+                  >
+                    Retry
+                  </button>
+                </>
               )}
             </div>
           </div>
         )}
 
-        {/* Bottom hint */}
-        {!loadingMaster && !masterError && (
-          <p className="absolute inset-x-0 bottom-2.5 text-center text-[11px] font-medium text-white/50">
-            Align AWB barcode inside the frame
+        {scanning && (
+          <p className="absolute inset-x-0 bottom-2 text-center text-[10px] font-medium tracking-widest text-white/30 uppercase">
+            Align barcode in frame
           </p>
         )}
       </div>
 
+      {/* ── Last scan result ── */}
+      <LastScanBanner result={lastScan} status={selection.status} />
+
       {/* ── Scan log ── */}
-      <div className="flex min-h-0 flex-1 flex-col bg-background">
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60">
-          <h2 className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Scan Log</h2>
-          <span className="text-[11px] text-muted-foreground">{results.length} scanned</span>
+      <div className="flex min-h-0 flex-1 flex-col bg-[#0d1117]">
+        {/* Log header */}
+        <div className="flex items-center justify-between border-b border-white/5 px-4 py-2">
+          <span className="text-[10px] font-bold tracking-widest text-white/25 uppercase">Scan Log</span>
+          <div className="flex items-center gap-3 text-[10px] text-white/30">
+            <span className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />{ok} ok
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />{fail} err
+            </span>
+            <span className="flex items-center gap-1">
+              <Hash className="h-3 w-3" />{total}
+            </span>
+          </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-2">
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
           {results.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center gap-3 py-10">
-              <div className="grid h-14 w-14 place-items-center rounded-3xl bg-muted/60">
-                <ScanLine className="h-7 w-7 text-muted-foreground/40" />
-              </div>
-              <div className="text-center">
-                <p className="text-sm font-medium text-muted-foreground">No scans yet</p>
-                <p className="mt-0.5 text-[12px] text-muted-foreground/60">Results appear here instantly</p>
-              </div>
-            </div>
+            <EmptyLog scanning={scanning} />
           ) : (
-            <ul className="space-y-1.5">
-              {results.map((r) => <LogRow key={r.id} r={r} />)}
-            </ul>
+            results.map((r) => <LogRow key={r.id} r={r} />)
           )}
         </div>
 
         {/* Done bar */}
-        <div className="border-t border-border/60 bg-card/60 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),14px)] backdrop-blur">
-          <Button onClick={onExit} variant="secondary"
-            className="h-14 w-full rounded-2xl text-[15px] font-bold">
+        <div className="border-t border-white/5 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
+          <button
+            onClick={onExit}
+            className="w-full h-[52px] rounded-2xl bg-white/8 text-[15px] font-bold text-white/80 hover:bg-white/12 active:scale-[0.98] transition-all"
+          >
             {ok > 0 ? `Done · ${ok} updated` : "Done"}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function Corner({ pos }: { pos: "tl" | "tr" | "bl" | "br" }) {
-  const base = "absolute h-6 w-6 border-primary/90";
-  const variants = {
-    tl: "top-0 left-0 border-t-[3px] border-l-[3px] rounded-tl-xl",
-    tr: "top-0 right-0 border-t-[3px] border-r-[3px] rounded-tr-xl",
-    bl: "bottom-0 left-0 border-b-[3px] border-l-[3px] rounded-bl-xl",
-    br: "bottom-0 right-0 border-b-[3px] border-r-[3px] rounded-br-xl",
+function StatBadge({ value, color }: { value: number; color: "emerald" | "rose" | "amber" }) {
+  const cls = {
+    emerald: "bg-emerald-500/15 text-emerald-400",
+    rose:    "bg-rose-500/15 text-rose-400",
+    amber:   "bg-amber-500/15 text-amber-400",
+  }[color];
+  return (
+    <span className={`flex min-w-[28px] items-center justify-center rounded-xl px-2 py-1 text-[11px] font-bold tabular-nums ${cls}`}>
+      {value}
+    </span>
+  );
+}
+
+function ScanFrame({ active, glowColor, flashType }: { active: boolean; glowColor: string; flashType: "success" | "error" | null }) {
+  const frameColor = flashType === "success" ? "#10b981" : flashType === "error" ? "#ef4444" : glowColor;
+  const W = "72%";
+  const H = "80%";
+
+  return (
+    <div
+      className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+      style={{ width: W, height: H }}
+    >
+      {/* Cutout shadow */}
+      <div
+        className="absolute inset-0 rounded-2xl"
+        style={{ boxShadow: `0 0 0 9999px rgba(0,0,0,0.58)` }}
+      />
+
+      {/* Corner brackets */}
+      {(["tl","tr","bl","br"] as const).map((pos) => (
+        <CornerBracket key={pos} pos={pos} color={frameColor} />
+      ))}
+
+      {/* Animated laser */}
+      {active && (
+        <div
+          className="absolute inset-x-2 h-[2px] rounded-full animate-scan"
+          style={{
+            background: `linear-gradient(90deg, transparent, ${frameColor}, transparent)`,
+            boxShadow: `0 0 8px 2px ${frameColor}55`,
+          }}
+        />
+      )}
+
+      {/* Center crosshair */}
+      {active && (
+        <>
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-px h-px w-4 rounded-full" style={{ backgroundColor: `${frameColor}60` }} />
+          <div className="absolute left-1/2 top-1/2 -translate-x-px -translate-y-1/2 w-px h-4 rounded-full" style={{ backgroundColor: `${frameColor}60` }} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function CornerBracket({ pos, color }: { pos: "tl" | "tr" | "bl" | "br"; color: string }) {
+  const base = "absolute h-7 w-7";
+  const border = `3px solid ${color}`;
+  const style: React.CSSProperties = {
+    boxShadow: `0 0 8px 1px ${color}55`,
   };
-  return <div className={`${base} ${variants[pos]}`} style={{ filter: "drop-shadow(0 0 5px var(--color-primary))" }} />;
+  const cls = {
+    tl: "top-0 left-0 rounded-tl-2xl border-t border-l",
+    tr: "top-0 right-0 rounded-tr-2xl border-t border-r",
+    bl: "bottom-0 left-0 rounded-bl-2xl border-b border-l",
+    br: "bottom-0 right-0 rounded-br-2xl border-b border-r",
+  }[pos];
+  return (
+    <div
+      className={`${base} ${cls}`}
+      style={{ borderColor: color, borderWidth: "2.5px", ...style }}
+    />
+  );
+}
+
+function LastScanBanner({ result, status }: { result: ScanResult | null; status: string }) {
+  if (!result) {
+    return (
+      <div className="flex items-center gap-3 border-b border-white/5 bg-[#0d1117] px-4 py-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/5">
+          <Zap className="h-4 w-4 text-white/20" />
+        </div>
+        <p className="text-[12px] text-white/25 font-medium">Waiting for first scan…</p>
+      </div>
+    );
+  }
+
+  if (result.success) {
+    return (
+      <div className="flex items-center gap-3 border-b border-emerald-500/15 bg-emerald-500/5 px-4 py-3">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15">
+          <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[13px] font-bold text-emerald-300 tabular-nums">{result.awb}</p>
+          <p className="text-[10px] text-emerald-400/60 mt-0.5">
+            {result.orderInfo?.productName || result.orderInfo?.orderId
+              ? (result.orderInfo.productName || `#${result.orderInfo.orderId}`)
+              : `→ ${status}`}
+          </p>
+        </div>
+        <span className="text-[10px] tabular-nums text-emerald-400/40">
+          {result.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+        </span>
+      </div>
+    );
+  }
+
+  const isWarn = !!result.warning;
+  return (
+    <div className={`flex items-center gap-3 border-b px-4 py-3 ${isWarn ? "border-amber-500/15 bg-amber-500/5" : "border-rose-500/15 bg-rose-500/5"}`}>
+      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${isWarn ? "bg-amber-500/15" : "bg-rose-500/15"}`}>
+        {isWarn
+          ? <AlertTriangle className="h-4 w-4 text-amber-400" />
+          : <XCircle className="h-4 w-4 text-rose-400" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className={`truncate text-[13px] font-bold tabular-nums ${isWarn ? "text-amber-300" : "text-rose-300"}`}>{result.awb}</p>
+        <p className={`text-[10px] mt-0.5 ${isWarn ? "text-amber-400/60" : "text-rose-400/60"}`}>{result.error}</p>
+      </div>
+    </div>
+  );
+}
+
+function EmptyLog({ scanning }: { scanning: boolean }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-2 py-8">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/4">
+        <Zap className="h-6 w-6 text-white/15" />
+      </div>
+      <p className="text-[12px] font-semibold text-white/20">
+        {scanning ? "Ready to scan" : "Scanner not ready"}
+      </p>
+      <p className="text-[11px] text-white/12">Results appear instantly</p>
+    </div>
+  );
 }
 
 function LogRow({ r }: { r: ScanResult }) {
   const time = r.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+
   if (r.success) {
     return (
-      <li className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5">
-        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-        <div className="min-w-0">
-          <p className="truncate text-[13px] font-semibold tabular-nums">{r.awb}</p>
-          <p className="truncate text-[11px] text-muted-foreground">
-            {r.orderInfo?.productName
-              ? <><Package className="mr-0.5 inline h-3 w-3" />{r.orderInfo.productName}</>
-              : r.orderInfo?.orderId ? `#${r.orderInfo.orderId}` : "Updated"}
-          </p>
+      <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/12 bg-emerald-500/4 px-3 py-2">
+        <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-[12px] font-semibold tabular-nums text-white/80">{r.awb}</p>
+          {(r.orderInfo?.productName || r.orderInfo?.orderId) && (
+            <p className="truncate text-[10px] text-white/30">
+              {r.orderInfo.productName || `#${r.orderInfo.orderId}`}
+            </p>
+          )}
         </div>
-        <span className="text-[10px] tabular-nums text-muted-foreground/70">{time}</span>
-      </li>
+        <span className="shrink-0 text-[9px] tabular-nums text-white/20">{time}</span>
+      </div>
     );
   }
-  const Icon = r.warning ? AlertTriangle : XCircle;
-  const style = r.warning
-    ? "border-amber-500/20 bg-amber-500/5 [&_svg]:text-amber-500"
-    : "border-rose-500/20 bg-rose-500/5 [&_svg]:text-rose-500";
+
+  const isWarn = !!r.warning;
   return (
-    <li className={`grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 py-2.5 ${style}`}>
-      <Icon className="h-4 w-4 shrink-0" />
-      <div className="min-w-0">
-        <p className="truncate text-[13px] font-semibold tabular-nums text-foreground">{r.awb}</p>
-        <p className="truncate text-[11px] text-muted-foreground">{r.error}</p>
+    <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 ${isWarn ? "border-amber-500/12 bg-amber-500/4" : "border-rose-500/12 bg-rose-500/4"}`}>
+      {isWarn
+        ? <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+        : <XCircle className="h-3.5 w-3.5 shrink-0 text-rose-500" />}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[12px] font-semibold tabular-nums text-white/60">{r.awb}</p>
+        <p className="truncate text-[10px] text-white/25">{r.error}</p>
       </div>
-      <span className="text-[10px] tabular-nums text-muted-foreground/70">{time}</span>
-    </li>
+      <span className="shrink-0 text-[9px] tabular-nums text-white/20">{time}</span>
+    </div>
   );
 }

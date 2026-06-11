@@ -1,15 +1,10 @@
 import { useEffect, useRef } from "react";
-import { BrowserMultiFormatReader, BrowserCodeReader } from "@zxing/browser";
 
-function buildReader() {
-  return new BrowserMultiFormatReader(undefined, {
-    delayBetweenScanAttempts: 50,
-    delayBetweenScanSuccess: 500,
-  });
-}
+type Controls = { stop: () => void };
 
-async function getBestCamera(): Promise<string | undefined> {
+async function getBestDeviceId(): Promise<string | undefined> {
   try {
+    const { BrowserCodeReader } = await import("@zxing/browser");
     const devices = await BrowserCodeReader.listVideoInputDevices();
     const back = devices.find((d: MediaDeviceInfo) =>
       /back|rear|environment/i.test(d.label),
@@ -31,13 +26,19 @@ export function useScanner(
   useEffect(() => {
     if (!enabled || !videoRef.current) return;
 
-    const reader = buildReader();
-    let controls: { stop: () => void } | null = null;
+    let controls: Controls | null = null;
     let cancelled = false;
 
     (async () => {
       try {
-        const deviceId = await getBestCamera();
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+
+        const reader = new BrowserMultiFormatReader(undefined, {
+          delayBetweenScanAttempts: 40,
+          delayBetweenScanSuccess: 500,
+        });
+
+        const deviceId = await getBestDeviceId();
 
         const videoConstraints: MediaTrackConstraints = {
           width: { ideal: 1920 },

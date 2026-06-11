@@ -1,4 +1,6 @@
-import { I as IllegalArgumentException, a as InvertedLuminanceSource, L as LuminanceSource, D as DecodeHintType, A as ArgumentException, H as HybridBinarizer, B as BinaryBitmap, N as NotFoundException, C as ChecksumException, F as FormatException, b as AztecReader, M as MultiFormatOneDReader, c as DataMatrixReader, d as MultiFormatReader, P as PDF417Reader, Q as QRCodeReader } from "./zxing__library.mjs";
+import { I as IllegalArgumentException, a as InvertedLuminanceSource, L as LuminanceSource, D as DecodeHintType, A as ArgumentException, H as HybridBinarizer, B as BinaryBitmap, N as NotFoundException, C as ChecksumException, F as FormatException, b as AztecReader, M as MultiFormatOneDReader, c as DataMatrixReader, d as MultiFormatReader, P as PDF417Reader, Q as QRCodeReader, E as EncodeHintType, e as ErrorCorrectionLevel, f as Encoder, g as IllegalStateException } from "./zxing__library.mjs";
+import { h } from "./zxing__library.mjs";
+import "./ts-custom-error.mjs";
 var __extends$6 = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -1208,13 +1210,16 @@ var __extends$5 = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$5(BrowserAztecCodeReader, _super);
-  function BrowserAztecCodeReader(hints, options) {
-    return _super.call(this, new AztecReader(), hints, options) || this;
-  }
-  return BrowserAztecCodeReader;
-})(BrowserCodeReader);
+var BrowserAztecCodeReader = (
+  /** @class */
+  (function(_super) {
+    __extends$5(BrowserAztecCodeReader2, _super);
+    function BrowserAztecCodeReader2(hints, options) {
+      return _super.call(this, new AztecReader(), hints, options) || this;
+    }
+    return BrowserAztecCodeReader2;
+  })(BrowserCodeReader)
+);
 var __extends$4 = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -1234,13 +1239,16 @@ var __extends$4 = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$4(BrowserMultiFormatOneDReader, _super);
-  function BrowserMultiFormatOneDReader(hints, options) {
-    return _super.call(this, new MultiFormatOneDReader(hints), hints, options) || this;
-  }
-  return BrowserMultiFormatOneDReader;
-})(BrowserCodeReader);
+var BrowserMultiFormatOneDReader = (
+  /** @class */
+  (function(_super) {
+    __extends$4(BrowserMultiFormatOneDReader2, _super);
+    function BrowserMultiFormatOneDReader2(hints, options) {
+      return _super.call(this, new MultiFormatOneDReader(hints), hints, options) || this;
+    }
+    return BrowserMultiFormatOneDReader2;
+  })(BrowserCodeReader)
+);
 var __extends$3 = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -1260,13 +1268,16 @@ var __extends$3 = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$3(BrowserDatamatrixCodeReader, _super);
-  function BrowserDatamatrixCodeReader(hints, options) {
-    return _super.call(this, new DataMatrixReader(), hints, options) || this;
-  }
-  return BrowserDatamatrixCodeReader;
-})(BrowserCodeReader);
+var BrowserDatamatrixCodeReader = (
+  /** @class */
+  (function(_super) {
+    __extends$3(BrowserDatamatrixCodeReader2, _super);
+    function BrowserDatamatrixCodeReader2(hints, options) {
+      return _super.call(this, new DataMatrixReader(), hints, options) || this;
+    }
+    return BrowserDatamatrixCodeReader2;
+  })(BrowserCodeReader)
+);
 var __extends$2 = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -1335,13 +1346,16 @@ var __extends$1 = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends$1(BrowserPDF417Reader, _super);
-  function BrowserPDF417Reader(hints, options) {
-    return _super.call(this, new PDF417Reader(), hints, options) || this;
-  }
-  return BrowserPDF417Reader;
-})(BrowserCodeReader);
+var BrowserPDF417Reader = (
+  /** @class */
+  (function(_super) {
+    __extends$1(BrowserPDF417Reader2, _super);
+    function BrowserPDF417Reader2(hints, options) {
+      return _super.call(this, new PDF417Reader(), hints, options) || this;
+    }
+    return BrowserPDF417Reader2;
+  })(BrowserCodeReader)
+);
 var __extends = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -1361,14 +1375,202 @@ var __extends = /* @__PURE__ */ (function() {
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
 })();
-(function(_super) {
-  __extends(BrowserQRCodeReader, _super);
-  function BrowserQRCodeReader(hints, options) {
-    return _super.call(this, new QRCodeReader(), hints, options) || this;
-  }
-  return BrowserQRCodeReader;
-})(BrowserCodeReader);
+var BrowserQRCodeReader = (
+  /** @class */
+  (function(_super) {
+    __extends(BrowserQRCodeReader2, _super);
+    function BrowserQRCodeReader2(hints, options) {
+      return _super.call(this, new QRCodeReader(), hints, options) || this;
+    }
+    return BrowserQRCodeReader2;
+  })(BrowserCodeReader)
+);
+var svgNs$1 = "http://www.w3.org/2000/svg";
+var BrowserCodeSvgWriter = (
+  /** @class */
+  (function() {
+    function BrowserCodeSvgWriter2(containerElement) {
+      if (typeof containerElement === "string") {
+        var container = document.getElementById(containerElement);
+        if (!container) {
+          throw new Error("Could not find a Container element with '".concat(containerElement, "'."));
+        }
+        this.containerElement = container;
+      } else {
+        this.containerElement = containerElement;
+      }
+    }
+    BrowserCodeSvgWriter2.prototype.write = function(contents, width, height, hints) {
+      if (contents.length === 0) {
+        throw new IllegalArgumentException("Found empty contents");
+      }
+      if (width < 0 || height < 0) {
+        throw new IllegalArgumentException("Requested dimensions are too small: " + width + "x" + height);
+      }
+      var quietZone = hints && hints.get(EncodeHintType.MARGIN) !== void 0 ? Number.parseInt(hints.get(EncodeHintType.MARGIN).toString(), 10) : BrowserCodeSvgWriter2.QUIET_ZONE_SIZE;
+      var code = this.encode(hints, contents);
+      return this.renderResult(code, width, height, quietZone);
+    };
+    BrowserCodeSvgWriter2.prototype.createSVGElement = function(w, h2) {
+      var el = document.createElementNS(BrowserCodeSvgWriter2.SVG_NS, "svg");
+      el.setAttributeNS(svgNs$1, "width", h2.toString());
+      el.setAttributeNS(svgNs$1, "height", w.toString());
+      return el;
+    };
+    BrowserCodeSvgWriter2.prototype.createSvgPathPlaceholderElement = function(w, h2) {
+      var el = document.createElementNS(BrowserCodeSvgWriter2.SVG_NS, "path");
+      el.setAttributeNS(svgNs$1, "d", "M0 0h".concat(w, "v").concat(h2, "H0z"));
+      el.setAttributeNS(svgNs$1, "fill", "none");
+      return el;
+    };
+    BrowserCodeSvgWriter2.prototype.createSvgRectElement = function(x, y, w, h2) {
+      var el = document.createElementNS(BrowserCodeSvgWriter2.SVG_NS, "rect");
+      el.setAttributeNS(svgNs$1, "x", x.toString());
+      el.setAttributeNS(svgNs$1, "y", y.toString());
+      el.setAttributeNS(svgNs$1, "height", w.toString());
+      el.setAttributeNS(svgNs$1, "width", h2.toString());
+      el.setAttributeNS(svgNs$1, "fill", "#000000");
+      return el;
+    };
+    BrowserCodeSvgWriter2.prototype.encode = function(hints, contents) {
+      var errorCorrectionLevel = ErrorCorrectionLevel.L;
+      if (hints && hints.get(EncodeHintType.ERROR_CORRECTION) !== void 0) {
+        var correctionStr = hints.get(EncodeHintType.ERROR_CORRECTION).toString();
+        errorCorrectionLevel = ErrorCorrectionLevel.fromString(correctionStr);
+      }
+      var code = Encoder.encode(contents, errorCorrectionLevel, hints);
+      return code;
+    };
+    BrowserCodeSvgWriter2.prototype.renderResult = function(code, width, height, quietZone) {
+      var input = code.getMatrix();
+      if (input === null) {
+        throw new IllegalStateException();
+      }
+      var inputWidth = input.getWidth();
+      var inputHeight = input.getHeight();
+      var qrWidth = inputWidth + quietZone * 2;
+      var qrHeight = inputHeight + quietZone * 2;
+      var outputWidth = Math.max(width, qrWidth);
+      var outputHeight = Math.max(height, qrHeight);
+      var multiple = Math.min(Math.floor(outputWidth / qrWidth), Math.floor(outputHeight / qrHeight));
+      var leftPadding = Math.floor((outputWidth - inputWidth * multiple) / 2);
+      var topPadding = Math.floor((outputHeight - inputHeight * multiple) / 2);
+      var svgElement = this.createSVGElement(outputWidth, outputHeight);
+      var placeholder = this.createSvgPathPlaceholderElement(width, height);
+      svgElement.appendChild(placeholder);
+      this.containerElement.appendChild(svgElement);
+      for (var inputY = 0, outputY = topPadding; inputY < inputHeight; inputY++, outputY += multiple) {
+        for (var inputX = 0, outputX = leftPadding; inputX < inputWidth; inputX++, outputX += multiple) {
+          if (input.get(inputX, inputY) === 1) {
+            var svgRectElement = this.createSvgRectElement(outputX, outputY, multiple, multiple);
+            svgElement.appendChild(svgRectElement);
+          }
+        }
+      }
+      return svgElement;
+    };
+    BrowserCodeSvgWriter2.QUIET_ZONE_SIZE = 4;
+    BrowserCodeSvgWriter2.SVG_NS = "http://www.w3.org/2000/svg";
+    return BrowserCodeSvgWriter2;
+  })()
+);
+var svgNs = "http://www.w3.org/2000/svg";
+var BrowserQRCodeSvgWriter = (
+  /** @class */
+  (function() {
+    function BrowserQRCodeSvgWriter2() {
+    }
+    BrowserQRCodeSvgWriter2.prototype.write = function(contents, width, height, hints) {
+      if (contents.length === 0) {
+        throw new IllegalArgumentException("Found empty contents");
+      }
+      if (width < 0 || height < 0) {
+        throw new IllegalArgumentException("Requested dimensions are too small: " + width + "x" + height);
+      }
+      var errorCorrectionLevel = ErrorCorrectionLevel.L;
+      var quietZone = BrowserQRCodeSvgWriter2.QUIET_ZONE_SIZE;
+      if (hints) {
+        if (void 0 !== hints.get(EncodeHintType.ERROR_CORRECTION)) {
+          var correctionStr = hints.get(EncodeHintType.ERROR_CORRECTION).toString();
+          errorCorrectionLevel = ErrorCorrectionLevel.fromString(correctionStr);
+        }
+        if (void 0 !== hints.get(EncodeHintType.MARGIN)) {
+          quietZone = Number.parseInt(hints.get(EncodeHintType.MARGIN).toString(), 10);
+        }
+      }
+      var code = Encoder.encode(contents, errorCorrectionLevel, hints);
+      return this.renderResult(code, width, height, quietZone);
+    };
+    BrowserQRCodeSvgWriter2.prototype.writeToDom = function(containerElement, contents, width, height, hints) {
+      if (typeof containerElement === "string") {
+        var targetEl = document.querySelector(containerElement);
+        if (!targetEl) {
+          throw new Error("Could no find the target HTML element.");
+        }
+        containerElement = targetEl;
+      }
+      var svgElement = this.write(contents, width, height, hints);
+      if (containerElement instanceof HTMLElement) {
+        containerElement.appendChild(svgElement);
+      }
+    };
+    BrowserQRCodeSvgWriter2.prototype.renderResult = function(code, width, height, quietZone) {
+      var input = code.getMatrix();
+      if (input === null) {
+        throw new IllegalStateException();
+      }
+      var inputWidth = input.getWidth();
+      var inputHeight = input.getHeight();
+      var qrWidth = inputWidth + quietZone * 2;
+      var qrHeight = inputHeight + quietZone * 2;
+      var outputWidth = Math.max(width, qrWidth);
+      var outputHeight = Math.max(height, qrHeight);
+      var multiple = Math.min(Math.floor(outputWidth / qrWidth), Math.floor(outputHeight / qrHeight));
+      var leftPadding = Math.floor((outputWidth - inputWidth * multiple) / 2);
+      var topPadding = Math.floor((outputHeight - inputHeight * multiple) / 2);
+      var svgElement = this.createSVGElement(outputWidth, outputHeight);
+      for (var inputY = 0, outputY = topPadding; inputY < inputHeight; inputY++, outputY += multiple) {
+        for (var inputX = 0, outputX = leftPadding; inputX < inputWidth; inputX++, outputX += multiple) {
+          if (input.get(inputX, inputY) === 1) {
+            var svgRectElement = this.createSvgRectElement(outputX, outputY, multiple, multiple);
+            svgElement.appendChild(svgRectElement);
+          }
+        }
+      }
+      return svgElement;
+    };
+    BrowserQRCodeSvgWriter2.prototype.createSVGElement = function(w, h2) {
+      var svgElement = document.createElementNS(svgNs, "svg");
+      var width = w.toString();
+      var height = h2.toString();
+      svgElement.setAttribute("height", height);
+      svgElement.setAttribute("width", width);
+      svgElement.setAttribute("viewBox", "0 0 " + width + " " + height);
+      return svgElement;
+    };
+    BrowserQRCodeSvgWriter2.prototype.createSvgRectElement = function(x, y, w, h2) {
+      var rect = document.createElementNS(svgNs, "rect");
+      rect.setAttribute("x", x.toString());
+      rect.setAttribute("y", y.toString());
+      rect.setAttribute("height", w.toString());
+      rect.setAttribute("width", h2.toString());
+      rect.setAttribute("fill", "#000000");
+      return rect;
+    };
+    BrowserQRCodeSvgWriter2.QUIET_ZONE_SIZE = 4;
+    return BrowserQRCodeSvgWriter2;
+  })()
+);
 export {
-  BrowserMultiFormatReader as B,
-  BrowserCodeReader as a
+  h as BarcodeFormat,
+  BrowserAztecCodeReader,
+  BrowserCodeReader,
+  BrowserCodeSvgWriter,
+  BrowserDatamatrixCodeReader,
+  BrowserMultiFormatOneDReader,
+  BrowserMultiFormatReader,
+  BrowserPDF417Reader,
+  BrowserQRCodeReader,
+  BrowserQRCodeSvgWriter,
+  HTMLCanvasElementLuminanceSource
 };

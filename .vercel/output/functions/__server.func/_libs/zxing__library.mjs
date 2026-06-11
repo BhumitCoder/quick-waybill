@@ -3243,7 +3243,6 @@ var BarcodeFormat;
   BarcodeFormat2[BarcodeFormat2["UPC_EAN_EXTENSION"] = 16] = "UPC_EAN_EXTENSION";
   BarcodeFormat2[BarcodeFormat2["MICRO_QR_CODE"] = 17] = "MICRO_QR_CODE";
 })(BarcodeFormat || (BarcodeFormat = {}));
-const BarcodeFormat$1 = BarcodeFormat;
 var ResultMetadataType;
 (function(ResultMetadataType2) {
   ResultMetadataType2[ResultMetadataType2["OTHER"] = 0] = "OTHER";
@@ -3259,7 +3258,6 @@ var ResultMetadataType;
   ResultMetadataType2[ResultMetadataType2["STRUCTURED_APPEND_PARITY"] = 10] = "STRUCTURED_APPEND_PARITY";
   ResultMetadataType2[ResultMetadataType2["ERRORS_CORRECTED"] = 11] = "ERRORS_CORRECTED";
 })(ResultMetadataType || (ResultMetadataType = {}));
-const ResultMetadataType$1 = ResultMetadataType;
 var DecoderResult = (
   /** @class */
   (function() {
@@ -5229,14 +5227,14 @@ var AztecReader = (
           throw e;
         }
       }
-      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), decoderResult.getNumBits(), points, BarcodeFormat$1.AZTEC, System.currentTimeMillis());
+      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), decoderResult.getNumBits(), points, BarcodeFormat.AZTEC, System.currentTimeMillis());
       var byteSegments = decoderResult.getByteSegments();
       if (byteSegments != null) {
-        result.putMetadata(ResultMetadataType$1.BYTE_SEGMENTS, byteSegments);
+        result.putMetadata(ResultMetadataType.BYTE_SEGMENTS, byteSegments);
       }
       var ecLevel = decoderResult.getECLevel();
       if (ecLevel != null) {
-        result.putMetadata(ResultMetadataType$1.ERROR_CORRECTION_LEVEL, ecLevel);
+        result.putMetadata(ResultMetadataType.ERROR_CORRECTION_LEVEL, ecLevel);
       }
       return result;
     };
@@ -5299,10 +5297,10 @@ var OneDReader = (
           var result = this.doDecode(rotatedImage, hints);
           var metadata = result.getResultMetadata();
           var orientation_1 = 270;
-          if (metadata !== null && metadata.get(ResultMetadataType$1.ORIENTATION) === true) {
-            orientation_1 = orientation_1 + metadata.get(ResultMetadataType$1.ORIENTATION) % 360;
+          if (metadata !== null && metadata.get(ResultMetadataType.ORIENTATION) === true) {
+            orientation_1 = orientation_1 + metadata.get(ResultMetadataType.ORIENTATION) % 360;
           }
-          result.putMetadata(ResultMetadataType$1.ORIENTATION, orientation_1);
+          result.putMetadata(ResultMetadataType.ORIENTATION, orientation_1);
           var points = result.getResultPoints();
           if (points !== null) {
             var height = rotatedImage.getHeight();
@@ -5358,7 +5356,7 @@ var OneDReader = (
           try {
             var result = this_1.decodeRow(rowNumber, row, hints);
             if (attempt2 === 1) {
-              result.putMetadata(ResultMetadataType$1.ORIENTATION, 180);
+              result.putMetadata(ResultMetadataType.ORIENTATION, 180);
               var points = result.getResultPoints();
               if (points !== null) {
                 points[0] = new ResultPoint(width - points[0].getX() - 1, points[0].getY());
@@ -5765,7 +5763,7 @@ var Code128Reader = (
         rawBytes[i] = rawCodes[i];
       }
       var points = [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)];
-      return new Result(result, rawBytes, 0, points, BarcodeFormat$1.CODE_128, (/* @__PURE__ */ new Date()).getTime());
+      return new Result(result, rawBytes, 0, points, BarcodeFormat.CODE_128, (/* @__PURE__ */ new Date()).getTime());
     };
     Code128Reader2.CODE_PATTERNS = [
       Int32Array.from([2, 1, 2, 2, 2, 2]),
@@ -6019,7 +6017,7 @@ var Code39Reader = (
       }
       var left = (start[1] + start[0]) / 2;
       var right = lastStart + lastPatternSize / 2;
-      return new Result(resultString, null, 0, [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)], BarcodeFormat$1.CODE_39, (/* @__PURE__ */ new Date()).getTime());
+      return new Result(resultString, null, 0, [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)], BarcodeFormat.CODE_39, (/* @__PURE__ */ new Date()).getTime());
     };
     Code39Reader2.findAsteriskPattern = function(row, counters) {
       var width = row.getSize();
@@ -6330,7 +6328,7 @@ var Code93Reader = (
       var resultString = this.decodeExtended(this.decodeRowResult);
       var left = (start[1] + start[0]) / 2;
       var right = lastStart + lastPatternSize / 2;
-      return new Result(resultString, null, 0, [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)], BarcodeFormat$1.CODE_93, (/* @__PURE__ */ new Date()).getTime());
+      return new Result(resultString, null, 0, [new ResultPoint(left, rowNumber), new ResultPoint(right, rowNumber)], BarcodeFormat.CODE_93, (/* @__PURE__ */ new Date()).getTime());
     };
     Code93Reader2.prototype.findAsteriskPattern = function(row) {
       var width = row.getSize();
@@ -6664,7 +6662,7 @@ var ITFReader = (
         // no natural byte representation for these barcodes
         0,
         points,
-        BarcodeFormat$1.ITF,
+        BarcodeFormat.ITF,
         (/* @__PURE__ */ new Date()).getTime()
       );
       return resultReturn;
@@ -7062,7 +7060,7 @@ var UPCEANExtension5Support = (
         new ResultPoint((extensionStartRange[0] + extensionStartRange[1]) / 2, rowNumber),
         new ResultPoint(end, rowNumber)
       ];
-      var extensionResult = new Result(resultString, null, 0, resultPoints, BarcodeFormat$1.UPC_EAN_EXTENSION, (/* @__PURE__ */ new Date()).getTime());
+      var extensionResult = new Result(resultString, null, 0, resultPoints, BarcodeFormat.UPC_EAN_EXTENSION, (/* @__PURE__ */ new Date()).getTime());
       if (extensionData != null) {
         extensionResult.putAllMetadata(extensionData);
       }
@@ -7141,7 +7139,7 @@ var UPCEANExtension5Support = (
       if (value == null) {
         return null;
       }
-      return /* @__PURE__ */ new Map([[ResultMetadataType$1.SUGGESTED_PRICE, value]]);
+      return /* @__PURE__ */ new Map([[ResultMetadataType.SUGGESTED_PRICE, value]]);
     };
     UPCEANExtension5Support2.parseExtension5String = function(raw) {
       var currency;
@@ -7203,7 +7201,7 @@ var UPCEANExtension2Support = (
         new ResultPoint((extensionStartRange[0] + extensionStartRange[1]) / 2, rowNumber),
         new ResultPoint(end, rowNumber)
       ];
-      var extensionResult = new Result(resultString, null, 0, resultPoints, BarcodeFormat$1.UPC_EAN_EXTENSION, (/* @__PURE__ */ new Date()).getTime());
+      var extensionResult = new Result(resultString, null, 0, resultPoints, BarcodeFormat.UPC_EAN_EXTENSION, (/* @__PURE__ */ new Date()).getTime());
       if (extensionData != null) {
         extensionResult.putAllMetadata(extensionData);
       }
@@ -7256,7 +7254,7 @@ var UPCEANExtension2Support = (
       if (raw.length !== 2) {
         return null;
       }
-      return /* @__PURE__ */ new Map([[ResultMetadataType$1.ISSUE_NUMBER, parseInt(raw)]]);
+      return /* @__PURE__ */ new Map([[ResultMetadataType.ISSUE_NUMBER, parseInt(raw)]]);
     };
     return UPCEANExtension2Support2;
   })()
@@ -7358,7 +7356,7 @@ var UPCEANReader = (
       var extensionLength = 0;
       try {
         var extensionResult = UPCEANExtensionSupport.decodeRow(rowNumber, row, endRange[1]);
-        decodeResult.putMetadata(ResultMetadataType$1.UPC_EAN_EXTENSION, extensionResult.getText());
+        decodeResult.putMetadata(ResultMetadataType.UPC_EAN_EXTENSION, extensionResult.getText());
         decodeResult.putAllMetadata(extensionResult.getResultMetadata());
         decodeResult.addResultPoints(extensionResult.getResultPoints());
         extensionLength = extensionResult.getText().length;
@@ -7377,7 +7375,7 @@ var UPCEANReader = (
           throw new NotFoundException();
         }
       }
-      if (format === BarcodeFormat$1.EAN_13 || format === BarcodeFormat$1.UPC_A) ;
+      if (format === BarcodeFormat.EAN_13 || format === BarcodeFormat.UPC_A) ;
       return decodeResult;
     };
     UPCEANReader2.checkChecksum = function(s) {
@@ -7510,7 +7508,7 @@ var EAN13Reader = (
       return { rowOffset, resultString };
     };
     EAN13Reader2.prototype.getBarcodeFormat = function() {
-      return BarcodeFormat$1.EAN_13;
+      return BarcodeFormat.EAN_13;
     };
     EAN13Reader2.determineFirstDigit = function(resultString, lgPatternFound) {
       for (var d = 0; d < 10; d++) {
@@ -7614,7 +7612,7 @@ var EAN8Reader = (
       return { rowOffset, resultString };
     };
     EAN8Reader2.prototype.getBarcodeFormat = function() {
-      return BarcodeFormat$1.EAN_8;
+      return BarcodeFormat.EAN_8;
     };
     return EAN8Reader2;
   })(UPCEANReader)
@@ -7674,7 +7672,7 @@ var UPCAReader = (
       return _this;
     }
     UPCAReader2.prototype.getBarcodeFormat = function() {
-      return BarcodeFormat$1.UPC_A;
+      return BarcodeFormat.UPC_A;
     };
     UPCAReader2.prototype.decode = function(image, hints) {
       return this.maybeReturnResult(this.ean13Reader.decode(image));
@@ -7688,7 +7686,7 @@ var UPCAReader = (
     UPCAReader2.prototype.maybeReturnResult = function(result) {
       var text = result.getText();
       if (text.charAt(0) === "0") {
-        var upcaResult = new Result(text.substring(1), null, null, result.getResultPoints(), BarcodeFormat$1.UPC_A);
+        var upcaResult = new Result(text.substring(1), null, null, result.getResultPoints(), BarcodeFormat.UPC_A);
         if (result.getResultMetadata() != null) {
           upcaResult.putAllMetadata(result.getResultMetadata());
         }
@@ -7804,7 +7802,7 @@ var UPCEReader = (
       throw NotFoundException.getNotFoundInstance();
     };
     UPCEReader2.prototype.getBarcodeFormat = function() {
-      return BarcodeFormat$1.UPC_E;
+      return BarcodeFormat.UPC_E;
     };
     UPCEReader2.convertUPCEtoUPCA = function(upce) {
       var upceChars = upce.slice(1, 7).split("").map(function(x) {
@@ -7892,16 +7890,16 @@ var MultiFormatUPCEANReader = (
       var possibleFormats = hints == null ? null : hints.get(DecodeHintType.POSSIBLE_FORMATS);
       var readers = [];
       if (possibleFormats != null) {
-        if (possibleFormats.indexOf(BarcodeFormat$1.EAN_13) > -1) {
+        if (possibleFormats.indexOf(BarcodeFormat.EAN_13) > -1) {
           readers.push(new EAN13Reader());
         }
-        if (possibleFormats.indexOf(BarcodeFormat$1.UPC_A) > -1) {
+        if (possibleFormats.indexOf(BarcodeFormat.UPC_A) > -1) {
           readers.push(new UPCAReader());
         }
-        if (possibleFormats.indexOf(BarcodeFormat$1.EAN_8) > -1) {
+        if (possibleFormats.indexOf(BarcodeFormat.EAN_8) > -1) {
           readers.push(new EAN8Reader());
         }
-        if (possibleFormats.indexOf(BarcodeFormat$1.UPC_E) > -1) {
+        if (possibleFormats.indexOf(BarcodeFormat.UPC_E) > -1) {
           readers.push(new UPCEReader());
         }
       }
@@ -7921,12 +7919,12 @@ var MultiFormatUPCEANReader = (
           var reader = _c.value;
           try {
             var result = reader.decodeRow(rowNumber, row, hints);
-            var ean13MayBeUPCA = result.getBarcodeFormat() === BarcodeFormat$1.EAN_13 && result.getText().charAt(0) === "0";
+            var ean13MayBeUPCA = result.getBarcodeFormat() === BarcodeFormat.EAN_13 && result.getText().charAt(0) === "0";
             var possibleFormats = hints == null ? null : hints.get(DecodeHintType.POSSIBLE_FORMATS);
-            var canReturnUPCA = possibleFormats == null || possibleFormats.includes(BarcodeFormat$1.UPC_A);
+            var canReturnUPCA = possibleFormats == null || possibleFormats.includes(BarcodeFormat.UPC_A);
             if (ean13MayBeUPCA && canReturnUPCA) {
               var rawBytes = result.getRawBytes();
-              var resultUPCA = new Result(result.getText().substring(1), rawBytes, rawBytes ? rawBytes.length : null, result.getResultPoints(), BarcodeFormat$1.UPC_A);
+              var resultUPCA = new Result(result.getText().substring(1), rawBytes, rawBytes ? rawBytes.length : null, result.getResultPoints(), BarcodeFormat.UPC_A);
               resultUPCA.putAllMetadata(result.getResultMetadata());
               return resultUPCA;
             }
@@ -8047,7 +8045,7 @@ var CodaBarReader = (
       var retStr = this.codaBarDecodeRow(validRowData.row);
       if (!retStr)
         throw new NotFoundException();
-      return new Result(retStr, null, 0, [new ResultPoint(validRowData.left, rowNumber), new ResultPoint(validRowData.right, rowNumber)], BarcodeFormat$1.CODABAR, (/* @__PURE__ */ new Date()).getTime());
+      return new Result(retStr, null, 0, [new ResultPoint(validRowData.left, rowNumber), new ResultPoint(validRowData.right, rowNumber)], BarcodeFormat.CODABAR, (/* @__PURE__ */ new Date()).getTime());
     };
     CodaBarReader2.prototype.getValidRowData = function(row) {
       var booleanArr = row.toArray();
@@ -10232,7 +10230,7 @@ var RSSExpandedReader = (
       var firstPoints = pairs[0].getFinderPattern().getResultPoints();
       var lastPoints = pairs[pairs.length - 1].getFinderPattern().getResultPoints();
       var points = [firstPoints[0], firstPoints[1], lastPoints[0], lastPoints[1]];
-      return new Result(resultingString, null, null, points, BarcodeFormat$1.RSS_EXPANDED, null);
+      return new Result(resultingString, null, null, points, BarcodeFormat.RSS_EXPANDED, null);
     };
     RSSExpandedReader2.prototype.checkChecksum = function() {
       var firstPair = this.pairs[0];
@@ -10933,7 +10931,7 @@ var RSS14Reader = (
       buffer.append(checkDigit.toString());
       var leftPoints = leftPair.getFinderPattern().getResultPoints();
       var rightPoints = rightPair.getFinderPattern().getResultPoints();
-      return new Result(buffer.toString(), null, 0, [leftPoints[0], leftPoints[1], rightPoints[0], rightPoints[1]], BarcodeFormat$1.RSS_14, (/* @__PURE__ */ new Date()).getTime());
+      return new Result(buffer.toString(), null, 0, [leftPoints[0], leftPoints[1], rightPoints[0], rightPoints[1]], BarcodeFormat.RSS_14, (/* @__PURE__ */ new Date()).getTime());
     };
     RSS14Reader2.checkChecksum = function(leftPair, rightPair) {
       var checkValue = (leftPair.getChecksumPortion() + 16 * rightPair.getChecksumPortion()) % 79;
@@ -11257,28 +11255,28 @@ var MultiFormatOneDReader = (
       var useCode39CheckDigit = hints && hints.get(DecodeHintType.ASSUME_CODE_39_CHECK_DIGIT) !== void 0;
       var useCode39ExtendedMode = hints && hints.get(DecodeHintType.ENABLE_CODE_39_EXTENDED_MODE) !== void 0;
       if (possibleFormats) {
-        if (possibleFormats.includes(BarcodeFormat$1.EAN_13) || possibleFormats.includes(BarcodeFormat$1.UPC_A) || possibleFormats.includes(BarcodeFormat$1.EAN_8) || possibleFormats.includes(BarcodeFormat$1.UPC_E)) {
+        if (possibleFormats.includes(BarcodeFormat.EAN_13) || possibleFormats.includes(BarcodeFormat.UPC_A) || possibleFormats.includes(BarcodeFormat.EAN_8) || possibleFormats.includes(BarcodeFormat.UPC_E)) {
           _this.readers.push(new MultiFormatUPCEANReader(hints));
         }
-        if (possibleFormats.includes(BarcodeFormat$1.CODE_39)) {
+        if (possibleFormats.includes(BarcodeFormat.CODE_39)) {
           _this.readers.push(new Code39Reader(useCode39CheckDigit, useCode39ExtendedMode));
         }
-        if (possibleFormats.includes(BarcodeFormat$1.CODE_93)) {
+        if (possibleFormats.includes(BarcodeFormat.CODE_93)) {
           _this.readers.push(new Code93Reader());
         }
-        if (possibleFormats.includes(BarcodeFormat$1.CODE_128)) {
+        if (possibleFormats.includes(BarcodeFormat.CODE_128)) {
           _this.readers.push(new Code128Reader());
         }
-        if (possibleFormats.includes(BarcodeFormat$1.ITF)) {
+        if (possibleFormats.includes(BarcodeFormat.ITF)) {
           _this.readers.push(new ITFReader());
         }
-        if (possibleFormats.includes(BarcodeFormat$1.CODABAR)) {
+        if (possibleFormats.includes(BarcodeFormat.CODABAR)) {
           _this.readers.push(new CodaBarReader());
         }
-        if (possibleFormats.includes(BarcodeFormat$1.RSS_14)) {
+        if (possibleFormats.includes(BarcodeFormat.RSS_14)) {
           _this.readers.push(new RSS14Reader());
         }
-        if (possibleFormats.includes(BarcodeFormat$1.RSS_EXPANDED)) {
+        if (possibleFormats.includes(BarcodeFormat.RSS_EXPANDED)) {
           console.warn("RSS Expanded reader IS NOT ready for production yet! use at your own risk.");
           _this.readers.push(new RSSExpandedReader());
         }
@@ -12789,14 +12787,14 @@ var DataMatrixReader = (
         points = detectorResult.getPoints();
       }
       var rawBytes = decoderResult.getRawBytes();
-      var result = new Result(decoderResult.getText(), rawBytes, 8 * rawBytes.length, points, BarcodeFormat$1.DATA_MATRIX, System.currentTimeMillis());
+      var result = new Result(decoderResult.getText(), rawBytes, 8 * rawBytes.length, points, BarcodeFormat.DATA_MATRIX, System.currentTimeMillis());
       var byteSegments = decoderResult.getByteSegments();
       if (byteSegments != null) {
-        result.putMetadata(ResultMetadataType$1.BYTE_SEGMENTS, byteSegments);
+        result.putMetadata(ResultMetadataType.BYTE_SEGMENTS, byteSegments);
       }
       var ecLevel = decoderResult.getECLevel();
       if (ecLevel != null) {
-        result.putMetadata(ResultMetadataType$1.ERROR_CORRECTION_LEVEL, ecLevel);
+        result.putMetadata(ResultMetadataType.ERROR_CORRECTION_LEVEL, ecLevel);
       }
       return result;
     };
@@ -15162,18 +15160,18 @@ var QRCodeReader = (
       if (decoderResult.getOther() instanceof QRCodeDecoderMetaData) {
         decoderResult.getOther().applyMirroredCorrection(points);
       }
-      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), void 0, points, BarcodeFormat$1.QR_CODE, void 0);
+      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), void 0, points, BarcodeFormat.QR_CODE, void 0);
       var byteSegments = decoderResult.getByteSegments();
       if (byteSegments !== null) {
-        result.putMetadata(ResultMetadataType$1.BYTE_SEGMENTS, byteSegments);
+        result.putMetadata(ResultMetadataType.BYTE_SEGMENTS, byteSegments);
       }
       var ecLevel = decoderResult.getECLevel();
       if (ecLevel !== null) {
-        result.putMetadata(ResultMetadataType$1.ERROR_CORRECTION_LEVEL, ecLevel);
+        result.putMetadata(ResultMetadataType.ERROR_CORRECTION_LEVEL, ecLevel);
       }
       if (decoderResult.hasStructuredAppend()) {
-        result.putMetadata(ResultMetadataType$1.STRUCTURED_APPEND_SEQUENCE, decoderResult.getStructuredAppendSequenceNumber());
-        result.putMetadata(ResultMetadataType$1.STRUCTURED_APPEND_PARITY, decoderResult.getStructuredAppendParity());
+        result.putMetadata(ResultMetadataType.STRUCTURED_APPEND_SEQUENCE, decoderResult.getStructuredAppendSequenceNumber());
+        result.putMetadata(ResultMetadataType.STRUCTURED_APPEND_PARITY, decoderResult.getStructuredAppendParity());
       }
       return result;
     };
@@ -16273,14 +16271,14 @@ var MicroQRCodeReader = (
         points = detectorResult.getPoints();
         decoderResult = this.decoder.decodeBitMatrix(detectorResult.getBits(), hints !== null && hints !== void 0 ? hints : void 0);
       }
-      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), decoderResult.getNumBits(), points, BarcodeFormat$1.MICRO_QR_CODE, System.currentTimeMillis());
+      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), decoderResult.getNumBits(), points, BarcodeFormat.MICRO_QR_CODE, System.currentTimeMillis());
       var byteSegments = decoderResult.getByteSegments();
       if (byteSegments !== null) {
-        result.putMetadata(ResultMetadataType$1.BYTE_SEGMENTS, byteSegments);
+        result.putMetadata(ResultMetadataType.BYTE_SEGMENTS, byteSegments);
       }
       var ecLevel = decoderResult.getECLevel();
       if (ecLevel !== null) {
-        result.putMetadata(ResultMetadataType$1.ERROR_CORRECTION_LEVEL, ecLevel);
+        result.putMetadata(ResultMetadataType.ERROR_CORRECTION_LEVEL, ecLevel);
       }
       return result;
     };
@@ -16652,11 +16650,11 @@ var MaxiCodeReader = (
       }
       var bits = MaxiCodeReader2.extractPureBits(image.getBlackMatrix());
       var decoderResult = this.decoder.decode(bits, hints);
-      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), 8 * decoderResult.getRawBytes().length, MaxiCodeReader2.NO_POINTS, BarcodeFormat$1.MAXICODE, System.currentTimeMillis());
-      result.putMetadata(ResultMetadataType$1.ERRORS_CORRECTED, decoderResult.getErrorsCorrected());
+      var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), 8 * decoderResult.getRawBytes().length, MaxiCodeReader2.NO_POINTS, BarcodeFormat.MAXICODE, System.currentTimeMillis());
+      result.putMetadata(ResultMetadataType.ERRORS_CORRECTED, decoderResult.getErrorsCorrected());
       var ecLevel = decoderResult.getECLevel();
       if (ecLevel != null) {
-        result.putMetadata(ResultMetadataType$1.ERROR_CORRECTION_LEVEL, ecLevel);
+        result.putMetadata(ResultMetadataType.ERROR_CORRECTION_LEVEL, ecLevel);
       }
       return result;
     };
@@ -25424,11 +25422,11 @@ var PDF417Reader = (
         for (var _b = __values$9(detectorResult.getPoints()), _c = _b.next(); !_c.done; _c = _b.next()) {
           var points = _c.value;
           var decoderResult = PDF417ScanningDecoder.decode(detectorResult.getBits(), points[4], points[5], points[6], points[7], PDF417Reader2.getMinCodewordWidth(points), PDF417Reader2.getMaxCodewordWidth(points));
-          var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), void 0, points, BarcodeFormat$1.PDF_417);
-          result.putMetadata(ResultMetadataType$1.ERROR_CORRECTION_LEVEL, decoderResult.getECLevel());
+          var result = new Result(decoderResult.getText(), decoderResult.getRawBytes(), void 0, points, BarcodeFormat.PDF_417);
+          result.putMetadata(ResultMetadataType.ERROR_CORRECTION_LEVEL, decoderResult.getECLevel());
           var pdf417ResultMetadata = decoderResult.getOther();
           if (pdf417ResultMetadata != null) {
-            result.putMetadata(ResultMetadataType$1.PDF417_EXTRA_METADATA, pdf417ResultMetadata);
+            result.putMetadata(ResultMetadataType.PDF417_EXTRA_METADATA, pdf417ResultMetadata);
           }
           results.push(result);
         }
@@ -25533,27 +25531,27 @@ var MultiFormatReader = (
       var readers = new Array();
       if (formats !== null && formats !== void 0) {
         var addOneDReader = formats.some(function(f) {
-          return f === BarcodeFormat$1.UPC_A || f === BarcodeFormat$1.UPC_E || f === BarcodeFormat$1.EAN_13 || f === BarcodeFormat$1.EAN_8 || f === BarcodeFormat$1.CODABAR || f === BarcodeFormat$1.CODE_39 || f === BarcodeFormat$1.CODE_93 || f === BarcodeFormat$1.CODE_128 || f === BarcodeFormat$1.ITF || f === BarcodeFormat$1.RSS_14 || f === BarcodeFormat$1.RSS_EXPANDED;
+          return f === BarcodeFormat.UPC_A || f === BarcodeFormat.UPC_E || f === BarcodeFormat.EAN_13 || f === BarcodeFormat.EAN_8 || f === BarcodeFormat.CODABAR || f === BarcodeFormat.CODE_39 || f === BarcodeFormat.CODE_93 || f === BarcodeFormat.CODE_128 || f === BarcodeFormat.ITF || f === BarcodeFormat.RSS_14 || f === BarcodeFormat.RSS_EXPANDED;
         });
         if (addOneDReader && !tryHarder) {
           readers.push(new MultiFormatOneDReader(hints));
         }
-        if (formats.includes(BarcodeFormat$1.QR_CODE)) {
+        if (formats.includes(BarcodeFormat.QR_CODE)) {
           readers.push(new QRCodeReader());
         }
-        if (formats.includes(BarcodeFormat$1.MICRO_QR_CODE)) {
+        if (formats.includes(BarcodeFormat.MICRO_QR_CODE)) {
           readers.push(new MicroQRCodeReader());
         }
-        if (formats.includes(BarcodeFormat$1.DATA_MATRIX)) {
+        if (formats.includes(BarcodeFormat.DATA_MATRIX)) {
           readers.push(new DataMatrixReader());
         }
-        if (formats.includes(BarcodeFormat$1.AZTEC)) {
+        if (formats.includes(BarcodeFormat.AZTEC)) {
           readers.push(new AztecReader());
         }
-        if (formats.includes(BarcodeFormat$1.PDF_417)) {
+        if (formats.includes(BarcodeFormat.PDF_417)) {
           readers.push(new PDF417Reader());
         }
-        if (formats.includes(BarcodeFormat$1.MAXICODE)) {
+        if (formats.includes(BarcodeFormat.MAXICODE)) {
           readers.push(new MaxiCodeReader());
         }
         if (addOneDReader && tryHarder) {
@@ -25751,7 +25749,6 @@ var EncodeHintType;
   EncodeHintType2[EncodeHintType2["GS1_FORMAT"] = 12] = "GS1_FORMAT";
   EncodeHintType2[EncodeHintType2["FORCE_C40"] = 13] = "FORCE_C40";
 })(EncodeHintType || (EncodeHintType = {}));
-const EncodeHintType$1 = EncodeHintType;
 var ReedSolomonEncoder = (
   /** @class */
   (function() {
@@ -26510,513 +26507,516 @@ var __values$6 = function(o) {
   };
   throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
-(function() {
-  function Encoder() {
-  }
-  Encoder.calculateMaskPenalty = function(matrix) {
-    return MaskUtil.applyMaskPenaltyRule1(matrix) + MaskUtil.applyMaskPenaltyRule2(matrix) + MaskUtil.applyMaskPenaltyRule3(matrix) + MaskUtil.applyMaskPenaltyRule4(matrix);
-  };
-  Encoder.encode = function(content, ecLevel, hints) {
-    if (hints === void 0) {
-      hints = null;
+var Encoder = (
+  /** @class */
+  (function() {
+    function Encoder2() {
     }
-    var encoding = Encoder.DEFAULT_BYTE_MODE_ENCODING;
-    var hasEncodingHint = hints !== null && void 0 !== hints.get(EncodeHintType$1.CHARACTER_SET);
-    if (hasEncodingHint) {
-      encoding = hints.get(EncodeHintType$1.CHARACTER_SET).toString();
-    }
-    var mode = this.chooseMode(content, encoding);
-    var headerBits = new BitArray();
-    if (mode === Mode$2.BYTE && (hasEncodingHint || Encoder.DEFAULT_BYTE_MODE_ENCODING !== encoding)) {
-      var eci = CharacterSetECI.getCharacterSetECIByName(encoding);
-      if (eci !== void 0) {
-        this.appendECI(eci, headerBits);
+    Encoder2.calculateMaskPenalty = function(matrix) {
+      return MaskUtil.applyMaskPenaltyRule1(matrix) + MaskUtil.applyMaskPenaltyRule2(matrix) + MaskUtil.applyMaskPenaltyRule3(matrix) + MaskUtil.applyMaskPenaltyRule4(matrix);
+    };
+    Encoder2.encode = function(content, ecLevel, hints) {
+      if (hints === void 0) {
+        hints = null;
       }
-    }
-    this.appendModeInfo(mode, headerBits);
-    var dataBits = new BitArray();
-    this.appendBytes(content, mode, dataBits, encoding);
-    var version;
-    if (hints !== null && void 0 !== hints.get(EncodeHintType$1.QR_VERSION)) {
-      var versionNumber = Number.parseInt(hints.get(EncodeHintType$1.QR_VERSION).toString(), 10);
-      version = Version.getVersionForNumber(versionNumber);
-      var bitsNeeded = this.calculateBitsNeeded(mode, headerBits, dataBits, version);
-      if (!this.willFit(bitsNeeded, version, ecLevel)) {
-        throw new WriterException("Data too big for requested version");
+      var encoding = Encoder2.DEFAULT_BYTE_MODE_ENCODING;
+      var hasEncodingHint = hints !== null && void 0 !== hints.get(EncodeHintType.CHARACTER_SET);
+      if (hasEncodingHint) {
+        encoding = hints.get(EncodeHintType.CHARACTER_SET).toString();
       }
-    } else {
-      version = this.recommendVersion(ecLevel, mode, headerBits, dataBits);
-    }
-    var headerAndDataBits = new BitArray();
-    headerAndDataBits.appendBitArray(headerBits);
-    var numLetters = mode === Mode$2.BYTE ? dataBits.getSizeInBytes() : content.length;
-    this.appendLengthInfo(numLetters, version, mode, headerAndDataBits);
-    headerAndDataBits.appendBitArray(dataBits);
-    var ecBlocks = version.getECBlocksForLevel(ecLevel);
-    var numDataBytes = version.getTotalCodewords() - ecBlocks.getTotalECCodewords();
-    this.terminateBits(numDataBytes, headerAndDataBits);
-    var finalBits = this.interleaveWithECBytes(headerAndDataBits, version.getTotalCodewords(), numDataBytes, ecBlocks.getNumBlocks());
-    var qrCode = new QRCode();
-    qrCode.setECLevel(ecLevel);
-    qrCode.setMode(mode);
-    qrCode.setVersion(version);
-    var dimension = version.getDimensionForVersion();
-    var matrix = new ByteMatrix(dimension, dimension);
-    var maskPattern = this.chooseMaskPattern(finalBits, ecLevel, version, matrix);
-    qrCode.setMaskPattern(maskPattern);
-    MatrixUtil.buildMatrix(finalBits, ecLevel, version, maskPattern, matrix);
-    qrCode.setMatrix(matrix);
-    return qrCode;
-  };
-  Encoder.recommendVersion = function(ecLevel, mode, headerBits, dataBits) {
-    var provisionalBitsNeeded = this.calculateBitsNeeded(mode, headerBits, dataBits, Version.getVersionForNumber(1));
-    var provisionalVersion = this.chooseVersion(provisionalBitsNeeded, ecLevel);
-    var bitsNeeded = this.calculateBitsNeeded(mode, headerBits, dataBits, provisionalVersion);
-    return this.chooseVersion(bitsNeeded, ecLevel);
-  };
-  Encoder.calculateBitsNeeded = function(mode, headerBits, dataBits, version) {
-    return headerBits.getSize() + mode.getCharacterCountBits(version) + dataBits.getSize();
-  };
-  Encoder.getAlphanumericCode = function(code) {
-    if (code < Encoder.ALPHANUMERIC_TABLE.length) {
-      return Encoder.ALPHANUMERIC_TABLE[code];
-    }
-    return -1;
-  };
-  Encoder.chooseMode = function(content, encoding) {
-    if (encoding === void 0) {
-      encoding = null;
-    }
-    if (CharacterSetECI.SJIS.getName() === encoding && this.isOnlyDoubleByteKanji(content)) {
-      return Mode$2.KANJI;
-    }
-    var hasNumeric = false;
-    var hasAlphanumeric = false;
-    for (var i = 0, length_1 = content.length; i < length_1; ++i) {
-      var c = content.charAt(i);
-      if (Encoder.isDigit(c)) {
-        hasNumeric = true;
-      } else if (this.getAlphanumericCode(c.charCodeAt(0)) !== -1) {
-        hasAlphanumeric = true;
+      var mode = this.chooseMode(content, encoding);
+      var headerBits = new BitArray();
+      if (mode === Mode$2.BYTE && (hasEncodingHint || Encoder2.DEFAULT_BYTE_MODE_ENCODING !== encoding)) {
+        var eci = CharacterSetECI.getCharacterSetECIByName(encoding);
+        if (eci !== void 0) {
+          this.appendECI(eci, headerBits);
+        }
+      }
+      this.appendModeInfo(mode, headerBits);
+      var dataBits = new BitArray();
+      this.appendBytes(content, mode, dataBits, encoding);
+      var version;
+      if (hints !== null && void 0 !== hints.get(EncodeHintType.QR_VERSION)) {
+        var versionNumber = Number.parseInt(hints.get(EncodeHintType.QR_VERSION).toString(), 10);
+        version = Version.getVersionForNumber(versionNumber);
+        var bitsNeeded = this.calculateBitsNeeded(mode, headerBits, dataBits, version);
+        if (!this.willFit(bitsNeeded, version, ecLevel)) {
+          throw new WriterException("Data too big for requested version");
+        }
       } else {
-        return Mode$2.BYTE;
+        version = this.recommendVersion(ecLevel, mode, headerBits, dataBits);
       }
-    }
-    if (hasAlphanumeric) {
-      return Mode$2.ALPHANUMERIC;
-    }
-    if (hasNumeric) {
-      return Mode$2.NUMERIC;
-    }
-    return Mode$2.BYTE;
-  };
-  Encoder.isOnlyDoubleByteKanji = function(content) {
-    var bytes;
-    try {
-      bytes = StringEncoding.encode(content, CharacterSetECI.SJIS);
-    } catch (ignored) {
-      return false;
-    }
-    var length = bytes.length;
-    if (length % 2 !== 0) {
-      return false;
-    }
-    for (var i = 0; i < length; i += 2) {
-      var byte1 = bytes[i] & 255;
-      if ((byte1 < 129 || byte1 > 159) && (byte1 < 224 || byte1 > 235)) {
+      var headerAndDataBits = new BitArray();
+      headerAndDataBits.appendBitArray(headerBits);
+      var numLetters = mode === Mode$2.BYTE ? dataBits.getSizeInBytes() : content.length;
+      this.appendLengthInfo(numLetters, version, mode, headerAndDataBits);
+      headerAndDataBits.appendBitArray(dataBits);
+      var ecBlocks = version.getECBlocksForLevel(ecLevel);
+      var numDataBytes = version.getTotalCodewords() - ecBlocks.getTotalECCodewords();
+      this.terminateBits(numDataBytes, headerAndDataBits);
+      var finalBits = this.interleaveWithECBytes(headerAndDataBits, version.getTotalCodewords(), numDataBytes, ecBlocks.getNumBlocks());
+      var qrCode = new QRCode();
+      qrCode.setECLevel(ecLevel);
+      qrCode.setMode(mode);
+      qrCode.setVersion(version);
+      var dimension = version.getDimensionForVersion();
+      var matrix = new ByteMatrix(dimension, dimension);
+      var maskPattern = this.chooseMaskPattern(finalBits, ecLevel, version, matrix);
+      qrCode.setMaskPattern(maskPattern);
+      MatrixUtil.buildMatrix(finalBits, ecLevel, version, maskPattern, matrix);
+      qrCode.setMatrix(matrix);
+      return qrCode;
+    };
+    Encoder2.recommendVersion = function(ecLevel, mode, headerBits, dataBits) {
+      var provisionalBitsNeeded = this.calculateBitsNeeded(mode, headerBits, dataBits, Version.getVersionForNumber(1));
+      var provisionalVersion = this.chooseVersion(provisionalBitsNeeded, ecLevel);
+      var bitsNeeded = this.calculateBitsNeeded(mode, headerBits, dataBits, provisionalVersion);
+      return this.chooseVersion(bitsNeeded, ecLevel);
+    };
+    Encoder2.calculateBitsNeeded = function(mode, headerBits, dataBits, version) {
+      return headerBits.getSize() + mode.getCharacterCountBits(version) + dataBits.getSize();
+    };
+    Encoder2.getAlphanumericCode = function(code) {
+      if (code < Encoder2.ALPHANUMERIC_TABLE.length) {
+        return Encoder2.ALPHANUMERIC_TABLE[code];
+      }
+      return -1;
+    };
+    Encoder2.chooseMode = function(content, encoding) {
+      if (encoding === void 0) {
+        encoding = null;
+      }
+      if (CharacterSetECI.SJIS.getName() === encoding && this.isOnlyDoubleByteKanji(content)) {
+        return Mode$2.KANJI;
+      }
+      var hasNumeric = false;
+      var hasAlphanumeric = false;
+      for (var i = 0, length_1 = content.length; i < length_1; ++i) {
+        var c = content.charAt(i);
+        if (Encoder2.isDigit(c)) {
+          hasNumeric = true;
+        } else if (this.getAlphanumericCode(c.charCodeAt(0)) !== -1) {
+          hasAlphanumeric = true;
+        } else {
+          return Mode$2.BYTE;
+        }
+      }
+      if (hasAlphanumeric) {
+        return Mode$2.ALPHANUMERIC;
+      }
+      if (hasNumeric) {
+        return Mode$2.NUMERIC;
+      }
+      return Mode$2.BYTE;
+    };
+    Encoder2.isOnlyDoubleByteKanji = function(content) {
+      var bytes;
+      try {
+        bytes = StringEncoding.encode(content, CharacterSetECI.SJIS);
+      } catch (ignored) {
         return false;
       }
-    }
-    return true;
-  };
-  Encoder.chooseMaskPattern = function(bits, ecLevel, version, matrix) {
-    var minPenalty = Number.MAX_SAFE_INTEGER;
-    var bestMaskPattern = -1;
-    for (var maskPattern = 0; maskPattern < QRCode.NUM_MASK_PATTERNS; maskPattern++) {
-      MatrixUtil.buildMatrix(bits, ecLevel, version, maskPattern, matrix);
-      var penalty = this.calculateMaskPenalty(matrix);
-      if (penalty < minPenalty) {
-        minPenalty = penalty;
-        bestMaskPattern = maskPattern;
+      var length = bytes.length;
+      if (length % 2 !== 0) {
+        return false;
       }
-    }
-    return bestMaskPattern;
-  };
-  Encoder.chooseVersion = function(numInputBits, ecLevel) {
-    for (var versionNum = 1; versionNum <= 40; versionNum++) {
-      var version = Version.getVersionForNumber(versionNum);
-      if (Encoder.willFit(numInputBits, version, ecLevel)) {
-        return version;
+      for (var i = 0; i < length; i += 2) {
+        var byte1 = bytes[i] & 255;
+        if ((byte1 < 129 || byte1 > 159) && (byte1 < 224 || byte1 > 235)) {
+          return false;
+        }
       }
-    }
-    throw new WriterException("Data too big");
-  };
-  Encoder.willFit = function(numInputBits, version, ecLevel) {
-    var numBytes = version.getTotalCodewords();
-    var ecBlocks = version.getECBlocksForLevel(ecLevel);
-    var numEcBytes = ecBlocks.getTotalECCodewords();
-    var numDataBytes = numBytes - numEcBytes;
-    var totalInputBytes = (numInputBits + 7) / 8;
-    return numDataBytes >= totalInputBytes;
-  };
-  Encoder.terminateBits = function(numDataBytes, bits) {
-    var capacity = numDataBytes * 8;
-    if (bits.getSize() > capacity) {
-      throw new WriterException("data bits cannot fit in the QR Code" + bits.getSize() + " > " + capacity);
-    }
-    for (var i = 0; i < 4 && bits.getSize() < capacity; ++i) {
-      bits.appendBit(false);
-    }
-    var numBitsInLastByte = bits.getSize() & 7;
-    if (numBitsInLastByte > 0) {
-      for (var i = numBitsInLastByte; i < 8; i++) {
+      return true;
+    };
+    Encoder2.chooseMaskPattern = function(bits, ecLevel, version, matrix) {
+      var minPenalty = Number.MAX_SAFE_INTEGER;
+      var bestMaskPattern = -1;
+      for (var maskPattern = 0; maskPattern < QRCode.NUM_MASK_PATTERNS; maskPattern++) {
+        MatrixUtil.buildMatrix(bits, ecLevel, version, maskPattern, matrix);
+        var penalty = this.calculateMaskPenalty(matrix);
+        if (penalty < minPenalty) {
+          minPenalty = penalty;
+          bestMaskPattern = maskPattern;
+        }
+      }
+      return bestMaskPattern;
+    };
+    Encoder2.chooseVersion = function(numInputBits, ecLevel) {
+      for (var versionNum = 1; versionNum <= 40; versionNum++) {
+        var version = Version.getVersionForNumber(versionNum);
+        if (Encoder2.willFit(numInputBits, version, ecLevel)) {
+          return version;
+        }
+      }
+      throw new WriterException("Data too big");
+    };
+    Encoder2.willFit = function(numInputBits, version, ecLevel) {
+      var numBytes = version.getTotalCodewords();
+      var ecBlocks = version.getECBlocksForLevel(ecLevel);
+      var numEcBytes = ecBlocks.getTotalECCodewords();
+      var numDataBytes = numBytes - numEcBytes;
+      var totalInputBytes = (numInputBits + 7) / 8;
+      return numDataBytes >= totalInputBytes;
+    };
+    Encoder2.terminateBits = function(numDataBytes, bits) {
+      var capacity = numDataBytes * 8;
+      if (bits.getSize() > capacity) {
+        throw new WriterException("data bits cannot fit in the QR Code" + bits.getSize() + " > " + capacity);
+      }
+      for (var i = 0; i < 4 && bits.getSize() < capacity; ++i) {
         bits.appendBit(false);
       }
-    }
-    var numPaddingBytes = numDataBytes - bits.getSizeInBytes();
-    for (var i = 0; i < numPaddingBytes; ++i) {
-      bits.appendBits((i & 1) === 0 ? 236 : 17, 8);
-    }
-    if (bits.getSize() !== capacity) {
-      throw new WriterException("Bits size does not equal capacity");
-    }
-  };
-  Encoder.getNumDataBytesAndNumECBytesForBlockID = function(numTotalBytes, numDataBytes, numRSBlocks, blockID, numDataBytesInBlock, numECBytesInBlock) {
-    if (blockID >= numRSBlocks) {
-      throw new WriterException("Block ID too large");
-    }
-    var numRsBlocksInGroup2 = numTotalBytes % numRSBlocks;
-    var numRsBlocksInGroup1 = numRSBlocks - numRsBlocksInGroup2;
-    var numTotalBytesInGroup1 = Math.floor(numTotalBytes / numRSBlocks);
-    var numTotalBytesInGroup2 = numTotalBytesInGroup1 + 1;
-    var numDataBytesInGroup1 = Math.floor(numDataBytes / numRSBlocks);
-    var numDataBytesInGroup2 = numDataBytesInGroup1 + 1;
-    var numEcBytesInGroup1 = numTotalBytesInGroup1 - numDataBytesInGroup1;
-    var numEcBytesInGroup2 = numTotalBytesInGroup2 - numDataBytesInGroup2;
-    if (numEcBytesInGroup1 !== numEcBytesInGroup2) {
-      throw new WriterException("EC bytes mismatch");
-    }
-    if (numRSBlocks !== numRsBlocksInGroup1 + numRsBlocksInGroup2) {
-      throw new WriterException("RS blocks mismatch");
-    }
-    if (numTotalBytes !== (numDataBytesInGroup1 + numEcBytesInGroup1) * numRsBlocksInGroup1 + (numDataBytesInGroup2 + numEcBytesInGroup2) * numRsBlocksInGroup2) {
-      throw new WriterException("Total bytes mismatch");
-    }
-    if (blockID < numRsBlocksInGroup1) {
-      numDataBytesInBlock[0] = numDataBytesInGroup1;
-      numECBytesInBlock[0] = numEcBytesInGroup1;
-    } else {
-      numDataBytesInBlock[0] = numDataBytesInGroup2;
-      numECBytesInBlock[0] = numEcBytesInGroup2;
-    }
-  };
-  Encoder.interleaveWithECBytes = function(bits, numTotalBytes, numDataBytes, numRSBlocks) {
-    var e_1, _a2, e_2, _b;
-    if (bits.getSizeInBytes() !== numDataBytes) {
-      throw new WriterException("Number of bits and data bytes does not match");
-    }
-    var dataBytesOffset = 0;
-    var maxNumDataBytes = 0;
-    var maxNumEcBytes = 0;
-    var blocks = new Array();
-    for (var i = 0; i < numRSBlocks; ++i) {
-      var numDataBytesInBlock = new Int32Array(1);
-      var numEcBytesInBlock = new Int32Array(1);
-      Encoder.getNumDataBytesAndNumECBytesForBlockID(numTotalBytes, numDataBytes, numRSBlocks, i, numDataBytesInBlock, numEcBytesInBlock);
-      var size = numDataBytesInBlock[0];
-      var dataBytes = new Uint8Array(size);
-      bits.toBytes(8 * dataBytesOffset, dataBytes, 0, size);
-      var ecBytes = Encoder.generateECBytes(dataBytes, numEcBytesInBlock[0]);
-      blocks.push(new BlockPair(dataBytes, ecBytes));
-      maxNumDataBytes = Math.max(maxNumDataBytes, size);
-      maxNumEcBytes = Math.max(maxNumEcBytes, ecBytes.length);
-      dataBytesOffset += numDataBytesInBlock[0];
-    }
-    if (numDataBytes !== dataBytesOffset) {
-      throw new WriterException("Data bytes does not match offset");
-    }
-    var result = new BitArray();
-    for (var i = 0; i < maxNumDataBytes; ++i) {
-      try {
-        for (var blocks_1 = (e_1 = void 0, __values$6(blocks)), blocks_1_1 = blocks_1.next(); !blocks_1_1.done; blocks_1_1 = blocks_1.next()) {
-          var block = blocks_1_1.value;
-          var dataBytes = block.getDataBytes();
-          if (i < dataBytes.length) {
-            result.appendBits(dataBytes[i], 8);
-          }
-        }
-      } catch (e_1_1) {
-        e_1 = { error: e_1_1 };
-      } finally {
-        try {
-          if (blocks_1_1 && !blocks_1_1.done && (_a2 = blocks_1.return)) _a2.call(blocks_1);
-        } finally {
-          if (e_1) throw e_1.error;
+      var numBitsInLastByte = bits.getSize() & 7;
+      if (numBitsInLastByte > 0) {
+        for (var i = numBitsInLastByte; i < 8; i++) {
+          bits.appendBit(false);
         }
       }
-    }
-    for (var i = 0; i < maxNumEcBytes; ++i) {
-      try {
-        for (var blocks_2 = (e_2 = void 0, __values$6(blocks)), blocks_2_1 = blocks_2.next(); !blocks_2_1.done; blocks_2_1 = blocks_2.next()) {
-          var block = blocks_2_1.value;
-          var ecBytes = block.getErrorCorrectionBytes();
-          if (i < ecBytes.length) {
-            result.appendBits(ecBytes[i], 8);
-          }
-        }
-      } catch (e_2_1) {
-        e_2 = { error: e_2_1 };
-      } finally {
-        try {
-          if (blocks_2_1 && !blocks_2_1.done && (_b = blocks_2.return)) _b.call(blocks_2);
-        } finally {
-          if (e_2) throw e_2.error;
-        }
+      var numPaddingBytes = numDataBytes - bits.getSizeInBytes();
+      for (var i = 0; i < numPaddingBytes; ++i) {
+        bits.appendBits((i & 1) === 0 ? 236 : 17, 8);
       }
-    }
-    if (numTotalBytes !== result.getSizeInBytes()) {
-      throw new WriterException("Interleaving error: " + numTotalBytes + " and " + result.getSizeInBytes() + " differ.");
-    }
-    return result;
-  };
-  Encoder.generateECBytes = function(dataBytes, numEcBytesInBlock) {
-    var numDataBytes = dataBytes.length;
-    var toEncode = new Int32Array(numDataBytes + numEcBytesInBlock);
-    for (var i = 0; i < numDataBytes; i++) {
-      toEncode[i] = dataBytes[i] & 255;
-    }
-    new ReedSolomonEncoder(GenericGF.QR_CODE_FIELD_256).encode(toEncode, numEcBytesInBlock);
-    var ecBytes = new Uint8Array(numEcBytesInBlock);
-    for (var i = 0; i < numEcBytesInBlock; i++) {
-      ecBytes[i] = /*(byte) */
-      toEncode[numDataBytes + i];
-    }
-    return ecBytes;
-  };
-  Encoder.appendModeInfo = function(mode, bits) {
-    bits.appendBits(mode.getBits(), 4);
-  };
-  Encoder.appendLengthInfo = function(numLetters, version, mode, bits) {
-    var numBits = mode.getCharacterCountBits(version);
-    if (numLetters >= 1 << numBits) {
-      throw new WriterException(numLetters + " is bigger than " + ((1 << numBits) - 1));
-    }
-    bits.appendBits(numLetters, numBits);
-  };
-  Encoder.appendBytes = function(content, mode, bits, encoding) {
-    switch (mode) {
-      case Mode$2.NUMERIC:
-        Encoder.appendNumericBytes(content, bits);
-        break;
-      case Mode$2.ALPHANUMERIC:
-        Encoder.appendAlphanumericBytes(content, bits);
-        break;
-      case Mode$2.BYTE:
-        Encoder.append8BitBytes(content, bits, encoding);
-        break;
-      case Mode$2.KANJI:
-        Encoder.appendKanjiBytes(content, bits);
-        break;
-      default:
-        throw new WriterException("Invalid mode: " + mode);
-    }
-  };
-  Encoder.getDigit = function(singleCharacter) {
-    return singleCharacter.charCodeAt(0) - 48;
-  };
-  Encoder.isDigit = function(singleCharacter) {
-    var cn = Encoder.getDigit(singleCharacter);
-    return cn >= 0 && cn <= 9;
-  };
-  Encoder.appendNumericBytes = function(content, bits) {
-    var length = content.length;
-    var i = 0;
-    while (i < length) {
-      var num1 = Encoder.getDigit(content.charAt(i));
-      if (i + 2 < length) {
-        var num2 = Encoder.getDigit(content.charAt(i + 1));
-        var num3 = Encoder.getDigit(content.charAt(i + 2));
-        bits.appendBits(num1 * 100 + num2 * 10 + num3, 10);
-        i += 3;
-      } else if (i + 1 < length) {
-        var num2 = Encoder.getDigit(content.charAt(i + 1));
-        bits.appendBits(num1 * 10 + num2, 7);
-        i += 2;
+      if (bits.getSize() !== capacity) {
+        throw new WriterException("Bits size does not equal capacity");
+      }
+    };
+    Encoder2.getNumDataBytesAndNumECBytesForBlockID = function(numTotalBytes, numDataBytes, numRSBlocks, blockID, numDataBytesInBlock, numECBytesInBlock) {
+      if (blockID >= numRSBlocks) {
+        throw new WriterException("Block ID too large");
+      }
+      var numRsBlocksInGroup2 = numTotalBytes % numRSBlocks;
+      var numRsBlocksInGroup1 = numRSBlocks - numRsBlocksInGroup2;
+      var numTotalBytesInGroup1 = Math.floor(numTotalBytes / numRSBlocks);
+      var numTotalBytesInGroup2 = numTotalBytesInGroup1 + 1;
+      var numDataBytesInGroup1 = Math.floor(numDataBytes / numRSBlocks);
+      var numDataBytesInGroup2 = numDataBytesInGroup1 + 1;
+      var numEcBytesInGroup1 = numTotalBytesInGroup1 - numDataBytesInGroup1;
+      var numEcBytesInGroup2 = numTotalBytesInGroup2 - numDataBytesInGroup2;
+      if (numEcBytesInGroup1 !== numEcBytesInGroup2) {
+        throw new WriterException("EC bytes mismatch");
+      }
+      if (numRSBlocks !== numRsBlocksInGroup1 + numRsBlocksInGroup2) {
+        throw new WriterException("RS blocks mismatch");
+      }
+      if (numTotalBytes !== (numDataBytesInGroup1 + numEcBytesInGroup1) * numRsBlocksInGroup1 + (numDataBytesInGroup2 + numEcBytesInGroup2) * numRsBlocksInGroup2) {
+        throw new WriterException("Total bytes mismatch");
+      }
+      if (blockID < numRsBlocksInGroup1) {
+        numDataBytesInBlock[0] = numDataBytesInGroup1;
+        numECBytesInBlock[0] = numEcBytesInGroup1;
       } else {
-        bits.appendBits(num1, 4);
-        i++;
+        numDataBytesInBlock[0] = numDataBytesInGroup2;
+        numECBytesInBlock[0] = numEcBytesInGroup2;
       }
-    }
-  };
-  Encoder.appendAlphanumericBytes = function(content, bits) {
-    var length = content.length;
-    var i = 0;
-    while (i < length) {
-      var code1 = Encoder.getAlphanumericCode(content.charCodeAt(i));
-      if (code1 === -1) {
-        throw new WriterException();
+    };
+    Encoder2.interleaveWithECBytes = function(bits, numTotalBytes, numDataBytes, numRSBlocks) {
+      var e_1, _a2, e_2, _b;
+      if (bits.getSizeInBytes() !== numDataBytes) {
+        throw new WriterException("Number of bits and data bytes does not match");
       }
-      if (i + 1 < length) {
-        var code2 = Encoder.getAlphanumericCode(content.charCodeAt(i + 1));
-        if (code2 === -1) {
+      var dataBytesOffset = 0;
+      var maxNumDataBytes = 0;
+      var maxNumEcBytes = 0;
+      var blocks = new Array();
+      for (var i = 0; i < numRSBlocks; ++i) {
+        var numDataBytesInBlock = new Int32Array(1);
+        var numEcBytesInBlock = new Int32Array(1);
+        Encoder2.getNumDataBytesAndNumECBytesForBlockID(numTotalBytes, numDataBytes, numRSBlocks, i, numDataBytesInBlock, numEcBytesInBlock);
+        var size = numDataBytesInBlock[0];
+        var dataBytes = new Uint8Array(size);
+        bits.toBytes(8 * dataBytesOffset, dataBytes, 0, size);
+        var ecBytes = Encoder2.generateECBytes(dataBytes, numEcBytesInBlock[0]);
+        blocks.push(new BlockPair(dataBytes, ecBytes));
+        maxNumDataBytes = Math.max(maxNumDataBytes, size);
+        maxNumEcBytes = Math.max(maxNumEcBytes, ecBytes.length);
+        dataBytesOffset += numDataBytesInBlock[0];
+      }
+      if (numDataBytes !== dataBytesOffset) {
+        throw new WriterException("Data bytes does not match offset");
+      }
+      var result = new BitArray();
+      for (var i = 0; i < maxNumDataBytes; ++i) {
+        try {
+          for (var blocks_1 = (e_1 = void 0, __values$6(blocks)), blocks_1_1 = blocks_1.next(); !blocks_1_1.done; blocks_1_1 = blocks_1.next()) {
+            var block = blocks_1_1.value;
+            var dataBytes = block.getDataBytes();
+            if (i < dataBytes.length) {
+              result.appendBits(dataBytes[i], 8);
+            }
+          }
+        } catch (e_1_1) {
+          e_1 = { error: e_1_1 };
+        } finally {
+          try {
+            if (blocks_1_1 && !blocks_1_1.done && (_a2 = blocks_1.return)) _a2.call(blocks_1);
+          } finally {
+            if (e_1) throw e_1.error;
+          }
+        }
+      }
+      for (var i = 0; i < maxNumEcBytes; ++i) {
+        try {
+          for (var blocks_2 = (e_2 = void 0, __values$6(blocks)), blocks_2_1 = blocks_2.next(); !blocks_2_1.done; blocks_2_1 = blocks_2.next()) {
+            var block = blocks_2_1.value;
+            var ecBytes = block.getErrorCorrectionBytes();
+            if (i < ecBytes.length) {
+              result.appendBits(ecBytes[i], 8);
+            }
+          }
+        } catch (e_2_1) {
+          e_2 = { error: e_2_1 };
+        } finally {
+          try {
+            if (blocks_2_1 && !blocks_2_1.done && (_b = blocks_2.return)) _b.call(blocks_2);
+          } finally {
+            if (e_2) throw e_2.error;
+          }
+        }
+      }
+      if (numTotalBytes !== result.getSizeInBytes()) {
+        throw new WriterException("Interleaving error: " + numTotalBytes + " and " + result.getSizeInBytes() + " differ.");
+      }
+      return result;
+    };
+    Encoder2.generateECBytes = function(dataBytes, numEcBytesInBlock) {
+      var numDataBytes = dataBytes.length;
+      var toEncode = new Int32Array(numDataBytes + numEcBytesInBlock);
+      for (var i = 0; i < numDataBytes; i++) {
+        toEncode[i] = dataBytes[i] & 255;
+      }
+      new ReedSolomonEncoder(GenericGF.QR_CODE_FIELD_256).encode(toEncode, numEcBytesInBlock);
+      var ecBytes = new Uint8Array(numEcBytesInBlock);
+      for (var i = 0; i < numEcBytesInBlock; i++) {
+        ecBytes[i] = /*(byte) */
+        toEncode[numDataBytes + i];
+      }
+      return ecBytes;
+    };
+    Encoder2.appendModeInfo = function(mode, bits) {
+      bits.appendBits(mode.getBits(), 4);
+    };
+    Encoder2.appendLengthInfo = function(numLetters, version, mode, bits) {
+      var numBits = mode.getCharacterCountBits(version);
+      if (numLetters >= 1 << numBits) {
+        throw new WriterException(numLetters + " is bigger than " + ((1 << numBits) - 1));
+      }
+      bits.appendBits(numLetters, numBits);
+    };
+    Encoder2.appendBytes = function(content, mode, bits, encoding) {
+      switch (mode) {
+        case Mode$2.NUMERIC:
+          Encoder2.appendNumericBytes(content, bits);
+          break;
+        case Mode$2.ALPHANUMERIC:
+          Encoder2.appendAlphanumericBytes(content, bits);
+          break;
+        case Mode$2.BYTE:
+          Encoder2.append8BitBytes(content, bits, encoding);
+          break;
+        case Mode$2.KANJI:
+          Encoder2.appendKanjiBytes(content, bits);
+          break;
+        default:
+          throw new WriterException("Invalid mode: " + mode);
+      }
+    };
+    Encoder2.getDigit = function(singleCharacter) {
+      return singleCharacter.charCodeAt(0) - 48;
+    };
+    Encoder2.isDigit = function(singleCharacter) {
+      var cn = Encoder2.getDigit(singleCharacter);
+      return cn >= 0 && cn <= 9;
+    };
+    Encoder2.appendNumericBytes = function(content, bits) {
+      var length = content.length;
+      var i = 0;
+      while (i < length) {
+        var num1 = Encoder2.getDigit(content.charAt(i));
+        if (i + 2 < length) {
+          var num2 = Encoder2.getDigit(content.charAt(i + 1));
+          var num3 = Encoder2.getDigit(content.charAt(i + 2));
+          bits.appendBits(num1 * 100 + num2 * 10 + num3, 10);
+          i += 3;
+        } else if (i + 1 < length) {
+          var num2 = Encoder2.getDigit(content.charAt(i + 1));
+          bits.appendBits(num1 * 10 + num2, 7);
+          i += 2;
+        } else {
+          bits.appendBits(num1, 4);
+          i++;
+        }
+      }
+    };
+    Encoder2.appendAlphanumericBytes = function(content, bits) {
+      var length = content.length;
+      var i = 0;
+      while (i < length) {
+        var code1 = Encoder2.getAlphanumericCode(content.charCodeAt(i));
+        if (code1 === -1) {
           throw new WriterException();
         }
-        bits.appendBits(code1 * 45 + code2, 11);
-        i += 2;
-      } else {
-        bits.appendBits(code1, 6);
-        i++;
+        if (i + 1 < length) {
+          var code2 = Encoder2.getAlphanumericCode(content.charCodeAt(i + 1));
+          if (code2 === -1) {
+            throw new WriterException();
+          }
+          bits.appendBits(code1 * 45 + code2, 11);
+          i += 2;
+        } else {
+          bits.appendBits(code1, 6);
+          i++;
+        }
       }
-    }
-  };
-  Encoder.append8BitBytes = function(content, bits, encoding) {
-    var bytes;
-    try {
-      bytes = StringEncoding.encode(content, encoding);
-    } catch (uee) {
-      throw new WriterException(uee);
-    }
-    for (var i = 0, length_2 = bytes.length; i !== length_2; i++) {
-      var b = bytes[i];
-      bits.appendBits(b, 8);
-    }
-  };
-  Encoder.appendKanjiBytes = function(content, bits) {
-    var bytes;
-    try {
-      bytes = StringEncoding.encode(content, CharacterSetECI.SJIS);
-    } catch (uee) {
-      throw new WriterException(uee);
-    }
-    var length = bytes.length;
-    for (var i = 0; i < length; i += 2) {
-      var byte1 = bytes[i] & 255;
-      var byte2 = bytes[i + 1] & 255;
-      var code = byte1 << 8 & 4294967295 | byte2;
-      var subtracted = -1;
-      if (code >= 33088 && code <= 40956) {
-        subtracted = code - 33088;
-      } else if (code >= 57408 && code <= 60351) {
-        subtracted = code - 49472;
+    };
+    Encoder2.append8BitBytes = function(content, bits, encoding) {
+      var bytes;
+      try {
+        bytes = StringEncoding.encode(content, encoding);
+      } catch (uee) {
+        throw new WriterException(uee);
       }
-      if (subtracted === -1) {
-        throw new WriterException("Invalid byte sequence");
+      for (var i = 0, length_2 = bytes.length; i !== length_2; i++) {
+        var b = bytes[i];
+        bits.appendBits(b, 8);
       }
-      var encoded = (subtracted >> 8) * 192 + (subtracted & 255);
-      bits.appendBits(encoded, 13);
-    }
-  };
-  Encoder.appendECI = function(eci, bits) {
-    bits.appendBits(Mode$2.ECI.getBits(), 4);
-    bits.appendBits(eci.getValue(), 8);
-  };
-  Encoder.ALPHANUMERIC_TABLE = Int32Array.from([
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    // 0x00-0x0f
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    // 0x10-0x1f
-    36,
-    -1,
-    -1,
-    -1,
-    37,
-    38,
-    -1,
-    -1,
-    -1,
-    -1,
-    39,
-    40,
-    -1,
-    41,
-    42,
-    43,
-    // 0x20-0x2f
-    0,
-    1,
-    2,
-    3,
-    4,
-    5,
-    6,
-    7,
-    8,
-    9,
-    44,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1,
-    // 0x30-0x3f
-    -1,
-    10,
-    11,
-    12,
-    13,
-    14,
-    15,
-    16,
-    17,
-    18,
-    19,
-    20,
-    21,
-    22,
-    23,
-    24,
-    // 0x40-0x4f
-    25,
-    26,
-    27,
-    28,
-    29,
-    30,
-    31,
-    32,
-    33,
-    34,
-    35,
-    -1,
-    -1,
-    -1,
-    -1,
-    -1
-    // 0x50-0x5f
-  ]);
-  Encoder.DEFAULT_BYTE_MODE_ENCODING = CharacterSetECI.UTF8.getName();
-  return Encoder;
-})();
+    };
+    Encoder2.appendKanjiBytes = function(content, bits) {
+      var bytes;
+      try {
+        bytes = StringEncoding.encode(content, CharacterSetECI.SJIS);
+      } catch (uee) {
+        throw new WriterException(uee);
+      }
+      var length = bytes.length;
+      for (var i = 0; i < length; i += 2) {
+        var byte1 = bytes[i] & 255;
+        var byte2 = bytes[i + 1] & 255;
+        var code = byte1 << 8 & 4294967295 | byte2;
+        var subtracted = -1;
+        if (code >= 33088 && code <= 40956) {
+          subtracted = code - 33088;
+        } else if (code >= 57408 && code <= 60351) {
+          subtracted = code - 49472;
+        }
+        if (subtracted === -1) {
+          throw new WriterException("Invalid byte sequence");
+        }
+        var encoded = (subtracted >> 8) * 192 + (subtracted & 255);
+        bits.appendBits(encoded, 13);
+      }
+    };
+    Encoder2.appendECI = function(eci, bits) {
+      bits.appendBits(Mode$2.ECI.getBits(), 4);
+      bits.appendBits(eci.getValue(), 8);
+    };
+    Encoder2.ALPHANUMERIC_TABLE = Int32Array.from([
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      // 0x00-0x0f
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      // 0x10-0x1f
+      36,
+      -1,
+      -1,
+      -1,
+      37,
+      38,
+      -1,
+      -1,
+      -1,
+      -1,
+      39,
+      40,
+      -1,
+      41,
+      42,
+      43,
+      // 0x20-0x2f
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      44,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      // 0x30-0x3f
+      -1,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      // 0x40-0x4f
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1
+      // 0x50-0x5f
+    ]);
+    Encoder2.DEFAULT_BYTE_MODE_ENCODING = CharacterSetECI.UTF8.getName();
+    return Encoder2;
+  })()
+);
 var __extends$8 = /* @__PURE__ */ (function() {
   var extendStatics = function(d, b) {
     extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
@@ -29601,12 +29601,12 @@ var __values = function(o) {
   throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 };
 (function() {
-  function Encoder() {
+  function Encoder2() {
   }
-  Encoder.encodeBytes = function(data) {
-    return Encoder.encode(data, Encoder.DEFAULT_EC_PERCENT, Encoder.DEFAULT_AZTEC_LAYERS);
+  Encoder2.encodeBytes = function(data) {
+    return Encoder2.encode(data, Encoder2.DEFAULT_EC_PERCENT, Encoder2.DEFAULT_AZTEC_LAYERS);
   };
-  Encoder.encode = function(data, minECCPercent, userSpecifiedLayers) {
+  Encoder2.encode = function(data, minECCPercent, userSpecifiedLayers) {
     var bits = new HighLevelEncoder(data).encode();
     var eccBits = Integer.truncDivision(bits.getSize() * minECCPercent, 100) + 11;
     var totalSizeBits = bits.getSize() + eccBits;
@@ -29615,16 +29615,16 @@ var __values = function(o) {
     var totalBitsInLayer;
     var wordSize;
     var stuffedBits;
-    if (userSpecifiedLayers !== Encoder.DEFAULT_AZTEC_LAYERS) {
+    if (userSpecifiedLayers !== Encoder2.DEFAULT_AZTEC_LAYERS) {
       compact = userSpecifiedLayers < 0;
       layers = Math.abs(userSpecifiedLayers);
-      if (layers > (compact ? Encoder.MAX_NB_BITS_COMPACT : Encoder.MAX_NB_BITS)) {
+      if (layers > (compact ? Encoder2.MAX_NB_BITS_COMPACT : Encoder2.MAX_NB_BITS)) {
         throw new IllegalArgumentException(StringUtils.format("Illegal value %s for layers", userSpecifiedLayers));
       }
-      totalBitsInLayer = Encoder.totalBitsInLayer(layers, compact);
-      wordSize = Encoder.WORD_SIZE[layers];
+      totalBitsInLayer = Encoder2.totalBitsInLayer(layers, compact);
+      wordSize = Encoder2.WORD_SIZE[layers];
       var usableBitsInLayers = totalBitsInLayer - totalBitsInLayer % wordSize;
-      stuffedBits = Encoder.stuffBits(bits, wordSize);
+      stuffedBits = Encoder2.stuffBits(bits, wordSize);
       if (stuffedBits.getSize() + eccBits > usableBitsInLayers) {
         throw new IllegalArgumentException("Data to large for user specified layer");
       }
@@ -29635,18 +29635,18 @@ var __values = function(o) {
       wordSize = 0;
       stuffedBits = null;
       for (var i = 0; ; i++) {
-        if (i > Encoder.MAX_NB_BITS) {
+        if (i > Encoder2.MAX_NB_BITS) {
           throw new IllegalArgumentException("Data too large for an Aztec code");
         }
         compact = i <= 3;
         layers = compact ? i + 1 : i;
-        totalBitsInLayer = Encoder.totalBitsInLayer(layers, compact);
+        totalBitsInLayer = Encoder2.totalBitsInLayer(layers, compact);
         if (totalSizeBits > totalBitsInLayer) {
           continue;
         }
-        if (stuffedBits == null || wordSize !== Encoder.WORD_SIZE[layers]) {
-          wordSize = Encoder.WORD_SIZE[layers];
-          stuffedBits = Encoder.stuffBits(bits, wordSize);
+        if (stuffedBits == null || wordSize !== Encoder2.WORD_SIZE[layers]) {
+          wordSize = Encoder2.WORD_SIZE[layers];
+          stuffedBits = Encoder2.stuffBits(bits, wordSize);
         }
         var usableBitsInLayers = totalBitsInLayer - totalBitsInLayer % wordSize;
         if (compact && stuffedBits.getSize() > wordSize * 64) {
@@ -29657,9 +29657,9 @@ var __values = function(o) {
         }
       }
     }
-    var messageBits = Encoder.generateCheckWords(stuffedBits, totalBitsInLayer, wordSize);
+    var messageBits = Encoder2.generateCheckWords(stuffedBits, totalBitsInLayer, wordSize);
     var messageSizeInWords = stuffedBits.getSize() / wordSize;
-    var modeMessage = Encoder.generateModeMessage(compact, layers, messageSizeInWords);
+    var modeMessage = Encoder2.generateModeMessage(compact, layers, messageSizeInWords);
     var baseMatrixSize = (compact ? 11 : 14) + layers * 4;
     var alignmentMap = new Int32Array(baseMatrixSize);
     var matrixSize;
@@ -29700,11 +29700,11 @@ var __values = function(o) {
       }
       rowOffset += rowSize * 8;
     }
-    Encoder.drawModeMessage(matrix, compact, matrixSize, modeMessage);
+    Encoder2.drawModeMessage(matrix, compact, matrixSize, modeMessage);
     if (compact) {
-      Encoder.drawBullsEye(matrix, Integer.truncDivision(matrixSize, 2), 5);
+      Encoder2.drawBullsEye(matrix, Integer.truncDivision(matrixSize, 2), 5);
     } else {
-      Encoder.drawBullsEye(matrix, Integer.truncDivision(matrixSize, 2), 7);
+      Encoder2.drawBullsEye(matrix, Integer.truncDivision(matrixSize, 2), 7);
       for (var i = 0, j = 0; i < Integer.truncDivision(baseMatrixSize, 2) - 1; i += 15, j += 16) {
         for (var k = Integer.truncDivision(matrixSize, 2) & 1; k < matrixSize; k += 2) {
           matrix.set(Integer.truncDivision(matrixSize, 2) - j, k);
@@ -29722,7 +29722,7 @@ var __values = function(o) {
     aztec.setMatrix(matrix);
     return aztec;
   };
-  Encoder.drawBullsEye = function(matrix, center, size) {
+  Encoder2.drawBullsEye = function(matrix, center, size) {
     for (var i = 0; i < size; i += 2) {
       for (var j = center - i; j <= center + i; j++) {
         matrix.set(j, center - i);
@@ -29738,20 +29738,20 @@ var __values = function(o) {
     matrix.set(center + size, center - size + 1);
     matrix.set(center + size, center + size - 1);
   };
-  Encoder.generateModeMessage = function(compact, layers, messageSizeInWords) {
+  Encoder2.generateModeMessage = function(compact, layers, messageSizeInWords) {
     var modeMessage = new BitArray();
     if (compact) {
       modeMessage.appendBits(layers - 1, 2);
       modeMessage.appendBits(messageSizeInWords - 1, 6);
-      modeMessage = Encoder.generateCheckWords(modeMessage, 28, 4);
+      modeMessage = Encoder2.generateCheckWords(modeMessage, 28, 4);
     } else {
       modeMessage.appendBits(layers - 1, 5);
       modeMessage.appendBits(messageSizeInWords - 1, 11);
-      modeMessage = Encoder.generateCheckWords(modeMessage, 40, 4);
+      modeMessage = Encoder2.generateCheckWords(modeMessage, 40, 4);
     }
     return modeMessage;
   };
-  Encoder.drawModeMessage = function(matrix, compact, matrixSize, modeMessage) {
+  Encoder2.drawModeMessage = function(matrix, compact, matrixSize, modeMessage) {
     var center = Integer.truncDivision(matrixSize, 2);
     if (compact) {
       for (var i = 0; i < 7; i++) {
@@ -29787,12 +29787,12 @@ var __values = function(o) {
       }
     }
   };
-  Encoder.generateCheckWords = function(bitArray, totalBits, wordSize) {
+  Encoder2.generateCheckWords = function(bitArray, totalBits, wordSize) {
     var e_1, _a2;
     var messageSizeInWords = bitArray.getSize() / wordSize;
-    var rs = new ReedSolomonEncoder(Encoder.getGF(wordSize));
+    var rs = new ReedSolomonEncoder(Encoder2.getGF(wordSize));
     var totalWords = Integer.truncDivision(totalBits, wordSize);
-    var messageWords = Encoder.bitsToWords(bitArray, wordSize, totalWords);
+    var messageWords = Encoder2.bitsToWords(bitArray, wordSize, totalWords);
     rs.encode(messageWords, totalWords - messageSizeInWords);
     var startPad = totalBits % wordSize;
     var messageBits = new BitArray();
@@ -29813,7 +29813,7 @@ var __values = function(o) {
     }
     return messageBits;
   };
-  Encoder.bitsToWords = function(stuffedBits, wordSize, totalWords) {
+  Encoder2.bitsToWords = function(stuffedBits, wordSize, totalWords) {
     var message = new Int32Array(totalWords);
     var i;
     var n;
@@ -29826,7 +29826,7 @@ var __values = function(o) {
     }
     return message;
   };
-  Encoder.getGF = function(wordSize) {
+  Encoder2.getGF = function(wordSize) {
     switch (wordSize) {
       case 4:
         return GenericGF.AZTEC_PARAM;
@@ -29842,7 +29842,7 @@ var __values = function(o) {
         throw new IllegalArgumentException("Unsupported word size " + wordSize);
     }
   };
-  Encoder.stuffBits = function(bits, wordSize) {
+  Encoder2.stuffBits = function(bits, wordSize) {
     var out = new BitArray();
     var n = bits.getSize();
     var mask = (1 << wordSize) - 2;
@@ -29865,14 +29865,14 @@ var __values = function(o) {
     }
     return out;
   };
-  Encoder.totalBitsInLayer = function(layers, compact) {
+  Encoder2.totalBitsInLayer = function(layers, compact) {
     return ((compact ? 88 : 112) + 16 * layers) * layers;
   };
-  Encoder.DEFAULT_EC_PERCENT = 33;
-  Encoder.DEFAULT_AZTEC_LAYERS = 0;
-  Encoder.MAX_NB_BITS = 32;
-  Encoder.MAX_NB_BITS_COMPACT = 4;
-  Encoder.WORD_SIZE = Int32Array.from([
+  Encoder2.DEFAULT_EC_PERCENT = 33;
+  Encoder2.DEFAULT_AZTEC_LAYERS = 0;
+  Encoder2.MAX_NB_BITS = 32;
+  Encoder2.MAX_NB_BITS_COMPACT = 4;
+  Encoder2.WORD_SIZE = Int32Array.from([
     4,
     6,
     6,
@@ -29907,13 +29907,14 @@ var __values = function(o) {
     12,
     12
   ]);
-  return Encoder;
+  return Encoder2;
 })();
 export {
   ArgumentException as A,
   BinaryBitmap as B,
   ChecksumException as C,
   DecodeHintType as D,
+  EncodeHintType as E,
   FormatException as F,
   HybridBinarizer as H,
   IllegalArgumentException as I,
@@ -29925,5 +29926,9 @@ export {
   InvertedLuminanceSource as a,
   AztecReader as b,
   DataMatrixReader as c,
-  MultiFormatReader as d
+  MultiFormatReader as d,
+  ErrorCorrectionLevel as e,
+  Encoder as f,
+  IllegalStateException as g,
+  BarcodeFormat as h
 };

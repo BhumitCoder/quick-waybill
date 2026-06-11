@@ -12,9 +12,7 @@ import { t as twMerge } from "../_libs/tailwind-merge.mjs";
 import { R as Root2, V as Value, T as Trigger, I as Icon, P as Portal, C as Content2, a as Viewport, b as Item, c as ItemIndicator, d as ItemText, S as ScrollUpButton, e as ScrollDownButton, L as Label, f as Separator } from "../_libs/radix-ui__react-select.mjs";
 import { R as Root, P as Portal$1, C as Content, a as Close, T as Title, D as Description, O as Overlay } from "../_libs/radix-ui__react-dialog.mjs";
 import { c as configureStore, a as createSlice } from "../_libs/reduxjs__toolkit.mjs";
-import "../_libs/zxing__library.mjs";
-import { B as BrowserMultiFormatReader, a as BrowserCodeReader } from "../_libs/zxing__browser.mjs";
-import { A as ArrowLeft, L as LoaderCircle, C as CloudUpload, T as TriangleAlert, a as CircleCheck, b as CircleX, R as RefreshCw, S as Sun, M as Moon, c as ScanLine, B as Building2, d as ChevronRight, e as Layers, P as Package, D as Download, f as Share, g as Plus, X, h as ChevronDown, i as Check, j as ChevronUp } from "../_libs/lucide-react.mjs";
+import { A as ArrowLeft, C as CloudUpload, R as RefreshCw, L as LoaderCircle, T as TriangleAlert, H as Hash, S as ScanLine, a as Sun, M as Moon, B as Building2, b as ChevronRight, c as Layers, d as CircleCheck, Z as Zap, e as CircleX, D as Download, f as Share, P as Plus, X, g as ChevronDown, h as Check, i as ChevronUp } from "../_libs/lucide-react.mjs";
 import { c as getApps, g as getApp, i as initializeApp } from "../_libs/firebase__app.mjs";
 import "../_libs/use-sync-external-store.mjs";
 import "../_libs/react-dom.mjs";
@@ -89,7 +87,6 @@ import "../_libs/radix-ui__react-presence.mjs";
 import "../_libs/redux.mjs";
 import "../_libs/immer.mjs";
 import "../_libs/redux-thunk.mjs";
-import "../_libs/ts-custom-error.mjs";
 import "../_libs/idb.mjs";
 const firebaseConfig = {
   apiKey: "AIzaSyDsdTCK3XOodXcuC1TWHAmxLAETDYv7AjE",
@@ -718,14 +715,9 @@ function SetupScreen({ onStart }) {
 function SectionLabel({ children }) {
   return /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mb-2 px-1 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground", children });
 }
-function buildReader() {
-  return new BrowserMultiFormatReader(void 0, {
-    delayBetweenScanAttempts: 50,
-    delayBetweenScanSuccess: 500
-  });
-}
-async function getBestCamera() {
+async function getBestDeviceId() {
   try {
+    const { BrowserCodeReader } = await import("../_libs/zxing__browser.mjs");
     const devices = await BrowserCodeReader.listVideoInputDevices();
     const back = devices.find(
       (d) => /back|rear|environment/i.test(d.label)
@@ -740,12 +732,16 @@ function useScanner(videoRef, onDecode, enabled) {
   const errorRef = reactExports.useRef(null);
   reactExports.useEffect(() => {
     if (!enabled || !videoRef.current) return;
-    const reader = buildReader();
     let controls = null;
     let cancelled = false;
     (async () => {
       try {
-        const deviceId = await getBestCamera();
+        const { BrowserMultiFormatReader } = await import("../_libs/zxing__browser.mjs");
+        const reader = new BrowserMultiFormatReader(void 0, {
+          delayBetweenScanAttempts: 40,
+          delayBetweenScanSuccess: 500
+        });
+        const deviceId = await getBestDeviceId();
         const videoConstraints = {
           width: { ideal: 1920 },
           height: { ideal: 1080 }
@@ -838,18 +834,17 @@ function errorBeep() {
   beep(280, 180);
   setTimeout(() => beep(220, 180), 210);
 }
-const STATUS_CHIP = {
-  pending: "bg-amber-500/20 text-amber-300",
-  processing: "bg-blue-500/20 text-blue-300",
-  shipped: "bg-cyan-500/20 text-cyan-300",
-  delivered: "bg-emerald-500/20 text-emerald-300",
-  cancelled: "bg-rose-500/20 text-rose-300",
-  returned: "bg-orange-500/20 text-orange-300",
-  lost: "bg-red-500/20 text-red-300",
-  manifest: "bg-violet-500/20 text-violet-300"
+const STATUS_COLOR = {
+  pending: { bg: "bg-amber-500/20", text: "text-amber-300", glow: "#f59e0b" },
+  processing: { bg: "bg-blue-500/20", text: "text-blue-300", glow: "#3b82f6" },
+  shipped: { bg: "bg-cyan-500/20", text: "text-cyan-300", glow: "#06b6d4" },
+  delivered: { bg: "bg-emerald-500/20", text: "text-emerald-300", glow: "#10b981" },
+  cancelled: { bg: "bg-rose-500/20", text: "text-rose-300", glow: "#f43f5e" },
+  returned: { bg: "bg-orange-500/20", text: "text-orange-300", glow: "#f97316" },
+  lost: { bg: "bg-red-500/20", text: "text-red-300", glow: "#ef4444" },
+  manifest: { bg: "bg-violet-500/20", text: "text-violet-300", glow: "#8b5cf6" }
 };
 function ScannerScreen({ selection, onExit }) {
-  const { isDark, toggle } = useTheme();
   const videoRef = reactExports.useRef(null);
   const dispatch = useAppDispatch();
   const path = reactExports.useMemo(() => masterPath(selection.company.id, selection.platform.id), [selection]);
@@ -862,7 +857,8 @@ function ScannerScreen({ selection, onExit }) {
   const [results, setResults] = reactExports.useState([]);
   const [uploading, setUploading] = reactExports.useState(false);
   const [refreshing, setRefreshing] = reactExports.useState(false);
-  const [flashColor, setFlashColor] = reactExports.useState(null);
+  const [lastScan, setLastScan] = reactExports.useState(null);
+  const [flashType, setFlashType] = reactExports.useState(null);
   reactExports.useEffect(() => {
     if (cacheEntry) {
       rowsRef.current = cacheEntry.rows;
@@ -906,8 +902,9 @@ function ScannerScreen({ selection, onExit }) {
       setRefreshing(false);
     }
   }, [dispatch, path]);
-  const pushResult = reactExports.useCallback((r) => {
-    setResults((p) => [r, ...p].slice(0, 200));
+  const flash = reactExports.useCallback((type) => {
+    setFlashType(type);
+    setTimeout(() => setFlashType(null), 400);
   }, []);
   const handleDecode = reactExports.useCallback(async (text) => {
     const awb = text.trim();
@@ -915,26 +912,28 @@ function ScannerScreen({ selection, onExit }) {
     const key = awb.toLowerCase();
     if (scannedRef.current.has(key)) {
       vibrate(30);
-      setFlashColor("red");
-      setTimeout(() => setFlashColor(null), 350);
-      toast.warning("Already updated this session", { description: awb });
-      pushResult({ id: `${Date.now()}-${awb}`, awb, timestamp: /* @__PURE__ */ new Date(), success: false, warning: true, error: "Already scanned" });
+      flash("error");
+      const r2 = { id: `${Date.now()}-${awb}`, awb, timestamp: /* @__PURE__ */ new Date(), success: false, warning: true, error: "Already scanned this session" };
+      setLastScan(r2);
+      setResults((p) => [r2, ...p].slice(0, 200));
+      toast.warning("Already scanned", { description: awb });
       return;
     }
     const idx = findRowByAwb(rowsRef.current, awb);
     if (idx === -1) {
       errorBeep();
       vibrate(30);
-      setFlashColor("red");
-      setTimeout(() => setFlashColor(null), 350);
+      flash("error");
+      const r2 = { id: `${Date.now()}-${awb}`, awb, timestamp: /* @__PURE__ */ new Date(), success: false, error: "AWB not in master file" };
+      setLastScan(r2);
+      setResults((p) => [r2, ...p].slice(0, 200));
       toast.error("AWB not found", { description: awb });
-      pushResult({ id: `${Date.now()}-${awb}`, awb, timestamp: /* @__PURE__ */ new Date(), success: false, error: "Not in master file" });
       return;
     }
     const row = rowsRef.current[idx];
     const previousStatus = getField(row, "status") || "—";
-    const orderId = getField(row, "order_id") || getField(row, "orderId") || getField(row, "Order ID");
-    const productName = getField(row, "product_name") || getField(row, "productName") || getField(row, "Product Name") || getField(row, "product");
+    const orderId = getField(row, "order_id") || getField(row, "orderId") || getField(row, "Order ID") || "";
+    const productName = getField(row, "product_name") || getField(row, "productName") || getField(row, "Product Name") || getField(row, "product") || "";
     const updated = setField(row, "status", selection.status);
     rowsRef.current[idx] = updated;
     scannedRef.current.add(key);
@@ -942,15 +941,16 @@ function ScannerScreen({ selection, onExit }) {
     dispatch(markScanned({ path, awb: key }));
     beep();
     vibrate(50);
-    setFlashColor("green");
-    setTimeout(() => setFlashColor(null), 350);
-    pushResult({ id: `${Date.now()}-${awb}`, awb, timestamp: /* @__PURE__ */ new Date(), success: true, orderInfo: { orderId, productName, previousStatus } });
-    toast.success(`→ ${selection.status}`, { description: productName || orderId || awb });
+    flash("success");
+    const r = { id: `${Date.now()}-${awb}`, awb, timestamp: /* @__PURE__ */ new Date(), success: true, orderInfo: { orderId, productName, previousStatus } };
+    setLastScan(r);
+    setResults((p) => [r, ...p].slice(0, 200));
+    toast.success(`Marked as ${selection.status}`, { description: productName || orderId || awb });
     if (!uploadingRef.current) {
       uploadingRef.current = true;
       setUploading(true);
       try {
-        await new Promise((r) => setTimeout(r, 600));
+        await new Promise((r2) => setTimeout(r2, 500));
         await writeMasterRows(path, rowsRef.current);
       } catch (e) {
         toast.error("Upload failed", { description: e.message });
@@ -959,175 +959,256 @@ function ScannerScreen({ selection, onExit }) {
         setUploading(false);
       }
     }
-  }, [dispatch, path, pushResult, selection.status]);
+  }, [dispatch, flash, path, selection.status]);
   useScanner(videoRef, handleDecode, !loadingMaster && !masterError);
   const ok = results.filter((r) => r.success).length;
   const fail = results.filter((r) => !r.success && !r.warning).length;
   const warn = results.filter((r) => !!r.warning).length;
-  const statusChipCls = STATUS_CHIP[selection.status] ?? "bg-white/10 text-white/70";
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-dvh flex-col bg-black", children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { height: "env(safe-area-inset-top)" }, className: "bg-black" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("header", { className: "flex items-center gap-1.5 bg-black px-3 py-2", children: [
+  const total = results.length;
+  const statusColor = STATUS_COLOR[selection.status] ?? { bg: "bg-white/10", text: "text-white/70", glow: "#ffffff" };
+  const scanning = !loadingMaster && !masterError;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-dvh flex-col bg-[#080a0f]", onPointerDown: unlockAudio, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { style: { height: "env(safe-area-inset-top)" } }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("header", { className: "flex items-center gap-2 px-3 py-2", children: [
       /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Button,
+        "button",
         {
           onClick: onExit,
-          variant: "ghost",
-          size: "icon",
-          className: "h-9 w-9 shrink-0 rounded-xl text-white/60 hover:bg-white/10 hover:text-white",
-          children: /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowLeft, { className: "h-5 w-5" })
+          className: "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-white/50 hover:bg-white/10 hover:text-white active:scale-95 transition-all",
+          children: /* @__PURE__ */ jsxRuntimeExports.jsx(ArrowLeft, { className: "h-4.5 w-4.5" })
         }
       ),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 min-w-0 px-1", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "truncate text-[11px] font-medium leading-none text-white/40", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex-1 min-w-0", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("p", { className: "truncate text-[10px] font-medium text-white/30 tracking-wide uppercase", children: [
           selection.company.name,
           " · ",
           selection.platform.name
         ] }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "mt-1 flex items-center gap-2", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold capitalize ${statusChipCls}`, children: selection.status }),
-          loadingMaster && /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-3 w-3 animate-spin text-white/40" }),
-          uploading && /* @__PURE__ */ jsxRuntimeExports.jsx(CloudUpload, { className: "h-3 w-3 text-sky-400 animate-pulse" }),
-          masterError && /* @__PURE__ */ jsxRuntimeExports.jsx(TriangleAlert, { className: "h-3 w-3 text-rose-400" })
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1.5 mt-0.5", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs(
+            "span",
+            {
+              className: `inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold capitalize tracking-wide ${statusColor.bg} ${statusColor.text}`,
+              children: [
+                /* @__PURE__ */ jsxRuntimeExports.jsx(
+                  "span",
+                  {
+                    className: "h-1.5 w-1.5 rounded-full animate-pulse",
+                    style: { backgroundColor: statusColor.glow, boxShadow: `0 0 4px ${statusColor.glow}` }
+                  }
+                ),
+                selection.status
+              ]
+            }
+          ),
+          uploading && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex items-center gap-1 text-[10px] text-sky-400", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(CloudUpload, { className: "h-3 w-3 animate-pulse" }),
+            " syncing"
+          ] })
         ] })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-1", children: [
-        ok > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex items-center gap-0.5 rounded-full bg-emerald-500/15 px-2 py-1 text-[11px] font-bold text-emerald-400", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "h-3 w-3" }),
-          ok
-        ] }),
-        fail > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex items-center gap-0.5 rounded-full bg-rose-500/15 px-2 py-1 text-[11px] font-bold text-rose-400", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(CircleX, { className: "h-3 w-3" }),
-          fail
-        ] }),
-        warn > 0 && /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex items-center gap-0.5 rounded-full bg-amber-500/15 px-2 py-1 text-[11px] font-bold text-amber-400", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(TriangleAlert, { className: "h-3 w-3" }),
-          warn
-        ] })
+        ok > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(StatBadge, { value: ok, color: "emerald" }),
+        fail > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(StatBadge, { value: fail, color: "rose" }),
+        warn > 0 && /* @__PURE__ */ jsxRuntimeExports.jsx(StatBadge, { value: warn, color: "amber" })
       ] }),
       /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Button,
+        "button",
         {
           onClick: handleRefresh,
-          variant: "ghost",
-          size: "icon",
           disabled: refreshing || loadingMaster,
-          className: "h-9 w-9 shrink-0 rounded-xl text-white/50 hover:bg-white/10 hover:text-white",
+          className: "flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-white/40 hover:bg-white/10 hover:text-white active:scale-95 transition-all disabled:opacity-30",
           children: /* @__PURE__ */ jsxRuntimeExports.jsx(RefreshCw, { className: `h-4 w-4 ${refreshing ? "animate-spin" : ""}` })
-        }
-      ),
-      /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Button,
-        {
-          onClick: toggle,
-          variant: "ghost",
-          size: "icon",
-          className: "h-9 w-9 shrink-0 rounded-xl text-white/50 hover:bg-white/10 hover:text-white",
-          children: isDark ? /* @__PURE__ */ jsxRuntimeExports.jsx(Sun, { className: "h-4 w-4" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(Moon, { className: "h-4 w-4" })
         }
       )
     ] }),
     /* @__PURE__ */ jsxRuntimeExports.jsxs(
       "div",
       {
-        className: "relative w-full shrink-0 overflow-hidden bg-black",
-        style: { height: "clamp(200px, 55vw, 310px)" },
-        onPointerDown: unlockAudio,
+        className: "relative w-full shrink-0 overflow-hidden",
+        style: { height: "clamp(230px, 58vw, 340px)", background: "#000" },
         children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("video", { ref: videoRef, className: "h-full w-full object-cover", playsInline: true, muted: true }),
-          flashColor && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          /* @__PURE__ */ jsxRuntimeExports.jsx("video", { ref: videoRef, className: "h-full w-full object-cover", playsInline: true, muted: true, autoPlay: true }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(
             "div",
             {
               className: "pointer-events-none absolute inset-0 transition-opacity duration-300",
               style: {
-                backgroundColor: flashColor === "green" ? "rgba(34,197,94,0.35)" : "rgba(239,68,68,0.35)"
+                opacity: flashType ? 1 : 0,
+                backgroundColor: flashType === "success" ? "rgba(16,185,129,0.28)" : "rgba(239,68,68,0.28)"
               }
             }
           ),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "pointer-events-none absolute inset-0 bg-black/50" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx(
-            "div",
-            {
-              className: "pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl",
-              style: { width: "68%", height: "78%", boxShadow: "0 0 0 9999px rgba(0,0,0,0.55)" }
-            }
-          ),
-          /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2", style: { width: "68%", height: "78%" }, children: [
-            ["tl", "tr", "bl", "br"].map((p) => /* @__PURE__ */ jsxRuntimeExports.jsx(Corner, { pos: p }, p)),
-            !loadingMaster && !masterError && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-x-0 top-1/2 h-px animate-scan bg-gradient-to-r from-transparent via-primary to-transparent", style: { filter: "drop-shadow(0 0 4px var(--color-primary))" } })
-          ] }),
-          (loadingMaster || masterError) && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-2 rounded-2xl bg-black/70 px-5 py-4 backdrop-blur", children: loadingMaster ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-6 w-6 animate-spin text-primary" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[13px] font-medium text-white/80", children: "Loading master file…" })
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "pointer-events-none absolute inset-0", style: { background: "radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,0.72) 100%)" } }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx(ScanFrame, { active: scanning, glowColor: statusColor.glow, flashType }),
+          (loadingMaster || masterError) && /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm", children: /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex flex-col items-center gap-3 rounded-3xl bg-black/80 px-6 py-5 ring-1 ring-white/10", children: loadingMaster ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(LoaderCircle, { className: "h-7 w-7 animate-spin text-white/60" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[13px] font-semibold text-white/70", children: "Loading master file…" })
           ] }) : /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-            /* @__PURE__ */ jsxRuntimeExports.jsx(TriangleAlert, { className: "h-6 w-6 text-rose-400" }),
-            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[13px] font-medium text-white/80", children: masterError })
+            /* @__PURE__ */ jsxRuntimeExports.jsx(TriangleAlert, { className: "h-7 w-7 text-rose-400" }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[13px] font-semibold text-white/80", children: masterError }),
+            /* @__PURE__ */ jsxRuntimeExports.jsx(
+              "button",
+              {
+                onClick: handleRefresh,
+                className: "mt-1 rounded-xl bg-white/10 px-4 py-1.5 text-[12px] font-semibold text-white hover:bg-white/20 transition-colors",
+                children: "Retry"
+              }
+            )
           ] }) }) }),
-          !loadingMaster && !masterError && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "absolute inset-x-0 bottom-2.5 text-center text-[11px] font-medium text-white/50", children: "Align AWB barcode inside the frame" })
+          scanning && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "absolute inset-x-0 bottom-2 text-center text-[10px] font-medium tracking-widest text-white/30 uppercase", children: "Align barcode in frame" })
         ]
       }
     ),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex min-h-0 flex-1 flex-col bg-background", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between px-4 py-2.5 border-b border-border/60", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("h2", { className: "text-[11px] font-semibold uppercase tracking-widest text-muted-foreground", children: "Scan Log" }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "text-[11px] text-muted-foreground", children: [
-          results.length,
-          " scanned"
+    /* @__PURE__ */ jsxRuntimeExports.jsx(LastScanBanner, { result: lastScan, status: selection.status }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex min-h-0 flex-1 flex-col bg-[#0d1117]", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center justify-between border-b border-white/5 px-4 py-2", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[10px] font-bold tracking-widest text-white/25 uppercase", children: "Scan Log" }),
+        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 text-[10px] text-white/30", children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex items-center gap-1", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "h-1.5 w-1.5 rounded-full bg-emerald-500" }),
+            ok,
+            " ok"
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex items-center gap-1", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "h-1.5 w-1.5 rounded-full bg-rose-500" }),
+            fail,
+            " err"
+          ] }),
+          /* @__PURE__ */ jsxRuntimeExports.jsxs("span", { className: "flex items-center gap-1", children: [
+            /* @__PURE__ */ jsxRuntimeExports.jsx(Hash, { className: "h-3 w-3" }),
+            total
+          ] })
         ] })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 overflow-y-auto px-3 py-2", children: results.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full flex-col items-center justify-center gap-3 py-10", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "grid h-14 w-14 place-items-center rounded-3xl bg-muted/60", children: /* @__PURE__ */ jsxRuntimeExports.jsx(ScanLine, { className: "h-7 w-7 text-muted-foreground/40" }) }),
-        /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "text-center", children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-sm font-medium text-muted-foreground", children: "No scans yet" }),
-          /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "mt-0.5 text-[12px] text-muted-foreground/60", children: "Results appear here instantly" })
-        ] })
-      ] }) : /* @__PURE__ */ jsxRuntimeExports.jsx("ul", { className: "space-y-1.5", children: results.map((r) => /* @__PURE__ */ jsxRuntimeExports.jsx(LogRow, { r }, r.id)) }) }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-border/60 bg-card/60 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),14px)] backdrop-blur", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
-        Button,
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex-1 overflow-y-auto px-3 py-2 space-y-1.5", children: results.length === 0 ? /* @__PURE__ */ jsxRuntimeExports.jsx(EmptyLog, { scanning }) : results.map((r) => /* @__PURE__ */ jsxRuntimeExports.jsx(LogRow, { r }, r.id)) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "border-t border-white/5 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]", children: /* @__PURE__ */ jsxRuntimeExports.jsx(
+        "button",
         {
           onClick: onExit,
-          variant: "secondary",
-          className: "h-14 w-full rounded-2xl text-[15px] font-bold",
+          className: "w-full h-[52px] rounded-2xl bg-white/8 text-[15px] font-bold text-white/80 hover:bg-white/12 active:scale-[0.98] transition-all",
           children: ok > 0 ? `Done · ${ok} updated` : "Done"
         }
       ) })
     ] })
   ] });
 }
-function Corner({ pos }) {
-  const base = "absolute h-6 w-6 border-primary/90";
-  const variants = {
-    tl: "top-0 left-0 border-t-[3px] border-l-[3px] rounded-tl-xl",
-    tr: "top-0 right-0 border-t-[3px] border-r-[3px] rounded-tr-xl",
-    bl: "bottom-0 left-0 border-b-[3px] border-l-[3px] rounded-bl-xl",
-    br: "bottom-0 right-0 border-b-[3px] border-r-[3px] rounded-br-xl"
+function StatBadge({ value, color }) {
+  const cls = {
+    emerald: "bg-emerald-500/15 text-emerald-400",
+    rose: "bg-rose-500/15 text-rose-400",
+    amber: "bg-amber-500/15 text-amber-400"
+  }[color];
+  return /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: `flex min-w-[28px] items-center justify-center rounded-xl px-2 py-1 text-[11px] font-bold tabular-nums ${cls}`, children: value });
+}
+function ScanFrame({ active, glowColor, flashType }) {
+  const frameColor = flashType === "success" ? "#10b981" : flashType === "error" ? "#ef4444" : glowColor;
+  const W = "72%";
+  const H = "80%";
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs(
+    "div",
+    {
+      className: "pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2",
+      style: { width: W, height: H },
+      children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "absolute inset-0 rounded-2xl",
+            style: { boxShadow: `0 0 0 9999px rgba(0,0,0,0.58)` }
+          }
+        ),
+        ["tl", "tr", "bl", "br"].map((pos) => /* @__PURE__ */ jsxRuntimeExports.jsx(CornerBracket, { pos, color: frameColor }, pos)),
+        active && /* @__PURE__ */ jsxRuntimeExports.jsx(
+          "div",
+          {
+            className: "absolute inset-x-2 h-[2px] rounded-full animate-scan",
+            style: {
+              background: `linear-gradient(90deg, transparent, ${frameColor}, transparent)`,
+              boxShadow: `0 0 8px 2px ${frameColor}55`
+            }
+          }
+        ),
+        active && /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-px h-px w-4 rounded-full", style: { backgroundColor: `${frameColor}60` } }),
+          /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "absolute left-1/2 top-1/2 -translate-x-px -translate-y-1/2 w-px h-4 rounded-full", style: { backgroundColor: `${frameColor}60` } })
+        ] })
+      ]
+    }
+  );
+}
+function CornerBracket({ pos, color }) {
+  const base = "absolute h-7 w-7";
+  const style = {
+    boxShadow: `0 0 8px 1px ${color}55`
   };
-  return /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `${base} ${variants[pos]}`, style: { filter: "drop-shadow(0 0 5px var(--color-primary))" } });
+  const cls = {
+    tl: "top-0 left-0 rounded-tl-2xl border-t border-l",
+    tr: "top-0 right-0 rounded-tr-2xl border-t border-r",
+    bl: "bottom-0 left-0 rounded-bl-2xl border-b border-l",
+    br: "bottom-0 right-0 rounded-br-2xl border-b border-r"
+  }[pos];
+  return /* @__PURE__ */ jsxRuntimeExports.jsx(
+    "div",
+    {
+      className: `${base} ${cls}`,
+      style: { borderColor: color, borderWidth: "2.5px", ...style }
+    }
+  );
+}
+function LastScanBanner({ result, status }) {
+  if (!result) {
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 border-b border-white/5 bg-[#0d1117] px-4 py-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/5", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Zap, { className: "h-4 w-4 text-white/20" }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[12px] text-white/25 font-medium", children: "Waiting for first scan…" })
+    ] });
+  }
+  if (result.success) {
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-3 border-b border-emerald-500/15 bg-emerald-500/5 px-4 py-3", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15", children: /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "h-4 w-4 text-emerald-400" }) }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-[13px] font-bold text-emerald-300 tabular-nums", children: result.awb }),
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[10px] text-emerald-400/60 mt-0.5", children: result.orderInfo?.productName || result.orderInfo?.orderId ? result.orderInfo.productName || `#${result.orderInfo.orderId}` : `→ ${status}` })
+      ] }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[10px] tabular-nums text-emerald-400/40", children: result.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }) })
+    ] });
+  }
+  const isWarn = !!result.warning;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `flex items-center gap-3 border-b px-4 py-3 ${isWarn ? "border-amber-500/15 bg-amber-500/5" : "border-rose-500/15 bg-rose-500/5"}`, children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: `flex h-8 w-8 shrink-0 items-center justify-center rounded-xl ${isWarn ? "bg-amber-500/15" : "bg-rose-500/15"}`, children: isWarn ? /* @__PURE__ */ jsxRuntimeExports.jsx(TriangleAlert, { className: "h-4 w-4 text-amber-400" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(CircleX, { className: "h-4 w-4 text-rose-400" }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: `truncate text-[13px] font-bold tabular-nums ${isWarn ? "text-amber-300" : "text-rose-300"}`, children: result.awb }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: `text-[10px] mt-0.5 ${isWarn ? "text-amber-400/60" : "text-rose-400/60"}`, children: result.error })
+    ] })
+  ] });
+}
+function EmptyLog({ scanning }) {
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex h-full flex-col items-center justify-center gap-2 py-8", children: [
+    /* @__PURE__ */ jsxRuntimeExports.jsx("div", { className: "flex h-12 w-12 items-center justify-center rounded-2xl bg-white/4", children: /* @__PURE__ */ jsxRuntimeExports.jsx(Zap, { className: "h-6 w-6 text-white/15" }) }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[12px] font-semibold text-white/20", children: scanning ? "Ready to scan" : "Scanner not ready" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "text-[11px] text-white/12", children: "Results appear instantly" })
+  ] });
 }
 function LogRow({ r }) {
   const time = r.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   if (r.success) {
-    return /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { className: "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-3 py-2.5", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "h-4 w-4 shrink-0 text-emerald-500" }),
-      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-[13px] font-semibold tabular-nums", children: r.awb }),
-        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-[11px] text-muted-foreground", children: r.orderInfo?.productName ? /* @__PURE__ */ jsxRuntimeExports.jsxs(jsxRuntimeExports.Fragment, { children: [
-          /* @__PURE__ */ jsxRuntimeExports.jsx(Package, { className: "mr-0.5 inline h-3 w-3" }),
-          r.orderInfo.productName
-        ] }) : r.orderInfo?.orderId ? `#${r.orderInfo.orderId}` : "Updated" })
+    return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "flex items-center gap-2.5 rounded-xl border border-emerald-500/12 bg-emerald-500/4 px-3 py-2", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx(CircleCheck, { className: "h-3.5 w-3.5 shrink-0 text-emerald-500" }),
+      /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1", children: [
+        /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-[12px] font-semibold tabular-nums text-white/80", children: r.awb }),
+        (r.orderInfo?.productName || r.orderInfo?.orderId) && /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-[10px] text-white/30", children: r.orderInfo.productName || `#${r.orderInfo.orderId}` })
       ] }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[10px] tabular-nums text-muted-foreground/70", children: time })
+      /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 text-[9px] tabular-nums text-white/20", children: time })
     ] });
   }
-  const Icon2 = r.warning ? TriangleAlert : CircleX;
-  const style = r.warning ? "border-amber-500/20 bg-amber-500/5 [&_svg]:text-amber-500" : "border-rose-500/20 bg-rose-500/5 [&_svg]:text-rose-500";
-  return /* @__PURE__ */ jsxRuntimeExports.jsxs("li", { className: `grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border px-3 py-2.5 ${style}`, children: [
-    /* @__PURE__ */ jsxRuntimeExports.jsx(Icon2, { className: "h-4 w-4 shrink-0" }),
-    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0", children: [
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-[13px] font-semibold tabular-nums text-foreground", children: r.awb }),
-      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-[11px] text-muted-foreground", children: r.error })
+  const isWarn = !!r.warning;
+  return /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: `flex items-center gap-2.5 rounded-xl border px-3 py-2 ${isWarn ? "border-amber-500/12 bg-amber-500/4" : "border-rose-500/12 bg-rose-500/4"}`, children: [
+    isWarn ? /* @__PURE__ */ jsxRuntimeExports.jsx(TriangleAlert, { className: "h-3.5 w-3.5 shrink-0 text-amber-500" }) : /* @__PURE__ */ jsxRuntimeExports.jsx(CircleX, { className: "h-3.5 w-3.5 shrink-0 text-rose-500" }),
+    /* @__PURE__ */ jsxRuntimeExports.jsxs("div", { className: "min-w-0 flex-1", children: [
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-[12px] font-semibold tabular-nums text-white/60", children: r.awb }),
+      /* @__PURE__ */ jsxRuntimeExports.jsx("p", { className: "truncate text-[10px] text-white/25", children: r.error })
     ] }),
-    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "text-[10px] tabular-nums text-muted-foreground/70", children: time })
+    /* @__PURE__ */ jsxRuntimeExports.jsx("span", { className: "shrink-0 text-[9px] tabular-nums text-white/20", children: time })
   ] });
 }
 function Index() {

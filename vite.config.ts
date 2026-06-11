@@ -16,6 +16,9 @@ export default defineConfig({
   // This causes Nitro to emit to .vercel/output/ (Build Output API) which Vercel picks up automatically.
   nitro: {
     preset: "vercel",
+    externals: {
+      external: ["@zxing/browser", "@zxing/library"],
+    },
   },
   vite: {
     server: {
