@@ -1,25 +1,8 @@
 import { useEffect, useRef } from "react";
 import { BrowserMultiFormatReader, BrowserCodeReader } from "@zxing/browser";
-import { DecodeHintType, BarcodeFormat } from "@zxing/library";
-
-const BARCODE_FORMATS = [
-  BarcodeFormat.CODE_128,
-  BarcodeFormat.CODE_39,
-  BarcodeFormat.CODE_93,
-  BarcodeFormat.EAN_13,
-  BarcodeFormat.EAN_8,
-  BarcodeFormat.ITF,
-  BarcodeFormat.CODABAR,
-  BarcodeFormat.DATA_MATRIX,
-  BarcodeFormat.QR_CODE,
-  BarcodeFormat.PDF_417,
-];
 
 function buildReader() {
-  const hintsMap = new Map<unknown, unknown>();
-  hintsMap.set(DecodeHintType.POSSIBLE_FORMATS, BARCODE_FORMATS);
-  hintsMap.set(DecodeHintType.TRY_HARDER, true);
-  return new BrowserMultiFormatReader(hintsMap as never, {
+  return new BrowserMultiFormatReader(undefined, {
     delayBetweenScanAttempts: 50,
     delayBetweenScanSuccess: 500,
   });

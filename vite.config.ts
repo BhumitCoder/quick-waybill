@@ -33,14 +33,5 @@ export default defineConfig({
         ],
       },
     },
-    optimizeDeps: {
-      include: ["@zxing/browser", "@zxing/library"],
-    },
-    resolve: {
-      alias: {
-        "@zxing/browser": "@zxing/browser/esm/index.js",
-        "@zxing/library": "@zxing/library/esm/index.js",
-      },
-    },
   },
 });
