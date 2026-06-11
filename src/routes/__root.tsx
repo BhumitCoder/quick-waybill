@@ -77,14 +77,18 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
+      { title: "Zaiko AWB Scanner" },
+      { name: "description", content: "AWB Scan & Ship is a mobile PWA for bulk updating order statuses by scanning Air Waybill barcodes." },
       { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { property: "og:title", content: "Zaiko AWB Scanner" },
+      { property: "og:description", content: "AWB Scan & Ship is a mobile PWA for bulk updating order statuses by scanning Air Waybill barcodes." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "Zaiko AWB Scanner" },
+      { name: "twitter:description", content: "AWB Scan & Ship is a mobile PWA for bulk updating order statuses by scanning Air Waybill barcodes." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/73d75ccd-4fdd-46c2-ad6f-ef463ad3d2ed/id-preview-8b31b3dd--e9feb534-6a63-47a2-a034-e8d5eb47aa07.lovable.app-1781173263841.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/73d75ccd-4fdd-46c2-ad6f-ef463ad3d2ed/id-preview-8b31b3dd--e9feb534-6a63-47a2-a034-e8d5eb47aa07.lovable.app-1781173263841.png" },
     ],
     links: [
       {
