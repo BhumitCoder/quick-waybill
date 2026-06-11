@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { getDocs } from "firebase/firestore";
-import { ScanLine, Building2, Layers, Tag, Loader2 } from "lucide-react";
+import { ScanLine, Building2, Layers, Tag, Loader2, Sun, Moon } from "lucide-react";
 import { companiesCollection } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { InstallPrompt } from "./InstallPrompt";
+import { useTheme } from "@/hooks/useTheme";
 import {
   setCompany as setCompanyAction,
   setPlatform as setPlatformAction,
@@ -45,6 +46,7 @@ export type SetupSelection = {
 };
 
 export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void }) {
+  const { isDark, toggle } = useTheme();
   const dispatch = useAppDispatch();
   const setup = useAppSelector((s) => s.setup);
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -114,6 +116,9 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
             <p className="text-xs text-muted-foreground">Bulk status updates</p>
           </div>
         </div>
+        <Button variant="ghost" size="icon" onClick={toggle} className="h-10 w-10 rounded-xl">
+          {isDark ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+        </Button>
         <InstallPrompt />
       </header>
 

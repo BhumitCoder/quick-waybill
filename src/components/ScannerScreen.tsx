@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2, ScanLine, Package, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2, ScanLine, Package, RefreshCw, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScanner } from "@/hooks/useScanner";
+import { useTheme } from "@/hooks/useTheme";
 import {
   findRowByAwb,
   getField,
@@ -34,6 +35,7 @@ type ScanResult = {
 };
 
 export function ScannerScreen({ selection, onExit }: { selection: SetupSelection; onExit: () => void }) {
+  const { isDark, toggle } = useTheme();
   const videoRef = useRef<HTMLVideoElement>(null);
   const dispatch = useAppDispatch();
 
@@ -199,7 +201,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   return (
     <div className="flex h-dvh flex-col bg-background">
       {/* Header */}
-      <header className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-2 border-b border-border bg-card/80 px-3 py-3 pt-[max(env(safe-area-inset-top),0.75rem)] backdrop-blur">
+      <header className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto_auto] items-center gap-2 border-b border-border bg-card/80 px-3 py-3 pt-[max(env(safe-area-inset-top),0.75rem)] backdrop-blur">
         <Button
           onClick={onExit}
           variant="ghost"
@@ -216,6 +218,15 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           </div>
           <h1 className="truncate text-sm font-bold">{selection.company.name}</h1>
         </div>
+        <Button
+          onClick={toggle}
+          variant="ghost"
+          size="icon"
+          className="h-10 w-10 rounded-xl"
+          title="Toggle theme"
+        >
+          {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </Button>
         <Button
           onClick={handleRefresh}
           variant="ghost"
