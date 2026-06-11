@@ -1,4 +1,4 @@
-const CACHE = "awb-scanner-v1";
+const CACHE = "awb-scanner-v2";
 const PRECACHE = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (e) => {
@@ -20,15 +20,33 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (url.origin !== location.origin) return;
 
-  e.respondWith(
-    caches.match(e.request).then((cached) =>
-      cached ?? fetch(e.request).then((res) => {
-        if (res && res.status === 200 && res.type === "basic") {
-          const clone = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, clone));
-        }
-        return res;
-      })
-    )
-  );
+  // JS/CSS assets have content-hashed filenames — serve from cache, update in background.
+  // HTML and manifests: network-first so the app always gets fresh routing.
+  const isAsset = url.pathname.startsWith("/assets/");
+
+  if (isAsset) {
+    e.respondWith(
+      caches.match(e.request).then(
+        (cached) => cached ?? fetch(e.request).then((res) => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE).then((c) => c.put(e.request, clone));
+          }
+          return res;
+        })
+      )
+    );
+  } else {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          if (res && res.status === 200 && res.type === "basic") {
+            const clone = res.clone();
+            caches.open(CACHE).then((c) => c.put(e.request, clone));
+          }
+          return res;
+        })
+        .catch(() => caches.match(e.request).then((c) => c ?? Response.error()))
+    );
+  }
 });

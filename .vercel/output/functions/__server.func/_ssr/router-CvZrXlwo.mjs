@@ -15,7 +15,7 @@ import "stream";
 import "util";
 import "crypto";
 import "../_libs/isbot.mjs";
-const appCss = "/assets/styles-CHjMT1Ag.css";
+const appCss = "/assets/styles-CXJUV5iO.css";
 function reportLovableError(error, context = {}) {
   if (typeof window === "undefined") return;
   window.__lovableEvents?.captureException?.(
@@ -122,7 +122,7 @@ function RootComponent() {
   const { queryClient } = Route$1.useRouteContext();
   return /* @__PURE__ */ jsxRuntimeExports.jsx(QueryClientProvider, { client: queryClient, children: /* @__PURE__ */ jsxRuntimeExports.jsx(Outlet, {}) });
 }
-const $$splitComponentImporter = () => import("./index-CvKF1Asr.mjs");
+const $$splitComponentImporter = () => import("./index-DQAxBpZX.mjs").then((n) => n.e);
 const Route = createFileRoute("/")({
   head: () => ({
     meta: [{

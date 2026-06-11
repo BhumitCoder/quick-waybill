@@ -1,11 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Provider } from "react-redux";
 import { Toaster } from "sonner";
 import { SetupScreen, type SetupSelection } from "@/components/SetupScreen";
-import { ScannerScreen } from "@/components/ScannerScreen";
 import { store } from "@/store";
 import { useTheme } from "@/hooks/useTheme";
+
+// Lazy-load the scanner screen so its heavy dependencies (ZXing ~1 MB,
+// scanner logic) are not downloaded or parsed until the user actually
+// taps "Start Scanning". This is the single biggest win for initial
+// mobile load time.
+const ScannerScreen = lazy(() =>
+  import("@/components/ScannerScreen").then((m) => ({ default: m.ScannerScreen })),
+);
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,7 +50,18 @@ function Index() {
     <Provider store={store}>
       <div className="mx-auto max-w-[480px] bg-background text-foreground antialiased">
         {selection ? (
-          <ScannerScreen selection={selection} onExit={() => setSelection(null)} />
+          <Suspense
+            fallback={
+              <div className="flex h-dvh items-center justify-center bg-[#080a0f]">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/10 border-t-white/60" />
+                  <p className="text-[12px] text-white/30">Loading scanner…</p>
+                </div>
+              </div>
+            }
+          >
+            <ScannerScreen selection={selection} onExit={() => setSelection(null)} />
+          </Suspense>
         ) : (
           <SetupScreen onStart={setSelection} />
         )}

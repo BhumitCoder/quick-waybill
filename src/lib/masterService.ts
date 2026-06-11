@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import { ref, getBytes, uploadBytes } from "firebase/storage";
 import { storage } from "./firebase";
 
@@ -8,18 +7,36 @@ export function masterPath(companyId: string, platformId: string) {
   return `companies/${companyId}/platforms/${platformId}/master.xlsx`;
 }
 
+// xlsx is ~850 KB — import it dynamically so it never blocks the initial page
+// load / paint on mobile.
+async function getXLSX() {
+  return import("xlsx");
+}
+
 export async function readMasterRows(storagePath: string): Promise<MasterRow[]> {
-  const fileRef = ref(storage, storagePath);
+  const [XLSX, fileRef] = await Promise.all([
+    getXLSX(),
+    Promise.resolve(ref(storage, storagePath)),
+  ]);
   const bytes = await getBytes(fileRef);
+
+  // XLSX.read is synchronous and can freeze the main thread on large files.
+  // Yield to the event loop first so the UI stays responsive.
+  await new Promise((r) => setTimeout(r, 0));
+
   const workbook = XLSX.read(bytes, { type: "array" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
   return XLSX.utils.sheet_to_json<MasterRow>(sheet, { defval: "" });
 }
 
 export async function writeMasterRows(storagePath: string, rows: MasterRow[]): Promise<void> {
+  const XLSX = await getXLSX();
   const workbook = XLSX.utils.book_new();
   const sheet = XLSX.utils.json_to_sheet(rows);
   XLSX.utils.book_append_sheet(workbook, sheet, "Master Data");
+
+  await new Promise((r) => setTimeout(r, 0));
+
   const buffer = XLSX.write(workbook, { type: "array", bookType: "xlsx" });
   const fileRef = ref(storage, storagePath);
   await uploadBytes(fileRef, buffer as ArrayBuffer, {
