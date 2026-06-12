@@ -7,17 +7,38 @@ export function masterPath(companyId: string, platformId: string) {
   return `companies/${companyId}/platforms/${platformId}/master.xlsx`;
 }
 
+export function masterPathXls(companyId: string, platformId: string) {
+  return `companies/${companyId}/platforms/${platformId}/master.xls`;
+}
+
 // xlsx is ~850 KB — import dynamically so it never blocks the initial page load.
 async function getXLSX() {
   return import("xlsx");
 }
 
 export async function readMasterRows(storagePath: string): Promise<MasterRow[]> {
-  const [XLSX, fileRef] = await Promise.all([
-    getXLSX(),
-    Promise.resolve(ref(storage, storagePath)),
-  ]);
-  const bytes = await getBytes(fileRef);
+  const XLSX = await getXLSX();
+
+  // Try the given path first; if not found and it ends in .xlsx, also try .xls
+  // so that files manually uploaded to Firebase with the old .xls extension work.
+  let resolvedPath = storagePath;
+  let bytes: ArrayBuffer;
+  try {
+    console.log("[master] fetching:", storagePath);
+    bytes = await getBytes(ref(storage, storagePath));
+    console.log("[master] fetched OK:", storagePath);
+  } catch (e: unknown) {
+    const code = (e as { code?: string }).code ?? "";
+    if (code === "storage/object-not-found" && storagePath.endsWith(".xlsx")) {
+      resolvedPath = storagePath.replace(/\.xlsx$/, ".xls");
+      console.log("[master] .xlsx not found, trying fallback:", resolvedPath);
+      bytes = await getBytes(ref(storage, resolvedPath));
+      console.log("[master] fetched OK (fallback):", resolvedPath);
+    } else {
+      console.error("[master] fetch error:", code, e);
+      throw e;
+    }
+  }
 
   // Yield to the event loop so the UI stays responsive before heavy parsing.
   await new Promise((r) => setTimeout(r, 0));
@@ -28,7 +49,34 @@ export async function readMasterRows(storagePath: string): Promise<MasterRow[]> 
   // Use raw: true (default) — returns actual JS values, not formatted strings.
   // raw: false would convert large numeric AWBs to scientific notation
   // ("1.53955E+14") which never matches the scanned barcode string.
-  return XLSX.utils.sheet_to_json<MasterRow>(sheet, { defval: "" });
+  const rows = XLSX.utils.sheet_to_json<MasterRow>(sheet, { defval: "" });
+
+  const headers = rows.length ? Object.keys(rows[0]) : [];
+  const awbKey = detectAwbKey(headers);
+
+  // Log ALL columns that look like AWB columns (not just the first match)
+  const allAwbKeys = headers.filter((k) => {
+    const n = k.toLowerCase().trim().replace(/\s+/g, " ");
+    return AWB_PATTERNS.some((p) => p.test(n));
+  });
+
+  console.log(
+    `[master] loaded ${rows.length} rows from "${resolvedPath}"`,
+    "\n  columns:", headers,
+    "\n  AWB column detected (primary):", awbKey ?? "(none — will scan all columns)",
+    "\n  All AWB-like columns:", allAwbKeys,
+  );
+
+  // Show first 3 values for every AWB-like column so we can see which has the barcodes
+  if (allAwbKeys.length > 0) {
+    const preview: Record<string, unknown[]> = {};
+    for (const key of allAwbKeys) {
+      preview[key] = rows.slice(0, 3).map((r) => ({ raw: r[key], type: typeof r[key], normalized: normalize(r[key]) }));
+    }
+    console.log("[master] AWB column value samples:", preview);
+  }
+
+  return rows;
 }
 
 export async function writeMasterRows(storagePath: string, rows: MasterRow[]): Promise<void> {
@@ -102,23 +150,43 @@ export function findRowByAwb(rows: MasterRow[], awb: string): number {
   const needle = normalize(awb);
   if (!needle) return -1;
 
-  const awbKey = detectAwbKey(Object.keys(rows[0]));
+  const headers = Object.keys(rows[0]);
+  // Collect ALL columns that look like AWB columns — not just the first one.
+  // This handles files where "awb" is an internal ID but "AWB No" has the barcode.
+  const allAwbKeys = headers.filter((k) => {
+    const n = k.toLowerCase().trim().replace(/\s+/g, " ");
+    return AWB_PATTERNS.some((p) => p.test(n));
+  });
+  const awbKey = allAwbKeys[0]; // primary (first match, for logging)
 
-  // 1. Known AWB column — exact match (fast path, covers 99% of cases)
-  if (awbKey) {
-    const idx = rows.findIndex((r) => normalize(r[awbKey]) === needle);
-    if (idx !== -1) return idx;
+  console.log(`[awb] looking for "${needle}" (length=${needle.length}), AWB columns: ${JSON.stringify(allAwbKeys)}`);
+
+  // 1. Search in every recognised AWB column (fast path)
+  for (const key of allAwbKeys) {
+    const idx = rows.findIndex((r) => normalize(r[key]) === needle);
+    if (idx !== -1) {
+      console.log(`[awb] FOUND at row ${idx} via column "${key}"`);
+      return idx;
+    }
+    console.log(`[awb] not in column "${key}", sample:`, rows.slice(0, 3).map((r) => ({ raw: r[key], normalized: normalize(r[key]) })));
   }
 
-  // 2. No recognised AWB column header — scan every column for exact match.
-  //    Handles custom / non-standard column names.
-  if (!awbKey) {
-    return rows.findIndex((r) =>
-      Object.values(r).some((v) => normalize(v) === needle),
+  // 2. Fallback — scan every column for an exact match.
+  const idx = rows.findIndex((r) =>
+    Object.values(r).some((v) => normalize(v) === needle),
+  );
+  if (idx !== -1) {
+    console.log(`[awb] FOUND at row ${idx} via full-column scan`);
+  } else {
+    console.warn(
+      `[awb] NOT FOUND: "${needle}" (length=${needle.length})`,
+      "\n  scanned chars:", [...needle].map((c) => `${c}(${c.charCodeAt(0)})`).join(" "),
+      "\n  first 3 rows (all AWB cols):", rows.slice(0, 3).map((r) =>
+        Object.fromEntries(allAwbKeys.map((k) => [k, { raw: r[k], normalized: normalize(r[k]) }]))
+      ),
     );
   }
-
-  return -1;
+  return idx;
 }
 
 export function getField(row: MasterRow, name: string): string {

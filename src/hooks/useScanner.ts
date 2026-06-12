@@ -71,6 +71,18 @@ function startNativeDetector(
 
 // ── ZXing fallback ───────────────────────────────────────────────────────────
 
+// ZXing logs "MultiFormatReader: non-ReaderException" on every frame where no
+// barcode is found. These are expected "not found" results — not real errors —
+// but they flood the console. Suppress them while ZXing is running.
+function suppressZxingConsoleSpam(): () => void {
+  const original = console.error.bind(console);
+  console.error = (...args: unknown[]) => {
+    if (typeof args[0] === "string" && args[0].startsWith("MultiFormatReader:")) return;
+    original(...args);
+  };
+  return () => { console.error = original; };
+}
+
 async function startZxingScanner(
   video: HTMLVideoElement,
   onResult: (text: string) => void,
@@ -102,6 +114,8 @@ async function startZxingScanner(
     delayBetweenScanSuccess: 300,
   });
 
+  const restoreConsole = suppressZxingConsoleSpam();
+
   // ZXing manages the camera stream internally — do NOT open the stream
   // yourself before calling this or it will conflict.
   const controls = await reader.decodeFromConstraints(
@@ -118,7 +132,12 @@ async function startZxingScanner(
     },
   );
 
-  return { stop: () => controls.stop() };
+  return {
+    stop: () => {
+      controls.stop();
+      restoreConsole();
+    },
+  };
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────

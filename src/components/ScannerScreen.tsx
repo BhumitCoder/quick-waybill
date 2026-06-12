@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle,
-  Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff,
+  Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useScanner } from "@/hooks/useScanner";
@@ -151,7 +151,18 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     }
   }, [dispatch, flash, path, selection.status]);
 
+  const [manualAwb, setManualAwb] = useState("");
+
+  const handleManualSubmit = useCallback(() => {
+    const val = manualAwb.trim();
+    if (!val) return;
+    setManualAwb("");
+    handleDecode(val);
+  }, [manualAwb, handleDecode]);
+
   const { hasTorch, torchOn, toggleTorch } = useScanner(videoRef, handleDecode, !loadingMaster && !masterError);
+
+  const masterRowCount = rowsRef.current?.length ?? null;
 
   const ok   = results.filter((r) => r.success).length;
   const fail = results.filter((r) => !r.success && !r.warning).length;
@@ -178,6 +189,9 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         <div className="flex-1 min-w-0">
           <p className="truncate text-[10px] font-medium text-white/30 tracking-wide uppercase">
             {selection.company.name} · {selection.platform.name}
+            {masterRowCount !== null && (
+              <span className="ml-1.5 text-white/20">· {masterRowCount} rows</span>
+            )}
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span
@@ -317,11 +331,32 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           )}
         </div>
 
-        {/* Done bar */}
-        <div className="border-t border-white/5 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)]">
+        {/* Manual AWB input + Done bar */}
+        <div className="border-t border-white/5 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)] space-y-2">
+          {/* Manual entry row */}
+          <div className="flex gap-2">
+            <input
+              type="text"
+              inputMode="numeric"
+              placeholder="Enter AWB number manually…"
+              value={manualAwb}
+              onChange={(e) => setManualAwb(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleManualSubmit()}
+              disabled={!scanning}
+              className="flex-1 h-11 rounded-xl bg-white/6 border border-white/10 px-3 text-[13px] text-white placeholder:text-white/25 focus:outline-none focus:border-white/25 focus:bg-white/8 disabled:opacity-30 transition-all"
+            />
+            <button
+              onClick={handleManualSubmit}
+              disabled={!scanning || !manualAwb.trim()}
+              className="h-11 w-11 shrink-0 flex items-center justify-center rounded-xl bg-white/8 text-white/50 hover:bg-white/14 hover:text-white active:scale-95 disabled:opacity-25 transition-all"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
+
           <button
             onClick={onExit}
-            className="w-full h-[52px] rounded-2xl bg-white/8 text-[15px] font-bold text-white/80 hover:bg-white/12 active:scale-[0.98] transition-all"
+            className="w-full h-[48px] rounded-2xl bg-white/8 text-[15px] font-bold text-white/80 hover:bg-white/12 active:scale-[0.98] transition-all"
           >
             {ok > 0 ? `Done · ${ok} updated` : "Done"}
           </button>
