@@ -4,6 +4,7 @@ type Controls = { stop: () => void };
 
 export type ScannerHandle = {
   errorRef: React.MutableRefObject<string | null>;
+  cameraError: string | null;
   hasTorch: boolean;
   torchOn: boolean;
   toggleTorch: () => void;
@@ -154,6 +155,7 @@ export function useScanner(
   const ownStreamRef = useRef<MediaStream | null>(null);
   const [hasTorch, setHasTorch] = useState(false);
   const [torchOn, setTorchOn] = useState(false);
+  const [cameraError, setCameraError] = useState<string | null>(null);
 
   const dedupe = useCallback(
     (text: string) => {
@@ -185,6 +187,8 @@ export function useScanner(
 
     let controls: Controls | null = null;
     let cancelled = false;
+
+    setCameraError(null);
 
     (async () => {
       try {
@@ -244,7 +248,9 @@ export function useScanner(
         if (cancelled) controls?.stop();
       } catch (e) {
         if (!cancelled) {
-          errorRef.current = (e as Error).message;
+          const msg = (e as Error).message;
+          errorRef.current = msg;
+          setCameraError(msg);
           console.error("Scanner init failed", e);
         }
       }
@@ -263,5 +269,5 @@ export function useScanner(
     };
   }, [enabled, videoRef, dedupe]);
 
-  return { errorRef, hasTorch, torchOn, toggleTorch };
+  return { errorRef, cameraError, hasTorch, torchOn, toggleTorch };
 }

@@ -160,7 +160,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     handleDecode(val);
   }, [manualAwb, handleDecode]);
 
-  const { hasTorch, torchOn, toggleTorch } = useScanner(videoRef, handleDecode, !loadingMaster && !masterError);
+  const { cameraError, hasTorch, torchOn, toggleTorch } = useScanner(videoRef, handleDecode, true);
 
   const masterRowCount = rowsRef.current?.length ?? null;
 
@@ -271,13 +271,20 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         <ScanFrame active={scanning} glowColor={statusColor.glow} flashType={flashType} />
 
         {/* Status overlay */}
-        {(loadingMaster || masterError) && (
+        {(loadingMaster || masterError || cameraError) && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3 rounded-3xl bg-black/80 px-6 py-5 ring-1 ring-white/10">
               {loadingMaster ? (
                 <>
                   <Loader2 className="h-7 w-7 animate-spin text-white/60" />
                   <p className="text-[13px] font-semibold text-white/70">Loading master file…</p>
+                </>
+              ) : cameraError ? (
+                <>
+                  <AlertTriangle className="h-7 w-7 text-rose-400" />
+                  <p className="text-[13px] font-semibold text-white/80">Camera Error</p>
+                  <p className="text-[11px] text-white/50 text-center max-w-[200px]">{cameraError}</p>
+                  <p className="text-[10px] text-white/35 text-center">Allow camera permission and reload the page</p>
                 </>
               ) : (
                 <>
