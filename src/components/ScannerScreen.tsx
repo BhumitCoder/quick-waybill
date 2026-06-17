@@ -20,14 +20,6 @@ type ScanResult = {
   error?: string;
 };
 
-type ScanPreview = {
-  awb: string;
-  orderId: string;
-  productName: string;
-  previousStatus: string;
-  company: string;
-  platform: string;
-};
 
 const STATUS_COLOR: Record<string, { bg: string; text: string; glow: string }> = {
   pending:    { bg: "bg-amber-500/20",   text: "text-amber-300",   glow: "#f59e0b" },
@@ -81,9 +73,6 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [refreshing, setRefreshing] = useState(false);
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
   const [flashType, setFlashType] = useState<"success" | "error" | null>(null);
-  const [scanPreview, setScanPreview] = useState<ScanPreview | null>(null);
-  // true while preview is visible — blocks handleDecode without restarting the camera
-  const isPausedRef = useRef(false);
 
   // Single-platform load
   useEffect(() => {
@@ -244,21 +233,13 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     setLastScan(r);
     setResults((p) => [r, ...p].slice(0, 200));
 
-    isPausedRef.current = true;
-    setScanPreview({
-      awb,
-      orderId,
-      productName,
-      previousStatus,
-      company: entry.company.name,
-      platform: entry.platform.name,
-    });
+    const suffix = selection.scanAll ? ` · ${entry.company.name} › ${entry.platform.name}` : "";
+    toast.success(`Marked as ${selection.status}`, { description: (productName || orderId || awb) + suffix });
 
     scheduleUpload(targetPath);
   }, [dispatch, flash, scheduleUpload, selection.scanAll, selection.status]);
 
   const handleDecode = useCallback(async (text: string) => {
-    if (isPausedRef.current) return;
     const awb = text.trim();
     if (!awb) return;
     const key = awb.toLowerCase();
@@ -557,48 +538,6 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         </div>
       </div>
 
-      {/* ── Scan preview / confirm ── */}
-      {scanPreview && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/80 backdrop-blur-sm px-5">
-          <div className="w-full max-w-sm rounded-3xl overflow-hidden border border-white/10 bg-[#0d1117] shadow-2xl">
-            {/* Top success bar */}
-            <div className="flex flex-col items-center gap-2 bg-emerald-500/15 border-b border-white/5 px-5 py-5">
-              <CheckCircle2 className="h-10 w-10 text-emerald-400" />
-              <p className="text-[13px] font-bold text-emerald-300 tracking-wide">Status Updated</p>
-            </div>
-
-            {/* Detail rows */}
-            <div className="px-5 py-4 space-y-3">
-              <PreviewRow label="AWB" value={scanPreview.awb} mono />
-              {scanPreview.productName && <PreviewRow label="Product" value={scanPreview.productName} />}
-              {scanPreview.orderId && <PreviewRow label="Order ID" value={scanPreview.orderId} mono />}
-              <PreviewRow label="Platform" value={`${scanPreview.company} · ${scanPreview.platform}`} />
-              <div className="flex items-center gap-2 pt-1">
-                <span className="text-[11px] text-white/35 uppercase tracking-widest">Status</span>
-                <span className="ml-auto flex items-center gap-2 text-[12px] font-semibold">
-                  <span className="text-white/40">{scanPreview.previousStatus}</span>
-                  <span className="text-white/20">→</span>
-                  <span className={statusColor.text}>{selection.status}</span>
-                </span>
-              </div>
-            </div>
-
-            {/* OK button */}
-            <div className="px-5 pb-5">
-              <button
-                onClick={() => {
-                  setScanPreview(null);
-                  isPausedRef.current = false;
-                }}
-                className="w-full h-[52px] rounded-2xl bg-emerald-500 text-white text-[15px] font-bold tracking-wide active:scale-[0.98] transition-all"
-              >
-                OK — Next Scan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* ── Collision resolver ── */}
       {collision && (
         <div className="absolute inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm">
@@ -653,14 +592,6 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   );
 }
 
-function PreviewRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
-  return (
-    <div className="flex items-start gap-2">
-      <span className="shrink-0 text-[11px] text-white/35 uppercase tracking-widest pt-0.5 w-16">{label}</span>
-      <span className={`flex-1 text-right text-[13px] font-semibold text-white/80 break-all ${mono ? "font-mono" : ""}`}>{value}</span>
-    </div>
-  );
-}
 
 function StatBadge({ value, color }: { value: number; color: "emerald" | "rose" | "amber" }) {
   const cls = {
