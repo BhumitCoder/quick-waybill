@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getDocs } from "firebase/firestore";
 import {
   ScanLine, Building2, Layers, Sun, Moon,
-  CheckCircle2, AlertTriangle, Loader2, ChevronRight,
+  CheckCircle2, AlertTriangle, Loader2, ChevronRight, Globe,
 } from "lucide-react";
 import { companiesCollection } from "@/lib/firebase";
 import { readMasterRows, masterPath } from "@/lib/masterService";
@@ -17,6 +17,7 @@ import {
   setCompany as setCompanyAction,
   setPlatform as setPlatformAction,
   setStatus as setStatusAction,
+  setScanAll as setScanAllAction,
   setMaster,
   useAppDispatch,
   useAppSelector,
@@ -26,9 +27,11 @@ export type Platform = { id: string; name: string };
 export type Company = { id: string; name: string; platforms: Platform[] };
 
 export type SetupSelection = {
-  company: Company;
-  platform: Platform;
+  company: Company | null;
+  platform: Platform | null;
   status: string;
+  scanAll: boolean;
+  allCompanies: Company[];
 };
 
 const STATUSES = [
@@ -56,7 +59,7 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
   const [starting, setStarting] = useState(false);
   const pendingRef = useRef<Promise<void> | null>(null);
 
-  const { companyId, platformId, status } = setup;
+  const { companyId, platformId, status, scanAll } = setup;
 
   useEffect(() => {
     getDocs(companiesCollection)
@@ -72,7 +75,7 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
 
   const company = companies.find((c) => c.id === companyId) ?? setup.companySnapshot ?? undefined;
   const platform = company?.platforms.find((p) => p.id === platformId) ?? setup.platformSnapshot ?? undefined;
-  const canStart = !!company && !!platform && !!status;
+  const canStart = !!status && (scanAll || (!!company && !!platform));
 
   const cachedEntry = useAppSelector((s) =>
     company && platform ? s.master.cache[masterPath(company.id, platform.id)] : undefined
@@ -100,11 +103,17 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
 
   const handleStart = async () => {
     if (!canStart || starting) return;
-    if (prefetch === "loading" && pendingRef.current) {
+    if (!scanAll && prefetch === "loading" && pendingRef.current) {
       setStarting(true);
       try { await pendingRef.current; } finally { setStarting(false); }
     }
-    onStart({ company: company!, platform: platform!, status });
+    onStart({
+      company: scanAll ? null : company!,
+      platform: scanAll ? null : platform!,
+      status,
+      scanAll,
+      allCompanies: companies,
+    });
   };
 
   return (
@@ -130,9 +139,36 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
       {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-5">
 
-        {/* Company + Platform card */}
+        {/* Scan All toggle */}
         <div>
-          <SectionLabel>Destination</SectionLabel>
+          <SectionLabel>Mode</SectionLabel>
+          <button
+            type="button"
+            onClick={() => dispatch(setScanAllAction(!scanAll))}
+            className={`w-full flex items-center gap-3.5 rounded-2xl border px-4 py-3.5 text-left transition-all active:scale-[0.98] ${
+              scanAll
+                ? "border-primary bg-primary/10"
+                : "border-border/70 bg-card"
+            }`}
+          >
+            <div className={`grid h-9 w-9 shrink-0 place-items-center rounded-[10px] ${scanAll ? "bg-primary/20" : "bg-muted"}`}>
+              <Globe className={`h-4.5 w-4.5 ${scanAll ? "text-primary" : "text-muted-foreground"}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className={`text-[15px] font-semibold ${scanAll ? "text-primary" : "text-foreground"}`}>Scan All Platforms</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {scanAll ? "AWB will be searched across every company and platform" : "Search across all companies & platforms automatically"}
+              </p>
+            </div>
+            <div className={`h-5 w-9 rounded-full transition-colors relative ${scanAll ? "bg-primary" : "bg-muted"}`}>
+              <div className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform ${scanAll ? "translate-x-4" : "translate-x-0.5"}`} />
+            </div>
+          </button>
+        </div>
+
+        {/* Company + Platform card */}
+        <div className={scanAll ? "opacity-40 pointer-events-none" : ""}>
+          <SectionLabel>Destination {scanAll && <span className="normal-case font-normal text-muted-foreground/60">(not needed in scan-all mode)</span>}</SectionLabel>
           <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
             {/* Company */}
             <Select value={companyId} onValueChange={(id) => {
@@ -228,15 +264,19 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
       <div className="border-t border-border/50 bg-background px-5 pt-3 pb-[max(env(safe-area-inset-bottom),20px)]">
         {/* Prefetch pill */}
         <div className="mb-2.5 flex h-5 items-center justify-center gap-1.5">
-          {canStart && prefetch === "loading" && (
+          {scanAll && canStart && (
+            <><Globe className="h-3 w-3 text-primary" />
+            <span className="text-[11px] font-medium text-primary">All platforms — files load on start</span></>
+          )}
+          {!scanAll && canStart && prefetch === "loading" && (
             <><Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
             <span className="text-[11px] text-muted-foreground">Loading master file…</span></>
           )}
-          {canStart && prefetch === "ready" && (
+          {!scanAll && canStart && prefetch === "ready" && (
             <><CheckCircle2 className="h-3 w-3 text-emerald-500" />
             <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">Master file ready</span></>
           )}
-          {canStart && prefetch === "error" && (
+          {!scanAll && canStart && prefetch === "error" && (
             <><AlertTriangle className="h-3 w-3 text-amber-500" />
             <span className="text-[11px] text-amber-600 dark:text-amber-400">File not found — will retry on start</span></>
           )}

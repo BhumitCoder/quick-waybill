@@ -1,5 +1,6 @@
-import { ref, getBytes, uploadBytes } from "firebase/storage";
-import { storage } from "./firebase";
+import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
+import { doc, setDoc, serverTimestamp } from "firebase/firestore";
+import { storage, db } from "./firebase";
 
 export type MasterRow = Record<string, unknown>;
 
@@ -21,18 +22,25 @@ export async function readMasterRows(storagePath: string): Promise<MasterRow[]> 
 
   // Try the given path first; if not found and it ends in .xlsx, also try .xls
   // so that files manually uploaded to Firebase with the old .xls extension work.
+  // Uses getDownloadURL() + fetch() — getBytes() is blocked by CORS in production.
   let resolvedPath = storagePath;
-  let bytes: ArrayBuffer;
+  let arrayBuffer: ArrayBuffer;
   try {
     console.log("[master] fetching:", storagePath);
-    bytes = await getBytes(ref(storage, storagePath));
+    const url = await getDownloadURL(ref(storage, storagePath));
+    const res = await fetch(url);
+    if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { code: "storage/unknown" });
+    arrayBuffer = await res.arrayBuffer();
     console.log("[master] fetched OK:", storagePath);
   } catch (e: unknown) {
     const code = (e as { code?: string }).code ?? "";
     if (code === "storage/object-not-found" && storagePath.endsWith(".xlsx")) {
       resolvedPath = storagePath.replace(/\.xlsx$/, ".xls");
       console.log("[master] .xlsx not found, trying fallback:", resolvedPath);
-      bytes = await getBytes(ref(storage, resolvedPath));
+      const url = await getDownloadURL(ref(storage, resolvedPath));
+      const res = await fetch(url);
+      if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { code: "storage/unknown" });
+      arrayBuffer = await res.arrayBuffer();
       console.log("[master] fetched OK (fallback):", resolvedPath);
     } else {
       console.error("[master] fetch error:", code, e);
@@ -43,7 +51,7 @@ export async function readMasterRows(storagePath: string): Promise<MasterRow[]> 
   // Yield to the event loop so the UI stays responsive before heavy parsing.
   await new Promise((r) => setTimeout(r, 0));
 
-  const workbook = XLSX.read(bytes, { type: "array" });
+  const workbook = XLSX.read(arrayBuffer, { type: "array" });
   const sheet = workbook.Sheets[workbook.SheetNames[0]];
 
   // Use raw: true (default) — returns actual JS values, not formatted strings.
@@ -92,6 +100,21 @@ export async function writeMasterRows(storagePath: string, rows: MasterRow[]): P
   await uploadBytes(fileRef, buffer as ArrayBuffer, {
     contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
+
+  // Notify the report app that this master file changed.
+  // path format: companies/{companyId}/platforms/{platformId}/master.xlsx
+  const parts = storagePath.split("/");
+  const companyId = parts[1];
+  const platformId = parts[3];
+  if (companyId && platformId) {
+    try {
+      await setDoc(
+        doc(db, "masterSync", `${companyId}_${platformId}`),
+        { storagePath, companyId, platformId, updatedAt: serverTimestamp() },
+        { merge: true },
+      );
+    } catch { /* sync signal is best-effort — never block a scan */ }
+  }
 }
 
 // ── AWB column detection ────────────────────────────────────────────────────

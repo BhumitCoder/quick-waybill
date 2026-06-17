@@ -4,7 +4,6 @@ import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle,
   Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send,
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useScanner } from "@/hooks/useScanner";
 import {
   findRowByAwb, getField, masterPath, readMasterRows,
@@ -12,7 +11,7 @@ import {
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
 import type { SetupSelection } from "./SetupScreen";
-import { invalidate, markScanned, setMaster, updateRow, useAppDispatch, useAppSelector } from "@/store";
+import { invalidate, markScanned, setMaster, store, updateRow, useAppDispatch, useAppSelector } from "@/store";
 
 type ScanResult = {
   id: string; awb: string; timestamp: Date; success: boolean;
@@ -36,23 +35,45 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const videoRef = useRef<HTMLVideoElement>(null);
   const dispatch = useAppDispatch();
 
-  const path = useMemo(() => masterPath(selection.company.id, selection.platform.id), [selection]);
-  const cacheEntry = useAppSelector((s) => s.master.cache[path]);
-  const rowsRef = useRef<MasterRow[] | null>(cacheEntry?.rows ?? null);
-  const scannedRef = useRef<Set<string>>(new Set(cacheEntry?.scannedAwbs ?? []));
-  const uploadingRef = useRef(false);
+  // Single-platform mode path (empty string when scanAll)
+  const path = useMemo(() =>
+    selection.scanAll ? '' : masterPath(selection.company!.id, selection.platform!.id),
+  [selection]);
+  const cacheEntry = useAppSelector((s) => path ? s.master.cache[path] : undefined);
+  const rowsRef = useRef<MasterRow[] | null>(!selection.scanAll && cacheEntry?.rows ? [...cacheEntry.rows] : null);
+  const scannedRef = useRef<Set<string>>(new Set(!selection.scanAll ? (cacheEntry?.scannedAwbs ?? []) : []));
 
-  const [loadingMaster, setLoadingMaster] = useState(!cacheEntry);
+  // Debounced upload — accumulate dirty paths, flush once after DEBOUNCE_MS of silence
+  const DEBOUNCE_MS = 3000;
+  const dirtyPathsRef = useRef<Set<string>>(new Set());
+  const uploadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Scan-all mode: map of path → { company, platform, rows }
+  type MasterEntry = { company: NonNullable<typeof selection.company>; platform: NonNullable<typeof selection.platform>; rows: MasterRow[] };
+  const allMastersRef = useRef<Map<string, MasterEntry>>(new Map());
+  const [scanAllStatus, setScanAllStatus] = useState<{ total: number; loaded: number } | null>(
+    selection.scanAll ? { total: 0, loaded: 0 } : null
+  );
+  const [collision, setCollision] = useState<{
+    awb: string;
+    candidates: Array<{ path: string; entry: MasterEntry; index: number }>;
+  } | null>(null);
+
+  const [loadingMaster, setLoadingMaster] = useState(selection.scanAll ? true : !cacheEntry);
   const [masterError, setMasterError] = useState<string | null>(null);
   const [results, setResults] = useState<ScanResult[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [pendingUpload, setPendingUpload] = useState(false);
+  const [exiting, setExiting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
   const [flashType, setFlashType] = useState<"success" | "error" | null>(null);
 
+  // Single-platform load
   useEffect(() => {
+    if (selection.scanAll) return;
     if (cacheEntry) {
-      rowsRef.current = cacheEntry.rows;
+      rowsRef.current = [...cacheEntry.rows];
       scannedRef.current = new Set(cacheEntry.scannedAwbs);
       setLoadingMaster(false);
       return;
@@ -74,10 +95,64 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       }
     })();
     return () => { cancelled = true; };
-  }, [path]);
+  }, [path, selection.scanAll]);
+
+  // Scan-all: load every company × platform master file in parallel
+  useEffect(() => {
+    if (!selection.scanAll) return;
+    const entries = (selection.allCompanies ?? []).flatMap(c =>
+      c.platforms.map(p => ({ company: c, platform: p, path: masterPath(c.id, p.id) }))
+    );
+    setScanAllStatus({ total: entries.length, loaded: 0 });
+    setLoadingMaster(true);
+    allMastersRef.current.clear();
+    let cancelled = false;
+    let done = 0;
+    Promise.all(entries.map(async ({ company, platform, path: p }) => {
+      const cached = store.getState().master.cache[p];
+      if (cached) {
+        allMastersRef.current.set(p, { company, platform, rows: [...cached.rows] });
+      } else {
+        try {
+          const rows = await readMasterRows(p);
+          if (!cancelled) {
+            allMastersRef.current.set(p, { company, platform, rows });
+            dispatch(setMaster({ path: p, rows }));
+          }
+        } catch { /* skip files that don't exist yet */ }
+      }
+      done++;
+      if (!cancelled) setScanAllStatus(prev => prev ? { ...prev, loaded: done } : null);
+    })).finally(() => { if (!cancelled) setLoadingMaster(false); });
+    return () => { cancelled = true; };
+  }, [selection.scanAll, (selection.allCompanies ?? []).length, dispatch]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true); setMasterError(null);
+    if (selection.scanAll) {
+      allMastersRef.current.clear();
+      const entries = (selection.allCompanies ?? []).flatMap(c =>
+        c.platforms.map(p => ({ company: c, platform: p, path: masterPath(c.id, p.id) }))
+      );
+      setScanAllStatus({ total: entries.length, loaded: 0 });
+      setLoadingMaster(true);
+      let done = 0;
+      await Promise.all(entries.map(async ({ company, platform, path: p }) => {
+        dispatch(invalidate({ path: p }));
+        try {
+          const rows = await readMasterRows(p);
+          allMastersRef.current.set(p, { company, platform, rows });
+          dispatch(setMaster({ path: p, rows }));
+        } catch { /* skip */ }
+        done++;
+        setScanAllStatus(prev => prev ? { ...prev, loaded: done } : null);
+      }));
+      setLoadingMaster(false);
+      scannedRef.current = new Set();
+      toast.success("All master files reloaded");
+      setRefreshing(false);
+      return;
+    }
     try {
       dispatch(invalidate({ path }));
       const rows = await readMasterRows(path);
@@ -88,68 +163,135 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     } catch (e) {
       setMasterError((e as Error).message);
     } finally { setRefreshing(false); }
-  }, [dispatch, path]);
+  }, [dispatch, path, selection.scanAll, selection.allCompanies]);
 
   const flash = useCallback((type: "success" | "error") => {
     setFlashType(type);
     setTimeout(() => setFlashType(null), 400);
   }, []);
 
-  const handleDecode = useCallback(async (text: string) => {
-    const awb = text.trim();
-    if (!awb || !rowsRef.current) return;
+  // Flush all dirty paths to Storage in one pass
+  const doUpload = useCallback(async () => {
+    if (uploadTimerRef.current) { clearTimeout(uploadTimerRef.current); uploadTimerRef.current = null; }
+    const paths = [...dirtyPathsRef.current];
+    dirtyPathsRef.current.clear();
+    if (!paths.length) return;
+    setPendingUpload(false);
+    setUploading(true);
+    try {
+      await Promise.all(paths.map(async (p) => {
+        const rows = selection.scanAll
+          ? allMastersRef.current.get(p)?.rows
+          : rowsRef.current;
+        if (rows) await writeMasterRows(p, rows);
+      }));
+    } catch (e) {
+      toast.error("Upload failed", { description: (e as Error).message });
+    } finally {
+      setUploading(false);
+    }
+  }, [selection.scanAll]);
+
+  // Mark a path dirty and reset the debounce timer
+  const scheduleUpload = useCallback((targetPath: string) => {
+    dirtyPathsRef.current.add(targetPath);
+    setPendingUpload(true);
+    if (uploadTimerRef.current) clearTimeout(uploadTimerRef.current);
+    uploadTimerRef.current = setTimeout(doUpload, DEBOUNCE_MS);
+  }, [doUpload]);
+
+  // Shared update logic — works for both single-platform and scan-all
+  const applyUpdate = useCallback(async (
+    awb: string,
+    targetPath: string,
+    entry: MasterEntry,
+    idx: number,
+  ) => {
     const key = awb.toLowerCase();
-
-    if (scannedRef.current.has(key)) {
-      vibrate(30);
-      flash("error");
-      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, warning: true, error: "Already scanned this session" };
-      setLastScan(r);
-      setResults((p) => [r, ...p].slice(0, 200));
-      toast.warning("Already scanned", { description: awb });
-      return;
-    }
-
-    const idx = findRowByAwb(rowsRef.current, awb);
-    if (idx === -1) {
-      errorBeep(); vibrate(30);
-      flash("error");
-      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Not found in master file` };
-      setLastScan(r);
-      setResults((p) => [r, ...p].slice(0, 200));
-      toast.error("AWB not found", { description: `Scanned: ${awb}` });
-      return;
-    }
-
-    const row = rowsRef.current[idx];
+    const row = entry.rows[idx];
     const previousStatus = getField(row, "status") || "—";
     const orderId = getField(row, "order_id") || getField(row, "orderId") || getField(row, "Order ID") || "";
     const productName = getField(row, "product_name") || getField(row, "productName") || getField(row, "Product Name") || getField(row, "product") || "";
 
     const updated = setField(row, "status", selection.status);
-    rowsRef.current[idx] = updated;
+    const newRows = entry.rows.slice();
+    newRows[idx] = updated;
+    entry.rows = newRows;
+
     scannedRef.current.add(key);
-    dispatch(updateRow({ path, index: idx, row: updated }));
-    dispatch(markScanned({ path, awb: key }));
+    dispatch(updateRow({ path: targetPath, index: idx, row: updated }));
+    dispatch(markScanned({ path: targetPath, awb: key }));
 
-    beep(); vibrate(50);
-    flash("success");
+    beep(); vibrate(50); flash("success");
 
+    const suffix = selection.scanAll ? ` · ${entry.company.name} › ${entry.platform.name}` : "";
     const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: true, orderInfo: { orderId, productName, previousStatus } };
     setLastScan(r);
     setResults((p) => [r, ...p].slice(0, 200));
-    toast.success(`Marked as ${selection.status}`, { description: productName || orderId || awb });
+    toast.success(`Marked as ${selection.status}`, { description: (productName || orderId || awb) + suffix });
 
-    if (!uploadingRef.current) {
-      uploadingRef.current = true; setUploading(true);
-      try {
-        await new Promise((r) => setTimeout(r, 500));
-        await writeMasterRows(path, rowsRef.current!);
-      } catch (e) {
-        toast.error("Upload failed", { description: (e as Error).message });
-      } finally { uploadingRef.current = false; setUploading(false); }
+    scheduleUpload(targetPath);
+  }, [dispatch, flash, scheduleUpload, selection.scanAll, selection.status]);
+
+  const handleDecode = useCallback(async (text: string) => {
+    const awb = text.trim();
+    if (!awb) return;
+    const key = awb.toLowerCase();
+
+    if (scannedRef.current.has(key)) {
+      vibrate(30); flash("error");
+      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, warning: true, error: "Already scanned this session" };
+      setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+      toast.warning("Already scanned", { description: awb });
+      return;
     }
-  }, [dispatch, flash, path, selection.status]);
+
+    // ── Scan-all: search across every loaded master file ──
+    if (selection.scanAll) {
+      const matches: Array<{ path: string; entry: MasterEntry; index: number }> = [];
+      allMastersRef.current.forEach((entry, p) => {
+        const idx = findRowByAwb(entry.rows, awb);
+        if (idx !== -1) matches.push({ path: p, entry, index: idx });
+      });
+
+      if (matches.length === 0) {
+        errorBeep(); vibrate(30); flash("error");
+        const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Not found in any platform` };
+        setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+        toast.error("AWB not found", { description: `Searched ${allMastersRef.current.size} platforms` });
+        return;
+      }
+
+      if (matches.length === 1) {
+        await applyUpdate(awb, matches[0].path, matches[0].entry, matches[0].index);
+        return;
+      }
+
+      // Collision — multiple platforms have this AWB
+      vibrate(80);
+      setCollision({ awb, candidates: matches });
+      return;
+    }
+
+    // ── Single-platform ──
+    if (!rowsRef.current) return;
+    const idx = findRowByAwb(rowsRef.current, awb);
+    if (idx === -1) {
+      errorBeep(); vibrate(30); flash("error");
+      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Not found in master file` };
+      setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+      toast.error("AWB not found", { description: `Scanned: ${awb}` });
+      return;
+    }
+    // Wrap single-platform rows in a MasterEntry shape so applyUpdate can handle it uniformly
+    const singleEntry: MasterEntry = {
+      company: selection.company!,
+      platform: selection.platform!,
+      rows: rowsRef.current,
+    };
+    await applyUpdate(awb, path, singleEntry, idx);
+    rowsRef.current = singleEntry.rows; // applyUpdate mutates entry.rows
+  }, [applyUpdate, dispatch, flash, path, selection]);
 
   const [manualAwb, setManualAwb] = useState("");
 
@@ -162,7 +304,9 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
   const { cameraError, hasTorch, torchOn, toggleTorch } = useScanner(videoRef, handleDecode, true);
 
-  const masterRowCount = rowsRef.current?.length ?? null;
+  const masterRowCount = selection.scanAll
+    ? (scanAllStatus ? `${scanAllStatus.loaded}/${scanAllStatus.total} files` : null)
+    : (rowsRef.current?.length ?? null);
 
   const ok   = results.filter((r) => r.success).length;
   const fail = results.filter((r) => !r.success && !r.warning).length;
@@ -188,9 +332,11 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
         <div className="flex-1 min-w-0">
           <p className="truncate text-[10px] font-medium text-white/30 tracking-wide uppercase">
-            {selection.company.name} · {selection.platform.name}
+            {selection.scanAll
+              ? "All Platforms"
+              : `${selection.company?.name} · ${selection.platform?.name}`}
             {masterRowCount !== null && (
-              <span className="ml-1.5 text-white/20">· {masterRowCount} rows</span>
+              <span className="ml-1.5 text-white/20">· {masterRowCount}{typeof masterRowCount === "number" ? " rows" : ""}</span>
             )}
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
@@ -203,9 +349,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
               />
               {selection.status}
             </span>
-            {uploading && (
+            {(uploading || pendingUpload) && (
               <span className="flex items-center gap-1 text-[10px] text-sky-400">
-                <CloudUpload className="h-3 w-3 animate-pulse" /> syncing
+                <CloudUpload className="h-3 w-3 animate-pulse" />
+                {uploading ? 'syncing' : 'pending'}
               </span>
             )}
           </div>
@@ -277,7 +424,11 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
               {loadingMaster ? (
                 <>
                   <Loader2 className="h-7 w-7 animate-spin text-white/60" />
-                  <p className="text-[13px] font-semibold text-white/70">Loading master file…</p>
+                  <p className="text-[13px] font-semibold text-white/70">
+                    {selection.scanAll && scanAllStatus
+                      ? `Loading files… ${scanAllStatus.loaded}/${scanAllStatus.total}`
+                      : "Loading master file…"}
+                  </p>
                 </>
               ) : cameraError ? (
                 <>
@@ -362,13 +513,70 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           </div>
 
           <button
-            onClick={onExit}
+            onClick={async () => {
+              if (!pendingUpload && !uploading) { onExit(); return; }
+              setExiting(true);
+              if (uploadTimerRef.current) { clearTimeout(uploadTimerRef.current); uploadTimerRef.current = null; }
+              await doUpload();
+              onExit();
+            }}
             className="w-full h-[48px] rounded-2xl bg-white/8 text-[15px] font-bold text-white/80 hover:bg-white/12 active:scale-[0.98] transition-all"
           >
-            {ok > 0 ? `Done · ${ok} updated` : "Done"}
+            {exiting ? 'Saving…' : ok > 0 ? `Done · ${ok} updated` : "Done"}
           </button>
         </div>
       </div>
+
+      {/* ── Collision resolver ── */}
+      {collision && (
+        <div className="absolute inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm">
+          <div className="w-full rounded-t-3xl border-t border-white/10 bg-[#0d1117] px-5 pt-5 pb-[max(env(safe-area-inset-bottom),24px)]">
+            <div className="mb-4 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-white/30">Multiple Matches</p>
+              <p className="mt-1 font-mono text-[18px] font-bold text-white">{collision.awb}</p>
+              <p className="mt-0.5 text-[12px] text-white/40">
+                Found in {collision.candidates.length} platforms — tap to update one
+              </p>
+            </div>
+
+            <div className="mb-3 max-h-64 space-y-2 overflow-y-auto">
+              {collision.candidates.map((c, i) => {
+                const row = c.entry.rows[c.index];
+                const prod = getField(row, "productName") || getField(row, "product_name") || getField(row, "Product Name") || "";
+                const orderId = getField(row, "orderId") || getField(row, "order_id") || getField(row, "Order ID") || "";
+                const curStatus = getField(row, "status") || "—";
+                return (
+                  <button
+                    key={i}
+                    onClick={async () => {
+                      setCollision(null);
+                      await applyUpdate(collision.awb, c.path, c.entry, c.index);
+                    }}
+                    className="w-full flex items-center gap-3 rounded-2xl border border-white/8 bg-white/5 px-4 py-3 text-left transition-all hover:bg-white/10 active:scale-[0.98]"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[14px] font-semibold text-white">
+                        {c.entry.company.name} <span className="text-white/40">›</span> {c.entry.platform.name}
+                      </p>
+                      <p className="mt-0.5 truncate text-[11px] text-white/40">{prod || orderId || "—"}</p>
+                    </div>
+                    <span className="shrink-0 rounded-lg bg-white/8 px-2 py-1 text-[10px] font-medium capitalize text-white/50">
+                      {curStatus}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              onClick={() => setCollision(null)}
+              className="w-full h-11 rounded-2xl bg-white/5 text-[14px] font-semibold text-white/40"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -431,7 +639,6 @@ function ScanFrame({ active, glowColor, flashType }: { active: boolean; glowColo
 
 function CornerBracket({ pos, color }: { pos: "tl" | "tr" | "bl" | "br"; color: string }) {
   const base = "absolute h-7 w-7";
-  const border = `3px solid ${color}`;
   const style: React.CSSProperties = {
     boxShadow: `0 0 8px 1px ${color}55`,
   };

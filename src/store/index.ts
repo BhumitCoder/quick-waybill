@@ -9,20 +9,22 @@ type SetupState = {
   companyId: string;
   platformId: string;
   status: string;
+  scanAll: boolean;
   companySnapshot: Company | null;
   platformSnapshot: Platform | null;
 };
 
 const loadSetup = (): SetupState => {
   if (typeof window === "undefined") {
-    return { companyId: "", platformId: "", status: "", companySnapshot: null, platformSnapshot: null };
+    return { companyId: "", platformId: "", status: "", scanAll: false, companySnapshot: null, platformSnapshot: null };
   }
   try {
     const raw = localStorage.getItem(SETUP_KEY);
     if (!raw) throw new Error("empty");
-    return JSON.parse(raw) as SetupState;
+    const parsed = JSON.parse(raw) as SetupState;
+    return { ...parsed, scanAll: parsed.scanAll ?? false };
   } catch {
-    return { companyId: "", platformId: "", status: "", companySnapshot: null, platformSnapshot: null };
+    return { companyId: "", platformId: "", status: "", scanAll: false, companySnapshot: null, platformSnapshot: null };
   }
 };
 
@@ -47,8 +49,11 @@ const setupSlice = createSlice({
     setStatus(state, action: PayloadAction<string>) {
       state.status = action.payload;
     },
+    setScanAll(state, action: PayloadAction<boolean>) {
+      state.scanAll = action.payload;
+    },
     clearSetup() {
-      return { companyId: "", platformId: "", status: "", companySnapshot: null, platformSnapshot: null };
+      return { companyId: "", platformId: "", status: "", scanAll: false, companySnapshot: null, platformSnapshot: null };
     },
   },
 });
@@ -96,7 +101,7 @@ const masterSlice = createSlice({
   },
 });
 
-export const { setCompany, setPlatform, setStatus, clearSetup } = setupSlice.actions;
+export const { setCompany, setPlatform, setStatus, setScanAll, clearSetup } = setupSlice.actions;
 export const { setMaster, updateRow, markScanned, clearScannedAwbs, invalidate } = masterSlice.actions;
 
 export const store = configureStore({
