@@ -242,6 +242,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const handleDecode = useCallback(async (text: string) => {
     const awb = text.trim();
     if (!awb) return;
+
+    // Ignore QR codes that contain URLs — AWB numbers are never URLs
+    if (/^https?:\/\//i.test(awb)) return;
+
     const key = awb.toLowerCase();
 
     // Silently drop repeated reads of the same barcode while it stays in frame
