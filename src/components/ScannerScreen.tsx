@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle,
-  Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send,
+  Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send, Lock,
 } from "lucide-react";
 import { useScanner } from "@/hooks/useScanner";
 import {
@@ -73,6 +73,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [refreshing, setRefreshing] = useState(false);
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
   const [flashType, setFlashType] = useState<"success" | "error" | null>(null);
+  const [pickupConflict, setPickupConflict] = useState<{ awb: string; company: string; platform: string } | null>(null);
 
   // Single-platform load
   useEffect(() => {
@@ -215,6 +216,15 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const key = awb.toLowerCase();
     const row = entry.rows[idx];
     const previousStatus = getField(row, "status") || "—";
+
+    // Pickup lock: once an order is picked up, only "return" is allowed
+    if (previousStatus.toLowerCase() === "pickup" && selection.status.toLowerCase() !== "return") {
+      errorBeep(); vibrate(30); flash("error");
+      setPickupConflict({ awb, company: entry.company.name, platform: entry.platform.name });
+      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: "Pickup order — only Return allowed" };
+      setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+      return;
+    }
     const orderId = getField(row, "order_id") || getField(row, "orderId") || getField(row, "Order ID") || "";
     const productName = getField(row, "product_name") || getField(row, "productName") || getField(row, "Product Name") || getField(row, "product") || "";
 
@@ -541,6 +551,30 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           </button>
         </div>
       </div>
+
+      {/* ── Pickup conflict notification ── */}
+      {pickupConflict && (
+        <div className="absolute inset-x-0 bottom-0 z-40 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)] bg-[#0d1117] border-t border-rose-500/30">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-rose-500/15">
+              <Lock className="h-4 w-4 text-rose-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-bold text-rose-300">Status Locked — Pickup Order</p>
+              <p className="text-[11px] text-white/40 mt-0.5 leading-snug">
+                AWB {pickupConflict.awb} ({pickupConflict.company} · {pickupConflict.platform}) is already Pickup.
+                Set scanner status to <span className="text-white/60 font-semibold">Return</span> to update.
+              </p>
+            </div>
+            <button
+              onClick={() => setPickupConflict(null)}
+              className="shrink-0 text-[11px] font-semibold text-white/30 hover:text-white/60 px-2 py-1 rounded-lg transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Collision resolver ── */}
       {collision && (
