@@ -38,6 +38,8 @@ const STATUSES = [
   { id: "pickup",    label: "Pickup",    dot: "bg-sky-400",     pill: "bg-sky-50     border-sky-200     text-sky-700     dark:bg-sky-500/10    dark:border-sky-500/30    dark:text-sky-400"    },
   { id: "returned",  label: "Returned",  dot: "bg-orange-400",  pill: "bg-orange-50  border-orange-200  text-orange-700  dark:bg-orange-500/10 dark:border-orange-500/30 dark:text-orange-400"  },
   { id: "cancelled", label: "Cancelled", dot: "bg-rose-400",    pill: "bg-rose-50    border-rose-200    text-rose-700    dark:bg-rose-500/10   dark:border-rose-500/30   dark:text-rose-400"   },
+  { id: "manifest",  label: "Manifest",  dot: "bg-violet-400",  pill: "bg-violet-50  border-violet-200  text-violet-700  dark:bg-violet-500/10 dark:border-violet-500/30 dark:text-violet-400"  },
+  { id: "future",    label: "Future",    dot: "bg-indigo-400",  pill: "bg-indigo-50  border-indigo-200  text-indigo-700  dark:bg-indigo-500/10 dark:border-indigo-500/30 dark:text-indigo-400"  },
 ] as const;
 
 type PrefetchStatus = "idle" | "loading" | "ready" | "error";
@@ -227,14 +229,15 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
         <div>
           <SectionLabel>Status to Apply</SectionLabel>
           <div className="grid grid-cols-2 gap-2">
-            {STATUSES.map(({ id, label, dot, pill }) => {
+            {STATUSES.map(({ id, label, dot, pill }, i) => {
               const selected = status === id;
+              const isOddLast = STATUSES.length % 2 !== 0 && i === STATUSES.length - 1;
               return (
                 <button
                   key={id}
                   type="button"
                   onClick={() => dispatch(setStatusAction(id))}
-                  className={`relative flex h-[52px] items-center gap-3 rounded-2xl border px-4 text-left text-[14px] font-semibold transition-all active:scale-[0.96] ${
+                  className={`relative flex h-[52px] items-center gap-3 rounded-2xl border px-4 text-left text-[14px] font-semibold transition-all active:scale-[0.96] ${isOddLast ? 'col-span-2' : ''} ${
                     selected
                       ? "border-primary bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-glow"
                       : pill

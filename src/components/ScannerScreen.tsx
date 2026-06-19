@@ -33,6 +33,7 @@ const STATUS_COLOR: Record<string, { bg: string; text: string; glow: string }> =
   delivered:  { bg: "bg-emerald-500/20", text: "text-emerald-300", glow: "#10b981" },
   lost:       { bg: "bg-red-500/20",     text: "text-red-300",     glow: "#ef4444" },
   manifest:   { bg: "bg-violet-500/20",  text: "text-violet-300",  glow: "#8b5cf6" },
+  future:     { bg: "bg-indigo-500/20",  text: "text-indigo-300",  glow: "#6366f1" },
 };
 
 export function ScannerScreen({ selection, onExit }: { selection: SetupSelection; onExit: () => void }) {
