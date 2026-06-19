@@ -5,14 +5,16 @@ import {
   Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send, Lock,
   ThumbsUp, PackageX,
 } from "lucide-react";
+import { getDocs, query, where } from "firebase/firestore";
 import { useScanner } from "@/hooks/useScanner";
 import {
   findRowByAwb, getField, masterPath, readMasterRows,
-  setField, writeMasterRows, type MasterRow,
+  setField, writeMasterRows, normalize, type MasterRow,
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
 import type { SetupSelection } from "./SetupScreen";
 import { invalidate, markScanned, setMaster, store, updateRow, useAppDispatch, useAppSelector } from "@/store";
+import { manifestsCollection } from "@/lib/firebase";
 
 type ScanResult = {
   id: string; awb: string; timestamp: Date; success: boolean;
@@ -56,6 +58,9 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const DEBOUNCE_MS = 3000;
   const dirtyPathsRef = useRef<Set<string>>(new Set());
   const uploadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Tracks exactly which rows THIS user changed (path → awb → updated row)
+  // Used for merge-on-upload so we don't overwrite concurrent changes from other users
+  const pendingRowsRef = useRef<Map<string, Map<string, MasterRow>>>(new Map());
 
   // Scan-all mode: map of path → { company, platform, rows }
   type MasterEntry = { company: NonNullable<typeof selection.company>; platform: NonNullable<typeof selection.platform>; rows: MasterRow[] };
@@ -80,6 +85,22 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [pickupConflict, setPickupConflict] = useState<{ awb: string; company: string; platform: string } | null>(null);
   type ReturnConditionPending = { awb: string; targetPath: string; entry: MasterEntry; idx: number; updatedRow: MasterRow };
   const [returnConditionPending, setReturnConditionPending] = useState<ReturnConditionPending | null>(null);
+
+  // AWBs belonging to locked manifests — loaded once on mount, checked per-scan
+  const lockedAwbsRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDocs(query(manifestsCollection, where("locked", "==", true)));
+        if (cancelled) return;
+        const awbs = new Set<string>();
+        snap.docs.forEach(d => ((d.data().awbList ?? []) as string[]).forEach(a => awbs.add(a)));
+        lockedAwbsRef.current = awbs;
+      } catch { /* best-effort: if Firestore fails, no lock enforcement */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   // Single-platform load
   useEffect(() => {
@@ -182,7 +203,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     setTimeout(() => setFlashType(null), 400);
   }, []);
 
-  // Flush all dirty paths to Storage in one pass
+  // Flush all dirty paths to Storage in one pass.
+  // Re-reads the file before writing so concurrent scans from other users are preserved.
   const doUpload = useCallback(async () => {
     if (uploadTimerRef.current) { clearTimeout(uploadTimerRef.current); uploadTimerRef.current = null; }
     const paths = [...dirtyPathsRef.current];
@@ -192,10 +214,38 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     setUploading(true);
     try {
       await Promise.all(paths.map(async (p) => {
-        const rows = selection.scanAll
-          ? allMastersRef.current.get(p)?.rows
-          : rowsRef.current;
-        if (rows) await writeMasterRows(p, rows);
+        // Drain our pending changes for this path before the async work
+        const ourChanges = new Map(pendingRowsRef.current.get(p) ?? []);
+        pendingRowsRef.current.delete(p);
+        if (!ourChanges.size) return;
+
+        // Re-read the latest file to pick up changes from other users scanning concurrently
+        let baseRows: MasterRow[];
+        try {
+          baseRows = await readMasterRows(p);
+        } catch {
+          // Re-read failed — fall back to writing our local snapshot rather than losing data
+          const fallback = selection.scanAll ? allMastersRef.current.get(p)?.rows : rowsRef.current;
+          if (fallback) await writeMasterRows(p, fallback);
+          return;
+        }
+
+        // Apply only our changed rows on top of the fresh base (leaves other users' rows untouched)
+        const mergedRows = baseRows.slice();
+        for (const [awb, updatedRow] of ourChanges) {
+          const idx = findRowByAwb(mergedRows, awb);
+          if (idx !== -1) mergedRows[idx] = updatedRow;
+        }
+
+        // Sync our local copy so subsequent in-session scans see merged state
+        if (selection.scanAll) {
+          const entry = allMastersRef.current.get(p);
+          if (entry) entry.rows = mergedRows;
+        } else {
+          rowsRef.current = mergedRows;
+        }
+
+        await writeMasterRows(p, mergedRows);
       }));
     } catch (e) {
       toast.error("Upload failed", { description: (e as Error).message });
@@ -223,8 +273,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const row = entry.rows[idx];
     const previousStatus = getField(row, "status") || "—";
 
-    // Pickup lock: once an order is picked up, only "return" is allowed
-    if (previousStatus.toLowerCase() === "pickup" && selection.status.toLowerCase() !== "return") {
+    // Manifest lock: if AWB is in a locked manifest and status is pickup, only "return" is allowed
+    if (lockedAwbsRef.current.has(awb.toLowerCase()) && previousStatus.toLowerCase() === "pickup" && selection.status.toLowerCase() !== "returned") {
       errorBeep(); vibrate(30); flash("error");
       setPickupConflict({ awb, company: entry.company.name, platform: entry.platform.name });
       const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: "Pickup order — only Return allowed" };
@@ -238,6 +288,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const newRows = entry.rows.slice();
     newRows[idx] = updated;
     entry.rows = newRows;
+
+    // Track this row so doUpload merges only our changes into a fresh file read
+    if (!pendingRowsRef.current.has(targetPath)) pendingRowsRef.current.set(targetPath, new Map());
+    pendingRowsRef.current.get(targetPath)!.set(key, updated);
 
     scannedRef.current.add(key);
     dispatch(updateRow({ path: targetPath, index: idx, row: updated }));
@@ -269,6 +323,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       newRows[idx] = withCondition;
       entry.rows = newRows;
       dispatch(updateRow({ path: targetPath, index: idx, row: withCondition }));
+      // Update pending row so the merge-on-upload uses the row with condition included
+      const awbKey = returnConditionPending.awb.toLowerCase();
+      if (!pendingRowsRef.current.has(targetPath)) pendingRowsRef.current.set(targetPath, new Map());
+      pendingRowsRef.current.get(targetPath)!.set(awbKey, withCondition);
     }
     scheduleUpload(targetPath);
   }, [returnConditionPending, dispatch, scheduleUpload]);
