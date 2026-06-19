@@ -35,14 +35,9 @@ export type SetupSelection = {
 };
 
 const STATUSES = [
-  { id: "pending",    label: "Pending",    dot: "bg-amber-400",   pill: "bg-amber-50   border-amber-200   text-amber-700   dark:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-400"   },
-  { id: "processing", label: "Processing", dot: "bg-blue-400",    pill: "bg-blue-50    border-blue-200    text-blue-700    dark:bg-blue-500/10  dark:border-blue-500/30  dark:text-blue-400"    },
-  { id: "shipped",    label: "Shipped",    dot: "bg-cyan-400",    pill: "bg-cyan-50    border-cyan-200    text-cyan-700    dark:bg-cyan-500/10  dark:border-cyan-500/30  dark:text-cyan-400"    },
-  { id: "delivered",  label: "Delivered",  dot: "bg-emerald-400", pill: "bg-emerald-50 border-emerald-200 text-emerald-700 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:text-emerald-400" },
-  { id: "cancelled",  label: "Cancelled",  dot: "bg-rose-400",    pill: "bg-rose-50    border-rose-200    text-rose-700    dark:bg-rose-500/10   dark:border-rose-500/30   dark:text-rose-400"   },
-  { id: "returned",   label: "Returned",   dot: "bg-orange-400",  pill: "bg-orange-50  border-orange-200  text-orange-700  dark:bg-orange-500/10 dark:border-orange-500/30 dark:text-orange-400"  },
-  { id: "lost",       label: "Lost",       dot: "bg-red-400",     pill: "bg-red-50     border-red-200     text-red-700     dark:bg-red-500/10    dark:border-red-500/30    dark:text-red-400"    },
-  { id: "manifest",   label: "Manifest",   dot: "bg-violet-400",  pill: "bg-violet-50  border-violet-200  text-violet-700  dark:bg-violet-500/10 dark:border-violet-500/30 dark:text-violet-400"  },
+  { id: "pickup",    label: "Pickup",    dot: "bg-sky-400",     pill: "bg-sky-50     border-sky-200     text-sky-700     dark:bg-sky-500/10    dark:border-sky-500/30    dark:text-sky-400"    },
+  { id: "returned",  label: "Returned",  dot: "bg-orange-400",  pill: "bg-orange-50  border-orange-200  text-orange-700  dark:bg-orange-500/10 dark:border-orange-500/30 dark:text-orange-400"  },
+  { id: "cancelled", label: "Cancelled", dot: "bg-rose-400",    pill: "bg-rose-50    border-rose-200    text-rose-700    dark:bg-rose-500/10   dark:border-rose-500/30   dark:text-rose-400"   },
 ] as const;
 
 type PrefetchStatus = "idle" | "loading" | "ready" | "error";

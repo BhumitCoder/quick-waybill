@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle,
   Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send, Lock,
+  ThumbsUp, PackageX,
 } from "lucide-react";
 import { useScanner } from "@/hooks/useScanner";
 import {
@@ -22,12 +23,14 @@ type ScanResult = {
 
 
 const STATUS_COLOR: Record<string, { bg: string; text: string; glow: string }> = {
+  pickup:     { bg: "bg-sky-500/20",     text: "text-sky-300",     glow: "#0ea5e9" },
+  returned:   { bg: "bg-orange-500/20",  text: "text-orange-300",  glow: "#f97316" },
+  cancelled:  { bg: "bg-rose-500/20",    text: "text-rose-300",    glow: "#f43f5e" },
+  // legacy colours kept so older scanned data renders correctly
   pending:    { bg: "bg-amber-500/20",   text: "text-amber-300",   glow: "#f59e0b" },
   processing: { bg: "bg-blue-500/20",    text: "text-blue-300",    glow: "#3b82f6" },
   shipped:    { bg: "bg-cyan-500/20",    text: "text-cyan-300",    glow: "#06b6d4" },
   delivered:  { bg: "bg-emerald-500/20", text: "text-emerald-300", glow: "#10b981" },
-  cancelled:  { bg: "bg-rose-500/20",    text: "text-rose-300",    glow: "#f43f5e" },
-  returned:   { bg: "bg-orange-500/20",  text: "text-orange-300",  glow: "#f97316" },
   lost:       { bg: "bg-red-500/20",     text: "text-red-300",     glow: "#ef4444" },
   manifest:   { bg: "bg-violet-500/20",  text: "text-violet-300",  glow: "#8b5cf6" },
 };
@@ -74,6 +77,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
   const [flashType, setFlashType] = useState<"success" | "error" | null>(null);
   const [pickupConflict, setPickupConflict] = useState<{ awb: string; company: string; platform: string } | null>(null);
+  type ReturnConditionPending = { awb: string; targetPath: string; entry: MasterEntry; idx: number; updatedRow: MasterRow };
+  const [returnConditionPending, setReturnConditionPending] = useState<ReturnConditionPending | null>(null);
 
   // Single-platform load
   useEffect(() => {
@@ -246,8 +251,26 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const suffix = selection.scanAll ? ` · ${entry.company.name} › ${entry.platform.name}` : "";
     toast.success(`Marked as ${selection.status}`, { description: (productName || orderId || awb) + suffix });
 
-    scheduleUpload(targetPath);
+    if (selection.status.toLowerCase() === 'returned') {
+      setReturnConditionPending({ awb, targetPath, entry, idx, updatedRow: updated });
+    } else {
+      scheduleUpload(targetPath);
+    }
   }, [dispatch, flash, scheduleUpload, selection.scanAll, selection.status]);
+
+  const applyReturnCondition = useCallback((condition: 'good' | 'damaged' | null) => {
+    if (!returnConditionPending) return;
+    const { targetPath, entry, idx, updatedRow } = returnConditionPending;
+    setReturnConditionPending(null);
+    if (condition) {
+      const withCondition = setField(updatedRow, 'return_condition', condition);
+      const newRows = entry.rows.slice();
+      newRows[idx] = withCondition;
+      entry.rows = newRows;
+      dispatch(updateRow({ path: targetPath, index: idx, row: withCondition }));
+    }
+    scheduleUpload(targetPath);
+  }, [returnConditionPending, dispatch, scheduleUpload]);
 
   const handleDecode = useCallback(async (text: string) => {
     const awb = text.trim();
@@ -571,6 +594,43 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
               className="shrink-0 text-[11px] font-semibold text-white/30 hover:text-white/60 px-2 py-1 rounded-lg transition-colors"
             >
               Got it
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Return condition sheet ── */}
+      {returnConditionPending && (
+        <div className="absolute inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm">
+          <div className="w-full rounded-t-3xl border-t border-white/10 bg-[#0d1117] px-5 pt-5 pb-[max(env(safe-area-inset-bottom),24px)]">
+            <div className="mb-1 text-center">
+              <span className="inline-block rounded-full bg-orange-500/15 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-orange-400">Return Scanned</span>
+            </div>
+            <p className="mb-1 text-center font-mono text-[18px] font-bold text-white">{returnConditionPending.awb}</p>
+            <p className="mb-5 text-center text-[12px] text-white/40">What condition did the product come back in?</p>
+
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <button
+                onClick={() => applyReturnCondition('good')}
+                className="flex flex-col items-center justify-center gap-2 h-24 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 active:scale-95 transition-all"
+              >
+                <ThumbsUp className="h-7 w-7" />
+                <span className="text-[15px] font-bold">Good</span>
+              </button>
+              <button
+                onClick={() => applyReturnCondition('damaged')}
+                className="flex flex-col items-center justify-center gap-2 h-24 rounded-2xl bg-rose-500/15 border border-rose-500/25 text-rose-400 active:scale-95 transition-all"
+              >
+                <PackageX className="h-7 w-7" />
+                <span className="text-[15px] font-bold">Damaged</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => applyReturnCondition(null)}
+              className="w-full py-3 text-[13px] font-medium text-white/30 hover:text-white/50 transition-colors"
+            >
+              Skip — don't record condition
             </button>
           </div>
         </div>
