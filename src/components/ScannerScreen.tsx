@@ -65,16 +65,48 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
   // Scan-all mode: map of path → { company, platform, rows }
   type MasterEntry = { company: NonNullable<typeof selection.company>; platform: NonNullable<typeof selection.platform>; rows: MasterRow[] };
-  const allMastersRef = useRef<Map<string, MasterEntry>>(new Map());
-  const [scanAllStatus, setScanAllStatus] = useState<{ total: number; loaded: number } | null>(
-    selection.scanAll ? { total: 0, loaded: 0 } : null
-  );
+
+  // Pre-populate allMastersRef synchronously from Redux on mount — avoids any loading flash
+  const allMastersRef = useRef<Map<string, MasterEntry>>((() => {
+    const map = new Map<string, MasterEntry>();
+    if (selection.scanAll) {
+      const c = store.getState().master.cache;
+      (selection.allCompanies ?? []).forEach(company => {
+        company.platforms.forEach(platform => {
+          const p = masterPath(company.id, platform.id);
+          if (c[p]) map.set(p, { company, platform, rows: [...c[p].rows] });
+        });
+      });
+    }
+    return map;
+  })());
+
+  // Compute initial scanAllStatus and loadingMaster from cache at mount time
+  const [scanAllStatus, setScanAllStatus] = useState<{ total: number; loaded: number } | null>(() => {
+    if (!selection.scanAll) return null;
+    const allPaths = (selection.allCompanies ?? []).flatMap(c =>
+      c.platforms.map(p => masterPath(c.id, p.id))
+    );
+    const c = store.getState().master.cache;
+    return { total: allPaths.length, loaded: allPaths.filter(p => !!c[p]).length };
+  });
+
   const [collision, setCollision] = useState<{
     awb: string;
     candidates: Array<{ path: string; entry: MasterEntry; index: number }>;
   } | null>(null);
 
-  const [loadingMaster, setLoadingMaster] = useState(selection.scanAll ? true : !cacheEntry);
+  const [loadingMaster, setLoadingMaster] = useState(() => {
+    if (selection.scanAll) {
+      const allPaths = (selection.allCompanies ?? []).flatMap(c =>
+        c.platforms.map(p => masterPath(c.id, p.id))
+      );
+      const c = store.getState().master.cache;
+      // Only show loading if there are files NOT yet in cache
+      return allPaths.length > 0 && !allPaths.every(p => !!c[p]);
+    }
+    return !cacheEntry;
+  });
   const [masterError, setMasterError] = useState<string | null>(null);
   const [results, setResults] = useState<ScanResult[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -141,41 +173,40 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       c.platforms.map(p => ({ company: c, platform: p, path: masterPath(c.id, p.id) }))
     );
 
-    // Check if every file is already in the Redux cache — if so, skip loading entirely
+    // Separate cached from uncached — only fetch what's actually missing
     const currentCache = store.getState().master.cache;
-    const allCached = entries.length > 0 && entries.every(({ path: p }) => !!currentCache[p]);
+    const uncached = entries.filter(({ path: p }) => !currentCache[p]);
 
-    if (allCached) {
-      allMastersRef.current.clear();
-      entries.forEach(({ company, platform, path: p }) => {
+    // Populate allMastersRef from cache for everything already loaded
+    entries.forEach(({ company, platform, path: p }) => {
+      if (currentCache[p] && !allMastersRef.current.has(p)) {
         allMastersRef.current.set(p, { company, platform, rows: [...currentCache[p].rows] });
-      });
+      }
+    });
+
+    if (uncached.length === 0) {
+      // Everything already in cache — open scanner instantly
       setScanAllStatus({ total: entries.length, loaded: entries.length });
       setLoadingMaster(false);
       return;
     }
 
-    // Some files missing from cache — fetch what's needed
-    setScanAllStatus({ total: entries.length, loaded: 0 });
+    // Only fetch the files that are genuinely missing
+    const alreadyLoaded = entries.length - uncached.length;
+    setScanAllStatus({ total: entries.length, loaded: alreadyLoaded });
     setLoadingMaster(true);
-    allMastersRef.current.clear();
     let cancelled = false;
-    let done = 0;
-    Promise.all(entries.map(async ({ company, platform, path: p }) => {
-      const cached = store.getState().master.cache[p];
-      if (cached) {
-        allMastersRef.current.set(p, { company, platform, rows: [...cached.rows] });
-      } else {
-        try {
-          const rows = await readMasterRows(p);
-          if (!cancelled) {
-            allMastersRef.current.set(p, { company, platform, rows });
-            dispatch(setMaster({ path: p, rows }));
-          }
-        } catch { /* skip files that don't exist yet */ }
-      }
+    let done = alreadyLoaded;
+    Promise.all(uncached.map(async ({ company, platform, path: p }) => {
+      try {
+        const rows = await readMasterRows(p);
+        if (!cancelled) {
+          allMastersRef.current.set(p, { company, platform, rows });
+          dispatch(setMaster({ path: p, rows }));
+        }
+      } catch { /* skip files that don't exist in Storage */ }
       done++;
-      if (!cancelled) setScanAllStatus(prev => prev ? { ...prev, loaded: done } : null);
+      if (!cancelled) setScanAllStatus({ total: entries.length, loaded: done });
     })).finally(() => { if (!cancelled) setLoadingMaster(false); });
     return () => { cancelled = true; };
   }, [selection.scanAll, (selection.allCompanies ?? []).length, dispatch]);
