@@ -107,11 +107,13 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   useEffect(() => {
     if (selection.scanAll) return;
     if (cacheEntry) {
+      // Already in Redux (loaded by background prefetch or a previous scan) — instant
       rowsRef.current = [...cacheEntry.rows];
       scannedRef.current = new Set(cacheEntry.scannedAwbs);
       setLoadingMaster(false);
       return;
     }
+    // Not yet cached — load it (only happens if user got here faster than background prefetch)
     let cancelled = false;
     (async () => {
       setLoadingMaster(true);
@@ -129,7 +131,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       }
     })();
     return () => { cancelled = true; };
-  }, [path, selection.scanAll]);
+  // Include !!cacheEntry so if background prefetch finishes after scanner opens it cancels the fetch
+  }, [path, selection.scanAll, !!cacheEntry]);
 
   // Scan-all: load every company × platform master file in parallel
   useEffect(() => {
@@ -137,6 +140,22 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const entries = (selection.allCompanies ?? []).flatMap(c =>
       c.platforms.map(p => ({ company: c, platform: p, path: masterPath(c.id, p.id) }))
     );
+
+    // Check if every file is already in the Redux cache — if so, skip loading entirely
+    const currentCache = store.getState().master.cache;
+    const allCached = entries.length > 0 && entries.every(({ path: p }) => !!currentCache[p]);
+
+    if (allCached) {
+      allMastersRef.current.clear();
+      entries.forEach(({ company, platform, path: p }) => {
+        allMastersRef.current.set(p, { company, platform, rows: [...currentCache[p].rows] });
+      });
+      setScanAllStatus({ total: entries.length, loaded: entries.length });
+      setLoadingMaster(false);
+      return;
+    }
+
+    // Some files missing from cache — fetch what's needed
     setScanAllStatus({ total: entries.length, loaded: 0 });
     setLoadingMaster(true);
     allMastersRef.current.clear();
