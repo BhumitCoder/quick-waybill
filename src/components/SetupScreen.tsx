@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/select";
 import { InstallPrompt } from "./InstallPrompt";
 import { useTheme } from "@/hooks/useTheme";
+import { useBackgroundPrefetch } from "@/hooks/useBackgroundPrefetch";
 import {
   setCompany as setCompanyAction,
   setPlatform as setPlatformAction,
@@ -57,6 +58,8 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
   const pendingRef = useRef<Promise<void> | null>(null);
 
   const { companyId, platformId, status, scanAll } = setup;
+
+  const bgPrefetch = useBackgroundPrefetch(companies);
 
   useEffect(() => {
     getDocs(companiesCollection)
@@ -132,6 +135,30 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
         </Button>
         <InstallPrompt />
       </header>
+
+      {/* ── Background prefetch progress banner ── */}
+      {!bgPrefetch.done && bgPrefetch.total > 0 && (
+        <div className="mx-5 mb-1 flex items-center gap-2.5 rounded-2xl bg-primary/8 px-3.5 py-2.5">
+          <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin text-primary" />
+          <span className="flex-1 text-[12px] font-medium text-primary">
+            Pre-loading files… {bgPrefetch.loaded}/{bgPrefetch.total}
+          </span>
+          <div className="h-1.5 w-24 overflow-hidden rounded-full bg-primary/20">
+            <div
+              className="h-full rounded-full bg-primary transition-all duration-500"
+              style={{ width: `${(bgPrefetch.loaded / bgPrefetch.total) * 100}%` }}
+            />
+          </div>
+        </div>
+      )}
+      {bgPrefetch.done && bgPrefetch.total > 0 && (
+        <div className="mx-5 mb-1 flex items-center gap-2 rounded-2xl bg-emerald-500/8 px-3.5 py-2">
+          <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
+          <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400">
+            All {bgPrefetch.total} files ready — scanning is instant
+          </span>
+        </div>
+      )}
 
       {/* ── Scrollable body ── */}
       <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-5">
