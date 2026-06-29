@@ -12,6 +12,7 @@ import {
   setField, writeMasterRows, normalize, type MasterRow,
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
+import { idbDelete } from "@/lib/idbCache";
 import type { SetupSelection } from "./SetupScreen";
 import { invalidate, markScanned, setMaster, store, updateRow, useAppDispatch, useAppSelector } from "@/store";
 import { manifestsCollection } from "@/lib/firebase";
@@ -172,6 +173,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       let done = 0;
       await Promise.all(entries.map(async ({ company, platform, path: p }) => {
         dispatch(invalidate({ path: p }));
+        await idbDelete(p);
         try {
           const rows = await readMasterRows(p);
           allMastersRef.current.set(p, { company, platform, rows });
@@ -188,6 +190,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     }
     try {
       dispatch(invalidate({ path }));
+      await idbDelete(path);
       const rows = await readMasterRows(path);
       rowsRef.current = rows;
       scannedRef.current = new Set();
