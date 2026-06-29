@@ -13,6 +13,7 @@ import {
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
 import { idbDelete } from "@/lib/idbCache";
+import { isFailedPath } from "@/hooks/useBackgroundPrefetch";
 import type { SetupSelection } from "./SetupScreen";
 import { invalidate, markScanned, setMaster, store, updateRow, useAppDispatch, useAppSelector } from "@/store";
 import { manifestsCollection } from "@/lib/firebase";
@@ -102,8 +103,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         c.platforms.map(p => masterPath(c.id, p.id))
       );
       const c = store.getState().master.cache;
-      // Only show loading if there are files NOT yet in cache
-      return allPaths.length > 0 && !allPaths.every(p => !!c[p]);
+      // Only show loading if there are files that are neither cached nor permanently failed
+      return allPaths.some(p => !c[p] && !isFailedPath(p));
     }
     return !cacheEntry;
   });
@@ -175,7 +176,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
     // Separate cached from uncached — only fetch what's actually missing
     const currentCache = store.getState().master.cache;
-    const uncached = entries.filter(({ path: p }) => !currentCache[p]);
+    // Skip paths already cached OR permanently failed (404 in Storage — no point retrying)
+    const uncached = entries.filter(({ path: p }) => !currentCache[p] && !isFailedPath(p));
 
     // Populate allMastersRef from cache for everything already loaded
     entries.forEach(({ company, platform, path: p }) => {

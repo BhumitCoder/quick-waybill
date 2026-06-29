@@ -21,6 +21,14 @@ let _started = false;
 let _progress: PrefetchProgress = { loaded: 0, total: 0, done: true };
 const _subscribers = new Set<(p: PrefetchProgress) => void>();
 
+// Paths that returned 404 / permanent error — never retry these this session
+const _failed = new Set<string>();
+
+/** Returns true if this path was attempted and permanently failed (e.g. no file in Storage). */
+export function isFailedPath(path: string): boolean {
+  return _failed.has(path);
+}
+
 function broadcast(p: PrefetchProgress) {
   _progress = p;
   for (const fn of _subscribers) fn(p);
@@ -49,7 +57,7 @@ async function runPrefetch(companies: Company[], dispatch: ReturnType<typeof use
       active++;
       readMasterRows(path)
         .then((rows) => dispatch(setMaster({ path, rows })))
-        .catch(() => { /* missing file — skip silently */ })
+        .catch(() => { _failed.add(path); /* missing file — skip silently */ })
         .finally(() => {
           active--;
           completed++;
@@ -73,6 +81,7 @@ export async function refreshAllFiles(
 ) {
   // Reset module state so runPrefetch re-runs
   _started = false;
+  _failed.clear();
   broadcast({ loaded: 0, total: companies.flatMap(c => c.platforms).length, done: false });
 
   // Clear Redux + IDB caches for every path
