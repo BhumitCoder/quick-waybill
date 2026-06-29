@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { readMasterRows, masterPath } from "@/lib/masterService";
-import { setMaster, useAppDispatch, useAppSelector } from "@/store";
+import { idbDelete } from "@/lib/idbCache";
+import { setMaster, invalidate, useAppDispatch } from "@/store";
+import { store } from "@/store";
 import type { Company } from "@/components/SetupScreen";
-
-const CONCURRENCY = 3;
 
 export type PrefetchProgress = {
   loaded: number;
@@ -11,60 +11,106 @@ export type PrefetchProgress = {
   done: boolean;
 };
 
+// ── Module-level singleton ───────────────────────────────────────────────────
+// Lives outside React so it survives component unmount/remount (navigation).
+// The prefetch runs exactly ONCE per actual page load.
+
+const CONCURRENCY = 3;
+
+let _started = false;
+let _progress: PrefetchProgress = { loaded: 0, total: 0, done: true };
+const _subscribers = new Set<(p: PrefetchProgress) => void>();
+
+function broadcast(p: PrefetchProgress) {
+  _progress = p;
+  for (const fn of _subscribers) fn(p);
+}
+
+async function runPrefetch(companies: Company[], dispatch: ReturnType<typeof useAppDispatch>) {
+  const currentCache = store.getState().master.cache;
+  const paths = companies
+    .flatMap((c) => c.platforms.map((p) => masterPath(c.id, p.id)))
+    .filter((path) => !currentCache[path]);
+
+  if (!paths.length) {
+    broadcast({ loaded: 0, total: 0, done: true });
+    return;
+  }
+
+  broadcast({ loaded: 0, total: paths.length, done: false });
+
+  let completed = 0;
+  let nextIdx = 0;
+  let active = 0;
+
+  const pump = () => {
+    while (active < CONCURRENCY && nextIdx < paths.length) {
+      const path = paths[nextIdx++];
+      active++;
+      readMasterRows(path)
+        .then((rows) => dispatch(setMaster({ path, rows })))
+        .catch(() => { /* missing file — skip silently */ })
+        .finally(() => {
+          active--;
+          completed++;
+          const done = completed === paths.length;
+          broadcast({ loaded: completed, total: paths.length, done });
+          if (!done) pump();
+        });
+    }
+  };
+
+  pump();
+}
+
 /**
- * Silently pre-loads every company/platform master file in the background.
- * Uses a concurrency limit of CONCURRENCY so we never hammer Firebase Storage.
- * Files already in the Redux cache are skipped entirely.
- * Returns live progress so the UI can show a subtle indicator.
+ * Force-reload all files from Firebase Storage (bypasses IDB cache).
+ * Call this when the user explicitly taps the refresh button in the header.
+ */
+export async function refreshAllFiles(
+  companies: Company[],
+  dispatch: ReturnType<typeof useAppDispatch>,
+) {
+  // Reset module state so runPrefetch re-runs
+  _started = false;
+  broadcast({ loaded: 0, total: companies.flatMap(c => c.platforms).length, done: false });
+
+  // Clear Redux + IDB caches for every path
+  const paths = companies.flatMap((c) =>
+    c.platforms.map((p) => masterPath(c.id, p.id))
+  );
+  for (const path of paths) {
+    dispatch(invalidate({ path }));
+    idbDelete(path).catch(() => {});
+  }
+
+  _started = true;
+  await runPrefetch(companies, dispatch);
+}
+
+// ── Hook ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Subscribes to the module-level prefetch singleton.
+ * The prefetch starts once per page load (not per component mount),
+ * so navigating away and back never re-triggers the fetch.
  */
 export function useBackgroundPrefetch(companies: Company[]): PrefetchProgress {
   const dispatch = useAppDispatch();
-  const cache = useAppSelector((s) => s.master.cache);
-  const cacheRef = useRef(cache);
-  cacheRef.current = cache;
+  const [progress, setProgress] = useState<PrefetchProgress>(_progress);
 
-  const [progress, setProgress] = useState<PrefetchProgress>({ loaded: 0, total: 0, done: true });
-  const startedRef = useRef(false);
-
+  // Subscribe to future broadcasts so this component re-renders on updates
   useEffect(() => {
-    if (!companies.length) return;
-    if (startedRef.current) return;
-    startedRef.current = true;
+    _subscribers.add(setProgress);
+    setProgress(_progress); // sync in case progress changed while unmounted
+    return () => { _subscribers.delete(setProgress); };
+  }, []);
 
-    const paths = companies
-      .flatMap((c) => c.platforms.map((p) => masterPath(c.id, p.id)))
-      .filter((path) => !cacheRef.current[path]);
-
-    if (!paths.length) {
-      setProgress({ loaded: 0, total: 0, done: true });
-      return;
-    }
-
-    setProgress({ loaded: 0, total: paths.length, done: false });
-
-    let completed = 0;
-    let nextIdx = 0;
-    let active = 0;
-
-    const pump = () => {
-      while (active < CONCURRENCY && nextIdx < paths.length) {
-        const path = paths[nextIdx++];
-        active++;
-        readMasterRows(path)
-          .then((rows) => dispatch(setMaster({ path, rows })))
-          .catch(() => { /* missing file — skip silently */ })
-          .finally(() => {
-            active--;
-            completed++;
-            const done = completed === paths.length;
-            setProgress({ loaded: completed, total: paths.length, done });
-            if (!done) pump();
-          });
-      }
-    };
-
-    pump();
-    // no cleanup needed — we want these fetches to finish even if component re-renders
+  // Start the prefetch only on the very first call with a non-empty companies list
+  useEffect(() => {
+    if (!companies.length || _started) return;
+    _started = true;
+    runPrefetch(companies, dispatch);
   }, [companies.length > 0, dispatch]);
 
   return progress;

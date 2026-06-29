@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { getDocs } from "firebase/firestore";
 import {
   ScanLine, Building2, Layers, Sun, Moon,
-  CheckCircle2, AlertTriangle, Loader2, ChevronRight, Globe,
+  CheckCircle2, AlertTriangle, Loader2, ChevronRight, Globe, RefreshCw,
 } from "lucide-react";
 import { companiesCollection } from "@/lib/firebase";
 import { readMasterRows, masterPath } from "@/lib/masterService";
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { InstallPrompt } from "./InstallPrompt";
 import { useTheme } from "@/hooks/useTheme";
-import { useBackgroundPrefetch } from "@/hooks/useBackgroundPrefetch";
+import { useBackgroundPrefetch, refreshAllFiles } from "@/hooks/useBackgroundPrefetch";
 import {
   setCompany as setCompanyAction,
   setPlatform as setPlatformAction,
@@ -55,6 +55,7 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [prefetch, setPrefetch] = useState<PrefetchStatus>("idle");
   const [starting, setStarting] = useState(false);
+  const [refreshingFiles, setRefreshingFiles] = useState(false);
   const pendingRef = useRef<Promise<void> | null>(null);
 
   const { companyId, platformId, status, scanAll } = setup;
@@ -130,6 +131,21 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
           <p className="text-[17px] font-bold leading-none tracking-tight">AWB Scanner</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">Bulk status updates</p>
         </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          title="Refresh all files"
+          disabled={refreshingFiles || bgPrefetch.total > 0 && !bgPrefetch.done}
+          onClick={async () => {
+            if (!companies.length) return;
+            setRefreshingFiles(true);
+            try { await refreshAllFiles(companies, dispatch); }
+            finally { setRefreshingFiles(false); }
+          }}
+          className="h-9 w-9 rounded-xl text-muted-foreground"
+        >
+          <RefreshCw className={`h-[17px] w-[17px] ${refreshingFiles ? "animate-spin" : ""}`} />
+        </Button>
         <Button variant="ghost" size="icon" onClick={toggle} className="h-9 w-9 rounded-xl text-muted-foreground">
           {isDark ? <Sun className="h-[18px] w-[18px]" /> : <Moon className="h-[18px] w-[18px]" />}
         </Button>
