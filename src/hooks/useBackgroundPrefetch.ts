@@ -15,16 +15,30 @@ export type PrefetchProgress = {
 // Lives outside React so it survives component unmount/remount (navigation).
 // The prefetch runs exactly ONCE per actual page load.
 
-const CONCURRENCY = 3;
-
 let _started = false;
 let _progress: PrefetchProgress = { loaded: 0, total: 0, done: true };
 const _subscribers = new Set<(p: PrefetchProgress) => void>();
 
-// Paths that returned 404 / permanent error — never retry these this session
-const _failed = new Set<string>();
+// ── Persistent failed-path tracking ─────────────────────────────────────────
+// Paths that 404'd are saved to localStorage so they are never retried on the
+// next page load — avoids two wasted Firebase round-trips per bad path.
 
-/** Returns true if this path was attempted and permanently failed (e.g. no file in Storage). */
+const FAILED_LS_KEY = "awb-scanner-failed-paths";
+
+function loadFailedFromStorage(): Set<string> {
+  try {
+    const raw = localStorage.getItem(FAILED_LS_KEY);
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+  } catch { return new Set(); }
+}
+
+function saveFailedToStorage() {
+  try { localStorage.setItem(FAILED_LS_KEY, JSON.stringify([..._failed])); } catch {}
+}
+
+const _failed: Set<string> = loadFailedFromStorage();
+
+/** Returns true if this path has ever permanently failed (404 / no file in Storage). */
 export function isFailedPath(path: string): boolean {
   return _failed.has(path);
 }
@@ -38,7 +52,8 @@ async function runPrefetch(companies: Company[], dispatch: ReturnType<typeof use
   const currentCache = store.getState().master.cache;
   const paths = companies
     .flatMap((c) => c.platforms.map((p) => masterPath(c.id, p.id)))
-    .filter((path) => !currentCache[path]);
+    // Skip paths already in Redux cache OR known-failed (no file in Storage)
+    .filter((path) => !currentCache[path] && !_failed.has(path));
 
   if (!paths.length) {
     broadcast({ loaded: 0, total: 0, done: true });
@@ -47,28 +62,23 @@ async function runPrefetch(companies: Company[], dispatch: ReturnType<typeof use
 
   broadcast({ loaded: 0, total: paths.length, done: false });
 
+  // Run ALL paths fully in parallel — no artificial concurrency limit.
+  // IDB reads are local (no network bottleneck). Firebase downloads are
+  // naturally throttled by the browser's per-host connection limit (~6).
   let completed = 0;
-  let nextIdx = 0;
-  let active = 0;
-
-  const pump = () => {
-    while (active < CONCURRENCY && nextIdx < paths.length) {
-      const path = paths[nextIdx++];
-      active++;
-      readMasterRows(path)
-        .then((rows) => dispatch(setMaster({ path, rows })))
-        .catch(() => { _failed.add(path); /* missing file — skip silently */ })
-        .finally(() => {
-          active--;
-          completed++;
-          const done = completed === paths.length;
-          broadcast({ loaded: completed, total: paths.length, done });
-          if (!done) pump();
-        });
-    }
-  };
-
-  pump();
+  await Promise.all(
+    paths.map(async (path) => {
+      try {
+        const rows = await readMasterRows(path);
+        dispatch(setMaster({ path, rows }));
+      } catch {
+        _failed.add(path);
+        saveFailedToStorage();
+      }
+      completed++;
+      broadcast({ loaded: completed, total: paths.length, done: completed === paths.length });
+    }),
+  );
 }
 
 /**
@@ -79,9 +89,12 @@ export async function refreshAllFiles(
   companies: Company[],
   dispatch: ReturnType<typeof useAppDispatch>,
 ) {
+  // Clear persisted failures so every file gets a fresh attempt
+  _failed.clear();
+  saveFailedToStorage();
+
   // Reset module state so runPrefetch re-runs
   _started = false;
-  _failed.clear();
   broadcast({ loaded: 0, total: companies.flatMap(c => c.platforms).length, done: false });
 
   // Clear Redux + IDB caches for every path
