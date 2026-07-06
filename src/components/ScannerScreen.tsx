@@ -5,7 +5,7 @@ import {
   Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send, Lock,
   ThumbsUp, PackageX,
 } from "lucide-react";
-import { getDocs, query, where } from "firebase/firestore";
+import { getDocs, query, where, setDoc, doc } from "firebase/firestore";
 import { useScanner } from "@/hooks/useScanner";
 import {
   findRowByAwb, getField, masterPath, readMasterRows,
@@ -16,7 +16,7 @@ import { idbDelete } from "@/lib/idbCache";
 import { isFailedPath } from "@/hooks/useBackgroundPrefetch";
 import type { SetupSelection } from "./SetupScreen";
 import { invalidate, markScanned, setMaster, store, updateRow, useAppDispatch, useAppSelector } from "@/store";
-import { manifestsCollection } from "@/lib/firebase";
+import { manifestsCollection, returnsCollection } from "@/lib/firebase";
 
 type ScanResult = {
   id: string; awb: string; timestamp: Date; success: boolean;
@@ -119,6 +119,9 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [pickupConflict, setPickupConflict] = useState<{ awb: string; company: string; platform: string } | null>(null);
   type ReturnConditionPending = { awb: string; targetPath: string; entry: MasterEntry; idx: number; updatedRow: MasterRow };
   const [returnConditionPending, setReturnConditionPending] = useState<ReturnConditionPending | null>(null);
+  // Ref so handleDecode (stale closure) can check if the dialog is open without being in its dep array
+  const returnConditionPendingRef = useRef<ReturnConditionPending | null>(null);
+  useEffect(() => { returnConditionPendingRef.current = returnConditionPending; }, [returnConditionPending]);
 
   // AWBs belonging to locked manifests — loaded once on mount, checked per-scan
   const lockedAwbsRef = useRef<Set<string>>(new Set());
@@ -362,6 +365,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     toast.success(`Marked as ${selection.status}`, { description: (productName || orderId || awb) + suffix });
 
     if (selection.status.toLowerCase() === 'returned') {
+      // Register as dirty immediately so this path is uploaded even if the dialog
+      // is replaced by a subsequent scan from a different platform (scan-all mode).
+      dirtyPathsRef.current.add(targetPath);
+      setPendingUpload(true);
       setReturnConditionPending({ awb, targetPath, entry, idx, updatedRow: updated });
     } else {
       scheduleUpload(targetPath);
@@ -370,7 +377,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
   const applyReturnCondition = useCallback((condition: 'good' | 'damaged' | null) => {
     if (!returnConditionPending) return;
-    const { targetPath, entry, idx, updatedRow } = returnConditionPending;
+    const { awb, targetPath, entry, idx, updatedRow } = returnConditionPending;
     setReturnConditionPending(null);
     if (condition) {
       const withCondition = setField(updatedRow, 'return_condition', condition);
@@ -379,14 +386,40 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       entry.rows = newRows;
       dispatch(updateRow({ path: targetPath, index: idx, row: withCondition }));
       // Update pending row so the merge-on-upload uses the row with condition included
-      const awbKey = returnConditionPending.awb.toLowerCase();
+      const awbKey = awb.toLowerCase();
       if (!pendingRowsRef.current.has(targetPath)) pendingRowsRef.current.set(targetPath, new Map());
       pendingRowsRef.current.get(targetPath)!.set(awbKey, withCondition);
+
+      // Write to panel's returns collection so the Returns page shows this scanned return
+      const orderId = getField(updatedRow, "order_id") || getField(updatedRow, "orderId") || getField(updatedRow, "Order ID") || awb;
+      const subOrderId = getField(updatedRow, "sub_order_id") || getField(updatedRow, "subOrderId") || getField(updatedRow, "Sub Order ID") || orderId;
+      const productName = getField(updatedRow, "product_name") || getField(updatedRow, "productName") || getField(updatedRow, "Product Name") || "";
+      const sku = getField(updatedRow, "sku") || getField(updatedRow, "SKU") || "";
+      const returnDocId = `${awbKey}_${Date.now()}`;
+      setDoc(doc(returnsCollection, returnDocId), {
+        id: returnDocId,
+        awb,
+        orderId,
+        subOrderId,
+        platformId: entry.platform.id,
+        companyId: entry.company.id,
+        productName,
+        sku,
+        returnDate: new Date().toISOString().split('T')[0],
+        condition: condition === 'good' ? 'good' : 'bad',
+        addedToInventory: false,
+        addedToDeadStock: false,
+        notes: '',
+        createdAt: new Date().toISOString(),
+      }).catch(() => { /* best-effort — don't block the scan flow */ });
     }
     scheduleUpload(targetPath);
   }, [returnConditionPending, dispatch, scheduleUpload]);
 
   const handleDecode = useCallback(async (text: string) => {
+    // Block new scans while waiting for the user to pick a return condition
+    if (returnConditionPendingRef.current) return;
+
     const awb = text.trim();
     if (!awb) return;
 

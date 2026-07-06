@@ -17,3 +17,4 @@ export const db = getFirestore(app, "zaiko-reports");
 export const storage = getStorage(app);
 export const companiesCollection = collection(db, "companies");
 export const manifestsCollection = collection(db, "manifests");
+export const returnsCollection = collection(db, "returns");
