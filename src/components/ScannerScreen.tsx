@@ -117,6 +117,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [lastScan, setLastScan] = useState<ScanResult | null>(null);
   const [flashType, setFlashType] = useState<"success" | "error" | null>(null);
   const [pickupConflict, setPickupConflict] = useState<{ awb: string; company: string; platform: string } | null>(null);
+  const [returnLockConflict, setReturnLockConflict] = useState<{ awb: string; condition: 'good' | 'bad' } | null>(null);
   type ReturnConditionPending = { awb: string; targetPath: string; entry: MasterEntry; idx: number; updatedRow: MasterRow };
   const [returnConditionPending, setReturnConditionPending] = useState<ReturnConditionPending | null>(null);
   // Ref so handleDecode (stale closure) can check if the dialog is open without being in its dep array
@@ -134,6 +135,25 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         const awbs = new Set<string>();
         snap.docs.forEach(d => ((d.data().awbList ?? []) as string[]).forEach(a => awbs.add(a)));
         lockedAwbsRef.current = awbs;
+      } catch { /* best-effort: if Firestore fails, no lock enforcement */ }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // AWBs already scanned + marked good/bad — locked, no further status changes allowed from the scanner
+  const lockedReturnAwbsRef = useRef<Map<string, 'good' | 'bad'>>(new Map());
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const snap = await getDocs(query(returnsCollection, where("locked", "==", true)));
+        if (cancelled) return;
+        const map = new Map<string, 'good' | 'bad'>();
+        snap.docs.forEach(d => {
+          const data = d.data() as { awb?: string; condition?: 'good' | 'bad' };
+          if (data.awb) map.set(data.awb.toLowerCase(), data.condition === 'good' ? 'good' : 'bad');
+        });
+        lockedReturnAwbsRef.current = map;
       } catch { /* best-effort: if Firestore fails, no lock enforcement */ }
     })();
     return () => { cancelled = true; };
@@ -331,6 +351,17 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const row = entry.rows[idx];
     const previousStatus = getField(row, "status") || "—";
 
+    // Return lock: once an AWB has been scanned and marked good/bad, it can never be re-scanned
+    // to any other status — the condition call is final.
+    const lockedCondition = lockedReturnAwbsRef.current.get(key);
+    if (lockedCondition) {
+      errorBeep(); vibrate(30); flash("error");
+      setReturnLockConflict({ awb, condition: lockedCondition });
+      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Return locked — already marked ${lockedCondition}` };
+      setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+      return;
+    }
+
     // Manifest lock: if AWB is in a locked manifest and status is pickup, only "return" is allowed
     if (lockedAwbsRef.current.has(awb.toLowerCase()) && previousStatus.toLowerCase() === "pickup" && selection.status.toLowerCase() !== "returned") {
       errorBeep(); vibrate(30); flash("error");
@@ -411,7 +442,9 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         addedToDeadStock: false,
         notes: '',
         createdAt: new Date().toISOString(),
+        locked: true,
       }).catch(() => { /* best-effort — don't block the scan flow */ });
+      lockedReturnAwbsRef.current.set(awbKey, condition === 'good' ? 'good' : 'bad');
     }
     scheduleUpload(targetPath);
   }, [returnConditionPending, dispatch, scheduleUpload]);
@@ -738,6 +771,30 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
             </div>
             <button
               onClick={() => setPickupConflict(null)}
+              className="shrink-0 text-[11px] font-semibold text-white/30 hover:text-white/60 px-2 py-1 rounded-lg transition-colors"
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Return lock conflict notification ── */}
+      {returnLockConflict && (
+        <div className="absolute inset-x-0 bottom-0 z-40 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)] bg-[#0d1117] border-t border-rose-500/30">
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 shrink-0 flex items-center justify-center rounded-xl bg-rose-500/15">
+              <Lock className="h-4 w-4 text-rose-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-[13px] font-bold text-rose-300">Return Locked</p>
+              <p className="text-[11px] text-white/40 mt-0.5 leading-snug">
+                AWB {returnLockConflict.awb} was already scanned and marked <span className="text-white/60 font-semibold">{returnLockConflict.condition}</span>.
+                No further status changes are allowed.
+              </p>
+            </div>
+            <button
+              onClick={() => setReturnLockConflict(null)}
               className="shrink-0 text-[11px] font-semibold text-white/30 hover:text-white/60 px-2 py-1 rounded-lg transition-colors"
             >
               Got it
