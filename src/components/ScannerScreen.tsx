@@ -63,6 +63,9 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   // Tracks exactly which rows THIS user changed (path → awb → updated row)
   // Used for merge-on-upload so we don't overwrite concurrent changes from other users
   const pendingRowsRef = useRef<Map<string, Map<string, MasterRow>>>(new Map());
+  // Serializes flushes: a flush that starts while another is mid-write would
+  // read a base file missing the in-flight changes and overwrite them.
+  const uploadChainRef = useRef<Promise<void>>(Promise.resolve());
 
   // Scan-all mode: map of path → { company, platform, rows }
   type MasterEntry = { company: NonNullable<typeof selection.company>; platform: NonNullable<typeof selection.platform>; rows: MasterRow[] };
@@ -285,51 +288,60 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   // Re-reads the file before writing so concurrent scans from other users are preserved.
   const doUpload = useCallback(async () => {
     if (uploadTimerRef.current) { clearTimeout(uploadTimerRef.current); uploadTimerRef.current = null; }
-    const paths = [...dirtyPathsRef.current];
-    dirtyPathsRef.current.clear();
-    if (!paths.length) return;
-    setPendingUpload(false);
-    setUploading(true);
-    try {
-      await Promise.all(paths.map(async (p) => {
-        // Drain our pending changes for this path before the async work
-        const ourChanges = new Map(pendingRowsRef.current.get(p) ?? []);
-        pendingRowsRef.current.delete(p);
-        if (!ourChanges.size) return;
+    const run = async () => {
+      // Drain inside the chained run — draining while a previous flush is still
+      // writing would merge these changes onto a base that predates that write
+      const paths = [...dirtyPathsRef.current];
+      dirtyPathsRef.current.clear();
+      if (!paths.length) return;
+      setPendingUpload(false);
+      setUploading(true);
+      try {
+        await Promise.all(paths.map(async (p) => {
+          // Drain our pending changes for this path before the async work
+          const ourChanges = new Map(pendingRowsRef.current.get(p) ?? []);
+          pendingRowsRef.current.delete(p);
+          if (!ourChanges.size) return;
 
-        // Re-read the latest file to pick up changes from other users scanning concurrently
-        let baseRows: MasterRow[];
-        try {
-          baseRows = await readMasterRows(p);
-        } catch {
-          // Re-read failed — fall back to writing our local snapshot rather than losing data
-          const fallback = selection.scanAll ? allMastersRef.current.get(p)?.rows : rowsRef.current;
-          if (fallback) await writeMasterRows(p, fallback);
-          return;
-        }
+          // Re-read the latest file to pick up changes from other users scanning concurrently.
+          // fresh: bypass the IDB cache — a cached copy can predate this session's scans
+          let baseRows: MasterRow[];
+          try {
+            baseRows = await readMasterRows(p, { fresh: true });
+          } catch {
+            // Re-read failed — fall back to writing our local snapshot rather than losing data
+            const fallback = selection.scanAll ? allMastersRef.current.get(p)?.rows : rowsRef.current;
+            if (fallback) await writeMasterRows(p, fallback);
+            return;
+          }
 
-        // Apply only our changed rows on top of the fresh base (leaves other users' rows untouched)
-        const mergedRows = baseRows.slice();
-        for (const [awb, updatedRow] of ourChanges) {
-          const idx = findRowByAwb(mergedRows, awb);
-          if (idx !== -1) mergedRows[idx] = updatedRow;
-        }
+          // Apply only our changed rows on top of the fresh base (leaves other users' rows untouched)
+          const mergedRows = baseRows.slice();
+          for (const [awb, updatedRow] of ourChanges) {
+            const idx = findRowByAwb(mergedRows, awb);
+            if (idx !== -1) mergedRows[idx] = updatedRow;
+          }
 
-        // Sync our local copy so subsequent in-session scans see merged state
-        if (selection.scanAll) {
-          const entry = allMastersRef.current.get(p);
-          if (entry) entry.rows = mergedRows;
-        } else {
-          rowsRef.current = mergedRows;
-        }
+          // Sync our local copy so subsequent in-session scans see merged state
+          if (selection.scanAll) {
+            const entry = allMastersRef.current.get(p);
+            if (entry) entry.rows = mergedRows;
+          } else {
+            rowsRef.current = mergedRows;
+          }
 
-        await writeMasterRows(p, mergedRows);
-      }));
-    } catch (e) {
-      toast.error("Upload failed", { description: (e as Error).message });
-    } finally {
-      setUploading(false);
-    }
+          await writeMasterRows(p, mergedRows);
+        }));
+      } catch (e) {
+        toast.error("Upload failed", { description: (e as Error).message });
+      } finally {
+        setUploading(false);
+      }
+    };
+    const chained = uploadChainRef.current.then(run);
+    // Keep the chain alive even if this flush throws
+    uploadChainRef.current = chained.catch(() => {});
+    return chained;
   }, [selection.scanAll]);
 
   // Mark a path dirty and reset the debounce timer
@@ -362,11 +374,13 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       return;
     }
 
-    // Manifest lock: if AWB is in a locked manifest and status is pickup, only "return" is allowed
-    if (lockedAwbsRef.current.has(awb.toLowerCase()) && previousStatus.toLowerCase() === "pickup" && selection.status.toLowerCase() !== "returned") {
+    // Manifest lock: once a manifest is locked, NO status change is allowed from the scanner —
+    // from any status to any status. Only an Excel upload in the report app can change these orders.
+    if (lockedAwbsRef.current.has(awb.toLowerCase())) {
       errorBeep(); vibrate(30); flash("error");
       setPickupConflict({ awb, company: entry.company.name, platform: entry.platform.name });
-      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: "Pickup order — only Return allowed" };
+      toast.error("Manifest is locked", { description: `AWB ${awb} — status can only be changed by an Excel upload` });
+      const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: "Manifest locked — no status change allowed" };
       setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
       return;
     }
@@ -763,10 +777,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
               <Lock className="h-4 w-4 text-rose-400" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[13px] font-bold text-rose-300">Status Locked — Pickup Order</p>
+              <p className="text-[13px] font-bold text-rose-300">Manifest is Locked</p>
               <p className="text-[11px] text-white/40 mt-0.5 leading-snug">
-                AWB {pickupConflict.awb} ({pickupConflict.company} · {pickupConflict.platform}) is already Pickup.
-                Set scanner status to <span className="text-white/60 font-semibold">Return</span> to update.
+                AWB {pickupConflict.awb} ({pickupConflict.company} · {pickupConflict.platform}) belongs to a locked manifest.
+                No status change is allowed — status can only be changed by an <span className="text-white/60 font-semibold">Excel upload</span> in the report panel.
               </p>
             </div>
             <button

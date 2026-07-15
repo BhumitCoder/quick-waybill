@@ -112,12 +112,17 @@ async function downloadArrayBuffer(storagePath: string): Promise<{ arrayBuffer: 
 //   2. Network + Worker parse — download from Firebase Storage, parse off-thread
 //   3. IDB write  — store result for next time
 
-export async function readMasterRows(storagePath: string): Promise<MasterRow[]> {
-  // 1. IndexedDB hit — instant, no parsing
-  const cached = await idbGet(storagePath);
-  if (cached) {
-    console.log("[master] IDB cache hit:", storagePath, `(${cached.length} rows)`);
-    return cached as MasterRow[];
+export async function readMasterRows(storagePath: string, opts?: { fresh?: boolean }): Promise<MasterRow[]> {
+  // fresh: merge-before-write reads MUST see the latest Storage content —
+  // an IDB hit here can be a pre-merge snapshot, and merging onto it would
+  // erase every row another flush already wrote.
+  if (!opts?.fresh) {
+    // 1. IndexedDB hit — instant, no parsing
+    const cached = await idbGet(storagePath);
+    if (cached) {
+      console.log("[master] IDB cache hit:", storagePath, `(${cached.length} rows)`);
+      return cached as MasterRow[];
+    }
   }
 
   // 2. Download + parse in worker
@@ -127,8 +132,10 @@ export async function readMasterRows(storagePath: string): Promise<MasterRow[]> 
   // Log AWB column info (fast, main-thread safe)
   logAwbInfo(rows, resolvedPath);
 
-  // 3. Persist to IDB so next load is instant
-  idbSet(storagePath, rows).catch(() => {}); // fire-and-forget
+  // 3. Persist to IDB so next load is instant — but never cache a fresh
+  // merge-read: it holds the pre-merge base and would go stale the moment
+  // the merged file is uploaded.
+  if (!opts?.fresh) idbSet(storagePath, rows).catch(() => {}); // fire-and-forget
 
   return rows;
 }
