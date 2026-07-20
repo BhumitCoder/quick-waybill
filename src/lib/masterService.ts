@@ -1,9 +1,15 @@
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { storage, db } from "./firebase";
+import { doc, setDoc, getDoc, getDocs, serverTimestamp } from "firebase/firestore";
+import { storage, db, masterSyncCollection } from "./firebase";
 import { idbGet, idbSet } from "./idbCache";
 
 export type MasterRow = Record<string, unknown>;
+
+// Per-session id written into masterSync so the report panel can distinguish
+// scanner writes from its own (it skips reloading for its own clientId).
+// Must be set on EVERY write — merge:true would otherwise leave a stale
+// clientId from a previous panel write in the doc.
+const CLIENT_ID = "scanner-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 export function masterPath(companyId: string, platformId: string) {
   return `companies/${companyId}/platforms/${platformId}/master.xlsx`;
@@ -105,23 +111,77 @@ async function downloadArrayBuffer(storagePath: string): Promise<{ arrayBuffer: 
   }
 }
 
+// ── masterSync version lookup ────────────────────────────────────────────────
+//
+// Both this app and the report panel write masterSync/{companyId}_{platformId}
+// on every master-file save. Comparing that version against what's stored in
+// IDB tells us whether a cached copy is still current.
+
+function syncDocId(storagePath: string): string | null {
+  const parts = storagePath.split("/"); // companies/{cid}/platforms/{pid}/master.xlsx
+  const companyId = parts[1];
+  const platformId = parts[3];
+  return companyId && platformId ? `${companyId}_${platformId}` : null;
+}
+
+/** One Firestore read covering every platform's current version — use this
+ *  before a batch load so each file's readMasterRows() call can skip its own
+ *  per-file version lookup. */
+export async function fetchSyncVersions(): Promise<Map<string, number>> {
+  try {
+    const snap = await getDocs(masterSyncCollection);
+    const map = new Map<string, number>();
+    snap.docs.forEach((d) => {
+      const data = d.data() as { updatedAt?: { toMillis?: () => number } };
+      map.set(d.id, data.updatedAt?.toMillis?.() ?? 0);
+    });
+    return map;
+  } catch {
+    return new Map();
+  }
+}
+
+async function fetchSyncVersion(storagePath: string): Promise<number> {
+  const id = syncDocId(storagePath);
+  if (!id) return 0;
+  try {
+    const snap = await getDoc(doc(masterSyncCollection, id));
+    const data = snap.data() as { updatedAt?: { toMillis?: () => number } } | undefined;
+    return data?.updatedAt?.toMillis?.() ?? 0;
+  } catch {
+    return 0;
+  }
+}
+
 // ── readMasterRows ───────────────────────────────────────────────────────────
 //
 // Load order (fastest first):
-//   1. IndexedDB  — persistent, survives page reload, no network or parse cost
+//   1. IndexedDB  — persistent, survives page reload, no network or parse cost.
+//      Used only when its stored version matches the current masterSync
+//      version — a file nobody has touched in months is never redownloaded
+//      just because time passed. Callers that don't know the version yet
+//      (opts.version omitted) get one extra Firestore read to look it up;
+//      pass it in (e.g. from a batched fetchSyncVersions() call) to skip that.
 //   2. Network + Worker parse — download from Firebase Storage, parse off-thread
-//   3. IDB write  — store result for next time
+//   3. IDB write  — store result (with its version) for next time
 
-export async function readMasterRows(storagePath: string, opts?: { fresh?: boolean }): Promise<MasterRow[]> {
+export async function readMasterRows(
+  storagePath: string,
+  opts?: { fresh?: boolean; version?: number },
+): Promise<MasterRow[]> {
   // fresh: merge-before-write reads MUST see the latest Storage content —
   // an IDB hit here can be a pre-merge snapshot, and merging onto it would
   // erase every row another flush already wrote.
   if (!opts?.fresh) {
-    // 1. IndexedDB hit — instant, no parsing
+    // 1. IndexedDB hit — instant, no parsing, IF the version still matches
     const cached = await idbGet(storagePath);
     if (cached) {
-      console.log("[master] IDB cache hit:", storagePath, `(${cached.length} rows)`);
-      return cached as MasterRow[];
+      const knownVersion = opts?.version ?? await fetchSyncVersion(storagePath);
+      if (knownVersion === 0 || cached.version === knownVersion) {
+        console.log("[master] IDB cache hit:", storagePath, `(${cached.rows.length} rows, v${cached.version})`);
+        return cached.rows as MasterRow[];
+      }
+      console.log("[master] cache stale, redownloading:", storagePath, `(cached v${cached.version}, current v${knownVersion})`);
     }
   }
 
@@ -135,7 +195,10 @@ export async function readMasterRows(storagePath: string, opts?: { fresh?: boole
   // 3. Persist to IDB so next load is instant — but never cache a fresh
   // merge-read: it holds the pre-merge base and would go stale the moment
   // the merged file is uploaded.
-  if (!opts?.fresh) idbSet(storagePath, rows).catch(() => {}); // fire-and-forget
+  if (!opts?.fresh) {
+    const version = opts?.version ?? await fetchSyncVersion(storagePath);
+    idbSet(storagePath, rows, version).catch(() => {}); // fire-and-forget
+  }
 
   return rows;
 }
@@ -186,7 +249,7 @@ export async function writeMasterRows(storagePath: string, rows: MasterRow[]): P
     try {
       await setDoc(
         doc(db, "masterSync", `${companyId}_${platformId}`),
-        { storagePath, companyId, platformId, updatedAt: serverTimestamp() },
+        { storagePath, companyId, platformId, clientId: CLIENT_ID, updatedAt: serverTimestamp() },
         { merge: true },
       );
     } catch { /* sync signal is best-effort */ }

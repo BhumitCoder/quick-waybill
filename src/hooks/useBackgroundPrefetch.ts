@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { readMasterRows, masterPath } from "@/lib/masterService";
-import { idbDelete } from "@/lib/idbCache";
+import { readMasterRows, masterPath, fetchSyncVersions } from "@/lib/masterService";
+import { idbGet, idbDelete } from "@/lib/idbCache";
 import { setMaster, invalidate, useAppDispatch } from "@/store";
 import { store } from "@/store";
 import type { Company } from "@/components/SetupScreen";
@@ -48,6 +48,12 @@ function broadcast(p: PrefetchProgress) {
   for (const fn of _subscribers) fn(p);
 }
 
+function syncKey(path: string): string | null {
+  // companies/{cid}/platforms/{pid}/master.xlsx
+  const parts = path.split("/");
+  return parts[1] && parts[3] ? `${parts[1]}_${parts[3]}` : null;
+}
+
 async function runPrefetch(companies: Company[], dispatch: ReturnType<typeof useAppDispatch>) {
   const currentCache = store.getState().master.cache;
   const paths = companies
@@ -62,6 +68,11 @@ async function runPrefetch(companies: Company[], dispatch: ReturnType<typeof use
 
   broadcast({ loaded: 0, total: paths.length, done: false });
 
+  // One Firestore read covers every platform's version — each readMasterRows()
+  // call below then skips its own per-file version lookup and, when the
+  // version matches what's already in IDB, needs no network at all.
+  const versions = await fetchSyncVersions();
+
   // Run ALL paths fully in parallel — no artificial concurrency limit.
   // IDB reads are local (no network bottleneck). Firebase downloads are
   // naturally throttled by the browser's per-host connection limit (~6).
@@ -69,7 +80,9 @@ async function runPrefetch(companies: Company[], dispatch: ReturnType<typeof use
   await Promise.all(
     paths.map(async (path) => {
       try {
-        const rows = await readMasterRows(path);
+        const key = syncKey(path);
+        const version = key ? versions.get(key) ?? 0 : 0;
+        const rows = await readMasterRows(path, { version });
         dispatch(setMaster({ path, rows }));
       } catch {
         _failed.add(path);
@@ -82,32 +95,58 @@ async function runPrefetch(companies: Company[], dispatch: ReturnType<typeof use
 }
 
 /**
- * Force-reload all files from Firebase Storage (bypasses IDB cache).
+ * Check every platform's masterSync version against the local cache and
+ * only re-download the ones that actually changed — tapping "refresh" with
+ * nothing new on the server should cost zero network requests, not a full
+ * blind re-download of every file. Also retries any path that previously
+ * 404'd, in case it exists now.
  * Call this when the user explicitly taps the refresh button in the header.
  */
 export async function refreshAllFiles(
   companies: Company[],
   dispatch: ReturnType<typeof useAppDispatch>,
 ) {
-  // Clear persisted failures so every file gets a fresh attempt
+  // Give previously-404'd paths a fresh chance
   _failed.clear();
   saveFailedToStorage();
 
-  // Reset module state so runPrefetch re-runs
   _started = false;
-  broadcast({ loaded: 0, total: companies.flatMap(c => c.platforms).length, done: false });
+  const paths = companies.flatMap((c) => c.platforms.map((p) => masterPath(c.id, p.id)));
+  broadcast({ loaded: 0, total: paths.length, done: false });
 
-  // Clear Redux + IDB caches for every path
-  const paths = companies.flatMap((c) =>
-    c.platforms.map((p) => masterPath(c.id, p.id))
+  const versions = await fetchSyncVersions();
+  let completed = 0;
+  await Promise.all(
+    paths.map(async (path) => {
+      try {
+        const key = syncKey(path);
+        const version = key ? versions.get(key) ?? 0 : 0;
+        const cached = await idbGet(path);
+        const isCurrent = cached && (version === 0 || cached.version === version);
+
+        if (isCurrent) {
+          // Already fresh — no download needed. Just make sure Redux has it
+          // (covers the case where Redux was cleared but IDB wasn't, e.g. a
+          // full page reload right before the user tapped refresh).
+          if (!store.getState().master.cache[path]) {
+            dispatch(setMaster({ path, rows: cached!.rows }));
+          }
+        } else {
+          // Version changed (or unknown) — this file needs a real re-download
+          dispatch(invalidate({ path }));
+          const rows = await readMasterRows(path, { version });
+          dispatch(setMaster({ path, rows }));
+        }
+      } catch {
+        _failed.add(path);
+        saveFailedToStorage();
+      }
+      completed++;
+      broadcast({ loaded: completed, total: paths.length, done: completed === paths.length });
+    }),
   );
-  for (const path of paths) {
-    dispatch(invalidate({ path }));
-    idbDelete(path).catch(() => {});
-  }
 
   _started = true;
-  await runPrefetch(companies, dispatch);
 }
 
 // ── Hook ─────────────────────────────────────────────────────────────────────
