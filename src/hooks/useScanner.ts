@@ -36,6 +36,12 @@ async function hasNativeDetector(): Promise<boolean> {
   }
 }
 
+// Barcodes need far less resolution than a phone camera's native sensor output —
+// analysing full 4K frames burns CPU/GPU for no decode benefit and throttles the
+// scan loop (it's serial: next tick waits for detect() to resolve). Cap the
+// analysis canvas so every device pays the same small, fast cost.
+const DETECT_MAX_DIM = 960;
+
 function startNativeDetector(
   video: HTMLVideoElement,
   onResult: (text: string) => void,
@@ -48,9 +54,12 @@ function startNativeDetector(
   function tick() {
     if (!running) return;
     if (video.readyState >= 2 && video.videoWidth > 0) {
-      if (canvas.width !== video.videoWidth) canvas.width = video.videoWidth;
-      if (canvas.height !== video.videoHeight) canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
+      const scale = Math.min(1, DETECT_MAX_DIM / Math.max(video.videoWidth, video.videoHeight));
+      const w = Math.round(video.videoWidth * scale);
+      const h = Math.round(video.videoHeight * scale);
+      if (canvas.width !== w) canvas.width = w;
+      if (canvas.height !== h) canvas.height = h;
+      ctx.drawImage(video, 0, 0, w, h);
       detector
         .detect(canvas)
         .then((codes) => {
@@ -123,8 +132,8 @@ async function startZxingScanner(
     {
       video: {
         facingMode: { ideal: "environment" },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
       },
     },
     video,
@@ -202,8 +211,8 @@ export function useScanner(
           const stream = await navigator.mediaDevices.getUserMedia({
             video: {
               facingMode: { ideal: "environment" },
-              width: { ideal: 3840 },
-              height: { ideal: 2160 },
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
             },
           });
           if (cancelled) { stream.getTracks().forEach((t) => t.stop()); return; }
