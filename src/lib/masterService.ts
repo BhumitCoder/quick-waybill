@@ -298,11 +298,57 @@ export const normalize = (s: unknown): string => {
 
 // ── findRowByAwb ─────────────────────────────────────────────────────────────
 
+// Some carriers' barcodes decode with a spurious leading zero relative to the
+// human-readable / master-file AWB (e.g. scanned "0123456789" vs stored
+// "123456789"). Treat two purely-numeric AWBs as equal if they only differ
+// by leading zeros — narrow enough that unrelated values can't collide.
+function awbEquals(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (/^\d+$/.test(a) && /^\d+$/.test(b)) {
+    return a.replace(/^0+(?=\d)/, "") === b.replace(/^0+(?=\d)/, "");
+  }
+  return false;
+}
+
+// GS1 mod-10 check digit (weight 3 on positions odd-from-the-right, weight 1
+// on even) — the standard check digit scheme behind EAN/UPC/ITF-14 barcodes.
+function gs1CheckDigit(digits: string): number {
+  let sum = 0;
+  for (let i = 0; i < digits.length; i++) {
+    const posFromRight = digits.length - i;
+    sum += Number(digits[i]) * (posFromRight % 2 === 1 ? 3 : 1);
+  }
+  return (10 - (sum % 10)) % 10;
+}
+
+// Some carriers (confirmed on an Amazon/SHIPEASO label) print an ITF barcode
+// encoding [AWB] + [GS1 check digit], padded with a leading zero when that
+// total length is odd (ITF requires an even digit count). Scanned "AWB"
+// "03709197471828" for a real system AWB of "370919747182" — the trailing
+// "8" is the verified GS1 check digit for "370919747182", and the leading
+// zero is the parity pad (awbEquals above already ignores it).
+// Only strip the last digit when it's actually a *valid* check digit for the
+// rest — this is a verified property of the barcode grammar, not a guess, so
+// it can't cause two unrelated AWBs to collide.
+function stripValidCheckDigit(s: string): string | null {
+  if (!/^\d{2,}$/.test(s)) return null;
+  const body = s.slice(0, -1);
+  const check = Number(s[s.length - 1]);
+  return gs1CheckDigit(body) === check ? body : null;
+}
+
 export function findRowByAwb(rows: MasterRow[], awb: string): number {
   if (!rows.length) return -1;
 
   const needle = normalize(awb);
   if (!needle) return -1;
+  const needleNoCheckDigit = stripValidCheckDigit(needle);
+
+  const matchesNeedle = (value: unknown): boolean => {
+    const v = normalize(value);
+    if (awbEquals(v, needle)) return true;
+    return needleNoCheckDigit !== null && awbEquals(v, needleNoCheckDigit);
+  };
 
   const headers = Object.keys(rows[0]);
   const allAwbKeys = headers.filter((k) => {
@@ -313,7 +359,7 @@ export function findRowByAwb(rows: MasterRow[], awb: string): number {
   console.log(`[awb] looking for "${needle}" (length=${needle.length}), AWB columns: ${JSON.stringify(allAwbKeys)}`);
 
   for (const key of allAwbKeys) {
-    const idx = rows.findIndex((r) => normalize(r[key]) === needle);
+    const idx = rows.findIndex((r) => matchesNeedle(r[key]));
     if (idx !== -1) {
       console.log(`[awb] FOUND at row ${idx} via column "${key}"`);
       return idx;
@@ -321,7 +367,7 @@ export function findRowByAwb(rows: MasterRow[], awb: string): number {
   }
 
   const idx = rows.findIndex((r) =>
-    Object.values(r).some((v) => normalize(v) === needle),
+    Object.values(r).some((v) => matchesNeedle(v)),
   );
   if (idx !== -1) {
     console.log(`[awb] FOUND at row ${idx} via full-column scan`);
