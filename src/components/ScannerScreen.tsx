@@ -5,7 +5,7 @@ import {
   Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send, Lock,
   ThumbsUp, PackageX,
 } from "lucide-react";
-import { getDocs, query, where, setDoc, doc } from "firebase/firestore";
+import { getDocs, query, where, doc, runTransaction } from "firebase/firestore";
 import { useScanner } from "@/hooks/useScanner";
 import {
   findRowByAwb, getField, masterPath, readMasterRows,
@@ -16,7 +16,7 @@ import { idbDelete } from "@/lib/idbCache";
 import { isFailedPath } from "@/hooks/useBackgroundPrefetch";
 import type { SetupSelection } from "./SetupScreen";
 import { invalidate, markScanned, setMaster, store, updateRow, useAppDispatch, useAppSelector } from "@/store";
-import { manifestsCollection, returnsCollection } from "@/lib/firebase";
+import { db, manifestsCollection, returnsCollection } from "@/lib/firebase";
 
 type ScanResult = {
   id: string; awb: string; timestamp: Date; success: boolean;
@@ -24,6 +24,19 @@ type ScanResult = {
   orderInfo?: { orderId: string; productName: string; previousStatus: string };
   error?: string;
 };
+
+// Deterministic key so the same AWB can never produce two return documents — Firestore has
+// no unique-constraint mechanism, so the document ID is the only thing that can enforce
+// "one AWB, one return" across two scanning sessions (or this app and the report panel).
+const returnDocKey = (awb: string) => awb.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+
+class ReturnAlreadyLockedError extends Error {
+  condition: "good" | "bad";
+  constructor(condition: "good" | "bad") {
+    super(`Return already locked as ${condition}`);
+    this.condition = condition;
+  }
+}
 
 
 const STATUS_COLOR: Record<string, { bg: string; text: string; glow: string }> = {
@@ -435,30 +448,52 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       if (!pendingRowsRef.current.has(targetPath)) pendingRowsRef.current.set(targetPath, new Map());
       pendingRowsRef.current.get(targetPath)!.set(awbKey, withCondition);
 
-      // Write to panel's returns collection so the Returns page shows this scanned return
+      // Write to panel's returns collection so the Returns page shows this scanned return.
+      // Keyed by AWB + wrapped in a transaction: this is the atomic gate that actually
+      // prevents the same AWB producing two return docs (e.g. two phones scanning the
+      // same package) — the in-memory lockedReturnAwbsRef check above is only a fast,
+      // possibly-stale pre-filter, not the source of truth.
       const orderId = getField(updatedRow, "order_id") || getField(updatedRow, "orderId") || getField(updatedRow, "Order ID") || awb;
       const subOrderId = getField(updatedRow, "sub_order_id") || getField(updatedRow, "subOrderId") || getField(updatedRow, "Sub Order ID") || orderId;
       const productName = getField(updatedRow, "product_name") || getField(updatedRow, "productName") || getField(updatedRow, "Product Name") || "";
       const sku = getField(updatedRow, "sku") || getField(updatedRow, "SKU") || "";
-      const returnDocId = `${awbKey}_${Date.now()}`;
-      setDoc(doc(returnsCollection, returnDocId), {
-        id: returnDocId,
-        awb,
-        orderId,
-        subOrderId,
-        platformId: entry.platform.id,
-        companyId: entry.company.id,
-        productName,
-        sku,
-        returnDate: new Date().toISOString().split('T')[0],
-        condition: condition === 'good' ? 'good' : 'bad',
-        addedToInventory: false,
-        addedToDeadStock: false,
-        notes: '',
-        createdAt: new Date().toISOString(),
-        locked: true,
-      }).catch(() => { /* best-effort — don't block the scan flow */ });
-      lockedReturnAwbsRef.current.set(awbKey, condition === 'good' ? 'good' : 'bad');
+      const finalCondition: "good" | "bad" = condition === "good" ? "good" : "bad";
+      const returnDocId = returnDocKey(awb);
+      const returnDocRef = doc(returnsCollection, returnDocId);
+
+      runTransaction(db, async (tx) => {
+        const existing = await tx.get(returnDocRef);
+        if (existing.exists() && (existing.data() as { locked?: boolean }).locked) {
+          throw new ReturnAlreadyLockedError((existing.data() as { condition?: "good" | "bad" }).condition === "good" ? "good" : "bad");
+        }
+        tx.set(returnDocRef, {
+          id: returnDocId,
+          awb,
+          orderId,
+          subOrderId,
+          platformId: entry.platform.id,
+          companyId: entry.company.id,
+          productName,
+          sku,
+          returnDate: new Date().toISOString().split('T')[0],
+          condition: finalCondition,
+          addedToInventory: false,
+          addedToDeadStock: false,
+          notes: '',
+          createdAt: new Date().toISOString(),
+          locked: true,
+        });
+      }).then(() => {
+        lockedReturnAwbsRef.current.set(awbKey, finalCondition);
+      }).catch((err) => {
+        if (err instanceof ReturnAlreadyLockedError) {
+          errorBeep(); vibrate(30);
+          lockedReturnAwbsRef.current.set(awbKey, err.condition);
+          setReturnLockConflict({ awb, condition: err.condition });
+        } else {
+          toast.error("Failed to save return", { description: (err as Error).message });
+        }
+      });
     }
     scheduleUpload(targetPath);
   }, [returnConditionPending, dispatch, scheduleUpload]);
