@@ -134,11 +134,11 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [flashType, setFlashType] = useState<"success" | "error" | null>(null);
   const [pickupConflict, setPickupConflict] = useState<{ awb: string; company: string; platform: string } | null>(null);
   const [returnLockConflict, setReturnLockConflict] = useState<{ awb: string; condition: 'good' | 'bad' } | null>(null);
-  type ReturnConditionPending = { awb: string; targetPath: string; entry: MasterEntry; idx: number; updatedRow: MasterRow };
-  const [returnConditionPending, setReturnConditionPending] = useState<ReturnConditionPending | null>(null);
-  // Ref so handleDecode (stale closure) can check if the dialog is open without being in its dep array
-  const returnConditionPendingRef = useRef<ReturnConditionPending | null>(null);
-  useEffect(() => { returnConditionPendingRef.current = returnConditionPending; }, [returnConditionPending]);
+
+  // Return sessions ask for the batch condition ONCE, up front, instead of after every scan —
+  // scanning 1000s of orders a day made a per-scan Good/Damaged prompt impractically slow.
+  const needsConditionChoice = selection.status.toLowerCase() === 'returned';
+  const [sessionReturnCondition, setSessionReturnCondition] = useState<'good' | 'damaged' | null>(null);
 
   // AWBs belonging to locked manifests — loaded once on mount, checked per-scan
   const lockedAwbsRef = useRef<Set<string>>(new Set());
@@ -400,7 +400,12 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const orderId = getField(row, "order_id") || getField(row, "orderId") || getField(row, "Order ID") || "";
     const productName = getField(row, "product_name") || getField(row, "productName") || getField(row, "Product Name") || getField(row, "product") || "";
 
-    const updated = setField(row, "status", selection.status);
+    const statusApplied = setField(row, "status", selection.status);
+    // Return sessions have already picked good/bad up front (scanning is gated on it), so the
+    // condition can be stamped on the row in the same pass — no per-scan pause to wait for it.
+    const updated = needsConditionChoice
+      ? setField(statusApplied, 'return_condition', sessionReturnCondition!)
+      : statusApplied;
     const newRows = entry.rows.slice();
     newRows[idx] = updated;
     entry.rows = newRows;
@@ -422,42 +427,15 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const suffix = selection.scanAll ? ` · ${entry.company.name} › ${entry.platform.name}` : "";
     toast.success(`Marked as ${selection.status}`, { description: (productName || orderId || awb) + suffix });
 
-    if (selection.status.toLowerCase() === 'returned') {
-      // Register as dirty immediately so this path is uploaded even if the dialog
-      // is replaced by a subsequent scan from a different platform (scan-all mode).
-      dirtyPathsRef.current.add(targetPath);
-      setPendingUpload(true);
-      setReturnConditionPending({ awb, targetPath, entry, idx, updatedRow: updated });
-    } else {
-      scheduleUpload(targetPath);
-    }
-  }, [dispatch, flash, scheduleUpload, selection.scanAll, selection.status]);
-
-  const applyReturnCondition = useCallback((condition: 'good' | 'damaged' | null) => {
-    if (!returnConditionPending) return;
-    const { awb, targetPath, entry, idx, updatedRow } = returnConditionPending;
-    setReturnConditionPending(null);
-    if (condition) {
-      const withCondition = setField(updatedRow, 'return_condition', condition);
-      const newRows = entry.rows.slice();
-      newRows[idx] = withCondition;
-      entry.rows = newRows;
-      dispatch(updateRow({ path: targetPath, index: idx, row: withCondition }));
-      // Update pending row so the merge-on-upload uses the row with condition included
-      const awbKey = awb.toLowerCase();
-      if (!pendingRowsRef.current.has(targetPath)) pendingRowsRef.current.set(targetPath, new Map());
-      pendingRowsRef.current.get(targetPath)!.set(awbKey, withCondition);
-
+    if (needsConditionChoice) {
       // Write to panel's returns collection so the Returns page shows this scanned return.
       // Keyed by AWB + wrapped in a transaction: this is the atomic gate that actually
       // prevents the same AWB producing two return docs (e.g. two phones scanning the
       // same package) — the in-memory lockedReturnAwbsRef check above is only a fast,
       // possibly-stale pre-filter, not the source of truth.
-      const orderId = getField(updatedRow, "order_id") || getField(updatedRow, "orderId") || getField(updatedRow, "Order ID") || awb;
-      const subOrderId = getField(updatedRow, "sub_order_id") || getField(updatedRow, "subOrderId") || getField(updatedRow, "Sub Order ID") || orderId;
-      const productName = getField(updatedRow, "product_name") || getField(updatedRow, "productName") || getField(updatedRow, "Product Name") || "";
-      const sku = getField(updatedRow, "sku") || getField(updatedRow, "SKU") || "";
-      const finalCondition: "good" | "bad" = condition === "good" ? "good" : "bad";
+      const subOrderId = getField(row, "sub_order_id") || getField(row, "subOrderId") || getField(row, "Sub Order ID") || orderId || awb;
+      const sku = getField(row, "sku") || getField(row, "SKU") || "";
+      const finalCondition: "good" | "bad" = sessionReturnCondition === "good" ? "good" : "bad";
       const returnDocId = returnDocKey(awb);
       const returnDocRef = doc(returnsCollection, returnDocId);
 
@@ -469,7 +447,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         tx.set(returnDocRef, {
           id: returnDocId,
           awb,
-          orderId,
+          orderId: orderId || awb,
           subOrderId,
           platformId: entry.platform.id,
           companyId: entry.company.id,
@@ -484,11 +462,11 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           locked: true,
         });
       }).then(() => {
-        lockedReturnAwbsRef.current.set(awbKey, finalCondition);
+        lockedReturnAwbsRef.current.set(key, finalCondition);
       }).catch((err) => {
         if (err instanceof ReturnAlreadyLockedError) {
           errorBeep(); vibrate(30);
-          lockedReturnAwbsRef.current.set(awbKey, err.condition);
+          lockedReturnAwbsRef.current.set(key, err.condition);
           setReturnLockConflict({ awb, condition: err.condition });
         } else {
           toast.error("Failed to save return", { description: (err as Error).message });
@@ -496,11 +474,11 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       });
     }
     scheduleUpload(targetPath);
-  }, [returnConditionPending, dispatch, scheduleUpload]);
+  }, [dispatch, flash, scheduleUpload, selection.scanAll, selection.status, needsConditionChoice, sessionReturnCondition]);
 
   const handleDecode = useCallback(async (text: string) => {
-    // Block new scans while waiting for the user to pick a return condition
-    if (returnConditionPendingRef.current) return;
+    // Return sessions must have a batch condition chosen before any scan is processed
+    if (needsConditionChoice && sessionReturnCondition === null) return;
 
     const awb = text.trim();
     if (!awb) return;
@@ -568,7 +546,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     };
     await applyUpdate(awb, path, singleEntry, idx);
     rowsRef.current = singleEntry.rows; // applyUpdate mutates entry.rows
-  }, [applyUpdate, dispatch, flash, path, selection]);
+  }, [applyUpdate, dispatch, flash, path, selection, needsConditionChoice, sessionReturnCondition]);
 
   const [manualAwb, setManualAwb] = useState("");
 
@@ -591,7 +569,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const total = results.length;
 
   const statusColor = STATUS_COLOR[selection.status] ?? { bg: "bg-white/10", text: "text-white/70", glow: "#ffffff" };
-  const scanning = !loadingMaster && !masterError;
+  const scanning = !loadingMaster && !masterError && (!needsConditionChoice || sessionReturnCondition !== null);
 
   return (
     <div className="flex h-dvh flex-col bg-[#080a0f]" onPointerDown={unlockAudio}>
@@ -626,6 +604,17 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
               />
               {selection.status}
             </span>
+            {needsConditionChoice && sessionReturnCondition && (
+              <button
+                onClick={() => setSessionReturnCondition(null)}
+                className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-bold capitalize tracking-wide active:scale-95 transition-all ${
+                  sessionReturnCondition === 'good' ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'
+                }`}
+              >
+                {sessionReturnCondition === 'good' ? <ThumbsUp className="h-3 w-3" /> : <PackageX className="h-3 w-3" />}
+                {sessionReturnCondition}
+              </button>
+            )}
             {(uploading || pendingUpload) && (
               <span className="flex items-center gap-1 text-[10px] text-sky-400">
                 <CloudUpload className="h-3 w-3 animate-pulse" />
@@ -852,39 +841,34 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         </div>
       )}
 
-      {/* ── Return condition sheet ── */}
-      {returnConditionPending && (
+      {/* ── One-time batch condition gate — asked once per return session, not per scan ── */}
+      {needsConditionChoice && sessionReturnCondition === null && !loadingMaster && !masterError && (
         <div className="absolute inset-0 z-50 flex items-end bg-black/70 backdrop-blur-sm">
           <div className="w-full rounded-t-3xl border-t border-white/10 bg-[#0d1117] px-5 pt-5 pb-[max(env(safe-area-inset-bottom),24px)]">
             <div className="mb-1 text-center">
-              <span className="inline-block rounded-full bg-orange-500/15 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-orange-400">Return Scanned</span>
+              <span className="inline-block rounded-full bg-orange-500/15 px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-orange-400">Before You Start</span>
             </div>
-            <p className="mb-1 text-center font-mono text-[18px] font-bold text-white">{returnConditionPending.awb}</p>
-            <p className="mb-5 text-center text-[12px] text-white/40">What condition did the product come back in?</p>
+            <p className="mb-5 text-center text-[12px] text-white/40">
+              What condition are the returns in this batch? Every scan will be recorded with this
+              choice until you change it.
+            </p>
 
-            <div className="grid grid-cols-2 gap-3 mb-3">
+            <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => applyReturnCondition('good')}
+                onClick={() => setSessionReturnCondition('good')}
                 className="flex flex-col items-center justify-center gap-2 h-24 rounded-2xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 active:scale-95 transition-all"
               >
                 <ThumbsUp className="h-7 w-7" />
                 <span className="text-[15px] font-bold">Good</span>
               </button>
               <button
-                onClick={() => applyReturnCondition('damaged')}
+                onClick={() => setSessionReturnCondition('damaged')}
                 className="flex flex-col items-center justify-center gap-2 h-24 rounded-2xl bg-rose-500/15 border border-rose-500/25 text-rose-400 active:scale-95 transition-all"
               >
                 <PackageX className="h-7 w-7" />
                 <span className="text-[15px] font-bold">Damaged</span>
               </button>
             </div>
-
-            <button
-              onClick={() => applyReturnCondition(null)}
-              className="w-full py-3 text-[13px] font-medium text-white/30 hover:text-white/50 transition-colors"
-            >
-              Skip — don't record condition
-            </button>
           </div>
         </div>
       )}
