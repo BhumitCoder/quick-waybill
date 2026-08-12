@@ -30,6 +30,11 @@ type ScanResult = {
 // "one AWB, one return" across two scanning sessions (or this app and the report panel).
 const returnDocKey = (awb: string) => awb.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
 
+// The check-digit / edge-trim leniency in findRowByAwb exists only for Amazon's
+// return-label barcodes — gate it on platform name so every other courier keeps
+// strict exact-AWB matching.
+const isAmazonPlatform = (name: string | undefined) => /amazon/i.test(name ?? "");
+
 class ReturnAlreadyLockedError extends Error {
   condition: "good" | "bad";
   constructor(condition: "good" | "bad") {
@@ -505,7 +510,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     if (selection.scanAll) {
       const matches: Array<{ path: string; entry: MasterEntry; index: number }> = [];
       allMastersRef.current.forEach((entry, p) => {
-        const idx = findRowByAwb(entry.rows, awb);
+        const idx = findRowByAwb(entry.rows, awb, { isAmazon: isAmazonPlatform(entry.platform.name) });
         if (idx !== -1) matches.push({ path: p, entry, index: idx });
       });
 
@@ -530,7 +535,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
     // ── Single-platform ──
     if (!rowsRef.current) return;
-    const idx = findRowByAwb(rowsRef.current, awb);
+    const idx = findRowByAwb(rowsRef.current, awb, { isAmazon: isAmazonPlatform(selection.platform?.name) });
     if (idx === -1) {
       errorBeep(); vibrate(30); flash("error");
       const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Not found in master file` };

@@ -337,12 +337,28 @@ function stripValidCheckDigit(s: string): string | null {
   return gs1CheckDigit(body) === check ? body : null;
 }
 
-export function findRowByAwb(rows: MasterRow[], awb: string): number {
+// Last-resort fallback for scan noise that isn't explained by the verified GS1
+// check-digit grammar above — e.g. a genuine 1-character misread introduced by
+// the camera decoder (glare, print smudge, downsampled frame) at either edge of
+// the barcode, unrelated to any real barcode-encoding artifact. Candidates are
+// only ever accepted when they resolve to exactly one row in the whole file —
+// an ambiguous trim is worse than a failed scan, so a tie is left as "not found".
+function fuzzyEdgeCandidates(s: string): string[] {
+  if (s.length < 8) return [];
+  return [s.slice(1), s.slice(0, -1), s.slice(1, -1)];
+}
+
+// Both fallbacks below exist because of Amazon return labels specifically (verified
+// GS1 check-digit grammar, then a last-resort edge-trim for unverified camera misreads).
+// Gate them on the courier so other platforms — where scans are already 1:1 with the
+// stored AWB — keep exact-only matching and can't be affected by this leniency at all.
+export function findRowByAwb(rows: MasterRow[], awb: string, opts?: { isAmazon?: boolean }): number {
   if (!rows.length) return -1;
+  const isAmazon = opts?.isAmazon ?? false;
 
   const needle = normalize(awb);
   if (!needle) return -1;
-  const needleNoCheckDigit = stripValidCheckDigit(needle);
+  const needleNoCheckDigit = isAmazon ? stripValidCheckDigit(needle) : null;
 
   const matchesNeedle = (value: unknown): boolean => {
     const v = normalize(value);
@@ -371,10 +387,28 @@ export function findRowByAwb(rows: MasterRow[], awb: string): number {
   );
   if (idx !== -1) {
     console.log(`[awb] FOUND at row ${idx} via full-column scan`);
-  } else {
-    console.warn(`[awb] NOT FOUND: "${needle}" (length=${needle.length})`);
+    return idx;
   }
-  return idx;
+
+  const edgeCandidates = isAmazon ? fuzzyEdgeCandidates(needle) : [];
+  if (edgeCandidates.length) {
+    const searchKeys = allAwbKeys.length ? allAwbKeys : headers;
+    const hitRows = new Set<number>();
+    rows.forEach((r, i) => {
+      if (searchKeys.some((k) => edgeCandidates.includes(normalize(r[k])))) hitRows.add(i);
+    });
+    if (hitRows.size === 1) {
+      const [only] = hitRows;
+      console.log(`[awb] FOUND at row ${only} via edge-trim fallback (needle="${needle}")`);
+      return only;
+    }
+    if (hitRows.size > 1) {
+      console.warn(`[awb] edge-trim fallback ambiguous for "${needle}" — ${hitRows.size} candidate rows, refusing to guess`);
+    }
+  }
+
+  console.warn(`[awb] NOT FOUND: "${needle}" (length=${needle.length})`);
+  return -1;
 }
 
 export function getField(row: MasterRow, name: string): string {
