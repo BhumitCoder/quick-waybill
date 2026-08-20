@@ -247,6 +247,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     setLoadingMaster(true);
     let cancelled = false;
     let done = alreadyLoaded;
+    const loadFailures: Array<{ platform: string; error: string }> = [];
     Promise.all(uncached.map(async ({ company, platform, path: p }) => {
       try {
         const rows = await readMasterRows(p);
@@ -254,10 +255,25 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           allMastersRef.current.set(p, { company, platform, rows });
           dispatch(setMaster({ path: p, rows }));
         }
-      } catch { /* skip files that don't exist in Storage */ }
+      } catch (e) {
+        // Not every failure here is a missing file (404) — a large file can also
+        // time out or fail to parse on a phone. Silently treating both the same
+        // way means a real failure looks identical to success: the counter below
+        // still increments, so surface it instead of swallowing it.
+        if (!cancelled) loadFailures.push({ platform: platform.name, error: (e as Error).message });
+      }
       done++;
       if (!cancelled) setScanAllStatus({ total: entries.length, loaded: done });
-    })).finally(() => { if (!cancelled) setLoadingMaster(false); });
+    })).finally(() => {
+      if (cancelled) return;
+      setLoadingMaster(false);
+      if (loadFailures.length) {
+        console.warn("[master] failed to load:", loadFailures);
+        toast.error(`${loadFailures.length} platform file(s) failed to load`, {
+          description: loadFailures.map(f => f.platform).join(", "),
+        });
+      }
+    });
     return () => { cancelled = true; };
   }, [selection.scanAll, (selection.allCompanies ?? []).length, dispatch]);
 
@@ -271,20 +287,32 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       setScanAllStatus({ total: entries.length, loaded: 0 });
       setLoadingMaster(true);
       let done = 0;
+      const loadFailures: Array<{ platform: string; error: string }> = [];
       await Promise.all(entries.map(async ({ company, platform, path: p }) => {
         dispatch(invalidate({ path: p }));
         await idbDelete(p);
         try {
+          // idbDelete just above already guarantees this is a real network fetch —
+          // don't pass fresh:true, or the result won't be cached for next time.
           const rows = await readMasterRows(p);
           allMastersRef.current.set(p, { company, platform, rows });
           dispatch(setMaster({ path: p, rows }));
-        } catch { /* skip */ }
+        } catch (e) {
+          loadFailures.push({ platform: platform.name, error: (e as Error).message });
+        }
         done++;
         setScanAllStatus(prev => prev ? { ...prev, loaded: done } : null);
       }));
       setLoadingMaster(false);
       scannedRef.current = new Set();
-      toast.success("All master files reloaded");
+      if (loadFailures.length) {
+        console.warn("[master] refresh failed for:", loadFailures);
+        toast.error(`${loadFailures.length} platform file(s) failed to reload`, {
+          description: loadFailures.map(f => f.platform).join(", "),
+        });
+      } else {
+        toast.success("All master files reloaded");
+      }
       setRefreshing(false);
       return;
     }
