@@ -270,11 +270,14 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           dispatch(setMaster({ path: p, rows }));
         }
       } catch (e) {
-        // Not every failure here is a missing file (404) — a large file can also
-        // time out or fail to parse on a phone. Silently treating both the same
-        // way means a real failure looks identical to success: the counter below
-        // still increments, so surface it instead of swallowing it.
-        if (!cancelled) loadFailures.push({ platform: platform.name, error: (e as Error).message });
+        // A platform simply having no master file uploaded yet (404) is normal,
+        // not a failure — don't alarm the user over it. Anything else (timeout,
+        // a large file failing to parse on a phone) is a real problem the old
+        // silent catch would have hidden entirely, so that still gets surfaced.
+        const code = (e as { code?: string })?.code;
+        if (!cancelled && code !== "storage/object-not-found") {
+          loadFailures.push({ platform: platform.name, error: (e as Error).message });
+        }
       }
       done++;
       if (!cancelled) setScanAllStatus({ total: entries.length, loaded: done });
@@ -312,7 +315,12 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           allMastersRef.current.set(p, { company, platform, rows });
           dispatch(setMaster({ path: p, rows }));
         } catch (e) {
-          loadFailures.push({ platform: platform.name, error: (e as Error).message });
+          // See the initial-load effect above — a platform with no master file
+          // uploaded yet (404) is normal, not worth alarming the user over.
+          const code = (e as { code?: string })?.code;
+          if (code !== "storage/object-not-found") {
+            loadFailures.push({ platform: platform.name, error: (e as Error).message });
+          }
         }
         done++;
         setScanAllStatus(prev => prev ? { ...prev, loaded: done } : null);
