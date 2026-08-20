@@ -32,8 +32,12 @@ const returnDocKey = (awb: string) => awb.trim().toLowerCase().replace(/[^a-z0-9
 
 // The check-digit / edge-trim leniency in findRowByAwb exists only for Amazon's
 // return-label barcodes — gate it on platform name so every other courier keeps
-// strict exact-AWB matching.
-const isAmazonPlatform = (name: string | undefined) => /amazon/i.test(name ?? "");
+// strict exact-AWB matching. In this system, Amazon-carried returns are filed
+// under the "SHIPEASO" platform (verified against production data: SHIPEASO rows
+// carry "Delivery Partner"/"Carrier Name" = "Amazon") rather than a platform
+// literally named "Amazon" — match both so this doesn't silently regress if a
+// platform is ever named "Amazon" directly.
+const isAmazonPlatform = (name: string | undefined) => /amazon|shipeaso/i.test(name ?? "");
 
 class ReturnAlreadyLockedError extends Error {
   condition: "good" | "bad";
