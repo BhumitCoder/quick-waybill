@@ -14,7 +14,6 @@ import {
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
 import { idbDelete } from "@/lib/idbCache";
-import { isFailedPath } from "@/hooks/useBackgroundPrefetch";
 import type { SetupSelection } from "./SetupScreen";
 import { invalidate, markScanned, setMaster, store, updateRow, useAppDispatch, useAppSelector } from "@/store";
 import { db, manifestsCollection, returnsCollection } from "@/lib/firebase";
@@ -129,8 +128,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         c.platforms.map(p => masterPath(c.id, p.id))
       );
       const c = store.getState().master.cache;
-      // Only show loading if there are files that are neither cached nor permanently failed
-      return allPaths.some(p => !c[p] && !isFailedPath(p));
+      // Only show loading if there are files not yet cached — matches the
+      // uncached filter below, which now always retries a previously-failed
+      // path rather than trusting a possibly-stale permanent blacklist.
+      return allPaths.some(p => !c[p]);
     }
     return !cacheEntry;
   });
@@ -229,10 +230,16 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       c.platforms.map(p => ({ company: c, platform: p, path: masterPath(c.id, p.id) }))
     );
 
-    // Separate cached from uncached — only fetch what's actually missing
+    // Separate cached from uncached — only fetch what's actually missing.
+    // Deliberately does NOT consult isFailedPath here: that flag is meant for
+    // genuinely-missing files (404), but a transient failure (network blip, a
+    // large file's worker parse struggling under mobile memory pressure) used
+    // to get blacklisted identically and permanently — silently excluding a
+    // real, existing platform from every future scan on that device forever.
+    // One extra round-trip for a truly-missing file per app open is cheap;
+    // silently losing a real platform's data is not.
     const currentCache = store.getState().master.cache;
-    // Skip paths already cached OR permanently failed (404 in Storage — no point retrying)
-    const uncached = entries.filter(({ path: p }) => !currentCache[p] && !isFailedPath(p));
+    const uncached = entries.filter(({ path: p }) => !currentCache[p]);
 
     // Populate allMastersRef from cache for everything already loaded
     entries.forEach(({ company, platform, path: p }) => {

@@ -84,9 +84,16 @@ async function runPrefetch(companies: Company[], dispatch: ReturnType<typeof use
         const version = key ? versions.get(key) ?? 0 : 0;
         const rows = await readMasterRows(path, { version });
         dispatch(setMaster({ path, rows }));
-      } catch {
-        _failed.add(path);
-        saveFailedToStorage();
+      } catch (e) {
+        // Only a CONFIRMED missing file (404) is worth remembering forever —
+        // a network blip or a large file's worker parse struggling under
+        // mobile memory pressure throws too, but blacklisting on those
+        // permanently excludes a real, existing platform from every future
+        // scan on this device until someone notices and manually clears it.
+        if ((e as { code?: string })?.code === "storage/object-not-found") {
+          _failed.add(path);
+          saveFailedToStorage();
+        }
       }
       completed++;
       broadcast({ loaded: completed, total: paths.length, done: completed === paths.length });
@@ -137,9 +144,13 @@ export async function refreshAllFiles(
           const rows = await readMasterRows(path, { version });
           dispatch(setMaster({ path, rows }));
         }
-      } catch {
-        _failed.add(path);
-        saveFailedToStorage();
+      } catch (e) {
+        // See runPrefetch's identical check above — only a confirmed 404 is
+        // worth remembering forever.
+        if ((e as { code?: string })?.code === "storage/object-not-found") {
+          _failed.add(path);
+          saveFailedToStorage();
+        }
       }
       completed++;
       broadcast({ loaded: completed, total: paths.length, done: completed === paths.length });
