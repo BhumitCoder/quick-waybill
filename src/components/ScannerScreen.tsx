@@ -8,7 +8,7 @@ import {
 import { getDocs, query, where, doc, runTransaction } from "firebase/firestore";
 import { useScanner } from "@/hooks/useScanner";
 import {
-  findRowByAwb, getField, masterPath, readMasterRows,
+  findRowByAwb, getField, masterPath, readMasterRows, resolveCanonicalAwb,
   setField, writeMasterRows, normalize, type MasterRow,
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
@@ -381,8 +381,13 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     entry: MasterEntry,
     idx: number,
   ) => {
-    const key = awb.toLowerCase();
     const row = entry.rows[idx];
+    // The scanned text (e.g. an Amazon barcode with a padding zero + check digit) found
+    // this row, but it is NOT the row's real AWB — every write below must key off the
+    // row's own stored AWB instead, or the fresh-file re-lookup in doUpload (plain exact
+    // match, no leniency) silently fails to find the row again and nothing gets merged in.
+    const canonicalAwb = resolveCanonicalAwb(row, awb);
+    const key = canonicalAwb.toLowerCase();
     const previousStatus = getField(row, "status") || "—";
 
     // Return lock: once an AWB has been scanned and marked good/bad, it can never be re-scanned
@@ -390,7 +395,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     const lockedCondition = lockedReturnAwbsRef.current.get(key);
     if (lockedCondition) {
       errorBeep(); vibrate(30); flash("error");
-      setReturnLockConflict({ awb, condition: lockedCondition });
+      setReturnLockConflict({ awb: canonicalAwb, condition: lockedCondition });
       const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Return locked — already marked ${lockedCondition}` };
       setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
       return;
@@ -398,7 +403,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
     // Manifest lock: once a manifest is locked, NO status change is allowed from the scanner —
     // from any status to any status. Only an Excel upload in the report app can change these orders.
-    if (lockedAwbsRef.current.has(awb.toLowerCase())) {
+    if (lockedAwbsRef.current.has(key)) {
       errorBeep(); vibrate(30); flash("error");
       setPickupConflict({ awb, company: entry.company.name, platform: entry.platform.name });
       toast.error("Manifest is locked", { description: `AWB ${awb} — status can only be changed by an Excel upload` });
@@ -442,10 +447,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       // prevents the same AWB producing two return docs (e.g. two phones scanning the
       // same package) — the in-memory lockedReturnAwbsRef check above is only a fast,
       // possibly-stale pre-filter, not the source of truth.
-      const subOrderId = getField(row, "sub_order_id") || getField(row, "subOrderId") || getField(row, "Sub Order ID") || orderId || awb;
+      const subOrderId = getField(row, "sub_order_id") || getField(row, "subOrderId") || getField(row, "Sub Order ID") || orderId || canonicalAwb;
       const sku = getField(row, "sku") || getField(row, "SKU") || "";
       const finalCondition: "good" | "bad" = sessionReturnCondition === "good" ? "good" : "bad";
-      const returnDocId = returnDocKey(awb);
+      const returnDocId = returnDocKey(canonicalAwb);
       const returnDocRef = doc(returnsCollection, returnDocId);
 
       runTransaction(db, async (tx) => {
@@ -455,8 +460,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         }
         tx.set(returnDocRef, {
           id: returnDocId,
-          awb,
-          orderId: orderId || awb,
+          awb: canonicalAwb,
+          orderId: orderId || canonicalAwb,
           subOrderId,
           platformId: entry.platform.id,
           companyId: entry.company.id,

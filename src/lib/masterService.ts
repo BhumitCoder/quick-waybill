@@ -411,6 +411,25 @@ export function findRowByAwb(rows: MasterRow[], awb: string, opts?: { isAmazon?:
   return -1;
 }
 
+// The value actually scanned (e.g. an Amazon barcode with a padding zero + check
+// digit) is NOT the row's real AWB — it's only good for finding the row once. Every
+// downstream write (pending-change tracking, the Firestore return doc, and the
+// re-lookup during doUpload's fresh-file merge) must key off the row's own stored
+// AWB instead, or that re-lookup — done with plain exact matching, no leniency —
+// silently fails to find the row again and the status update never gets merged in.
+export function resolveCanonicalAwb(row: MasterRow, fallback: string): string {
+  const headers = Object.keys(row);
+  const awbKeys = headers.filter((k) => {
+    const n = k.toLowerCase().trim().replace(/\s+/g, " ");
+    return AWB_PATTERNS.some((p) => p.test(n));
+  });
+  for (const k of awbKeys) {
+    const v = normalize(row[k]);
+    if (v) return String(row[k]);
+  }
+  return fallback;
+}
+
 export function getField(row: MasterRow, name: string): string {
   const key = Object.keys(row).find((k) => k.toLowerCase().trim() === name.toLowerCase());
   return key ? String(row[key] ?? "") : "";
