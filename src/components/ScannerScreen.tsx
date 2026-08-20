@@ -3,8 +3,9 @@ import { toast } from "sonner";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle,
   Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send, Lock,
-  ThumbsUp, PackageX,
+  ThumbsUp, PackageX, Bug, Copy, X,
 } from "lucide-react";
+import { getDebugLog, subscribeDebugLog, type LogEntry } from "@/lib/debugLog";
 import { getDocs, query, where, doc, runTransaction } from "firebase/firestore";
 import { useScanner } from "@/hooks/useScanner";
 import {
@@ -143,6 +144,12 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
   const [flashType, setFlashType] = useState<"success" | "error" | null>(null);
   const [pickupConflict, setPickupConflict] = useState<{ awb: string; company: string; platform: string } | null>(null);
   const [returnLockConflict, setReturnLockConflict] = useState<{ awb: string; condition: 'good' | 'bad' } | null>(null);
+
+  // On-screen debug log viewer — lets a phone user see exactly what the app
+  // logged (fetch/parse/match steps) without needing devtools or USB debugging.
+  const [showLogs, setShowLogs] = useState(false);
+  const [logEntries, setLogEntries] = useState<LogEntry[]>(() => getDebugLog());
+  useEffect(() => subscribeDebugLog(setLogEntries), []);
 
   // Return sessions ask for the batch condition ONCE, up front, instead of after every scan —
   // scanning 1000s of orders a day made a per-scan Good/Damaged prompt impractically slow.
@@ -706,6 +713,13 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
         </button>
+
+        <button
+          onClick={() => setShowLogs(true)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-white/5 text-white/40 hover:bg-white/10 hover:text-white active:scale-95 transition-all"
+        >
+          <Bug className="h-4 w-4" />
+        </button>
       </header>
 
       {/* ── Camera viewport ── */}
@@ -967,6 +981,52 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
             >
               Cancel
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Debug log viewer — lets a phone show exactly what happened, no devtools needed ── */}
+      {showLogs && (
+        <div className="absolute inset-0 z-50 flex flex-col bg-[#080a0f]">
+          <div style={{ height: "env(safe-area-inset-top)" }} />
+          <div className="flex items-center gap-2 border-b border-white/10 px-4 py-3">
+            <Bug className="h-4 w-4 text-white/50" />
+            <p className="flex-1 text-[13px] font-bold text-white/80">Debug Log ({logEntries.length})</p>
+            <button
+              onClick={() => {
+                const text = logEntries.map(e => `[${new Date(e.at).toLocaleTimeString()}] ${e.level.toUpperCase()}: ${e.text}`).join("\n");
+                navigator.clipboard?.writeText(text).then(
+                  () => toast.success("Copied log to clipboard"),
+                  () => toast.error("Copy failed"),
+                );
+              }}
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-white/40 hover:bg-white/10 hover:text-white"
+            >
+              <Copy className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setShowLogs(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/5 text-white/40 hover:bg-white/10 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1 font-mono">
+            {logEntries.length === 0 ? (
+              <p className="py-8 text-center text-[12px] text-white/25">No log entries yet.</p>
+            ) : (
+              logEntries.map((e, i) => (
+                <p
+                  key={i}
+                  className={`whitespace-pre-wrap break-words text-[10.5px] leading-snug ${
+                    e.level === "error" ? "text-rose-400" : e.level === "warn" ? "text-amber-400" : "text-white/60"
+                  }`}
+                >
+                  <span className="text-white/25">{new Date(e.at).toLocaleTimeString()} </span>
+                  {e.text}
+                </p>
+              ))
+            )}
           </div>
         </div>
       )}

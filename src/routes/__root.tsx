@@ -11,6 +11,12 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { installDebugLogCapture } from "../lib/debugLog";
+
+// As early as possible on the client — before background prefetch or any
+// scanning starts — so the on-screen log viewer (ScannerScreen) can show a
+// phone user exactly what happened without needing devtools/USB debugging.
+if (typeof window !== "undefined") installDebugLogCapture();
 
 function NotFoundComponent() {
   return (
