@@ -8,7 +8,18 @@ const MAX_ENTRIES = 500;
 const buffer: LogEntry[] = [];
 const subscribers = new Set<(entries: LogEntry[]) => void>();
 
+// ZXing logs this on every single camera frame where no barcode is found —
+// several times a second while the camera is pointed at anything. It's already
+// filtered from the real console (see useScanner.ts's suppressZxingConsoleSpam),
+// but this capture wraps console.error OUTSIDE that filter, so without this
+// check it floods the ring buffer and evicts every actually-useful log line
+// (file fetch, AWB match attempt) within seconds of the camera turning on.
+function isKnownNoise(args: unknown[]): boolean {
+  return typeof args[0] === "string" && args[0].startsWith("MultiFormatReader:");
+}
+
 function push(level: LogEntry["level"], args: unknown[]) {
+  if (isKnownNoise(args)) return;
   const text = args
     .map((a) => (typeof a === "string" ? a : safeStringify(a)))
     .join(" ");
