@@ -598,6 +598,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
             {masterRowCount !== null && (
               <span className="ml-1.5 text-white/20">· {masterRowCount}{typeof masterRowCount === "number" ? " rows" : ""}</span>
             )}
+            <span className="ml-1.5 text-white/15">· build {__BUILD_SHA__}</span>
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span

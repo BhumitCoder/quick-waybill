@@ -28,6 +28,12 @@ export default defineConfig({
     },
   },
   vite: {
+    // Bakes the deployed commit into the client bundle so anyone using the app can see
+    // exactly which build they're on (Settings screen footer) instead of guessing whether
+    // a fix has actually reached their device — Vercel sets this automatically per build.
+    define: {
+      __BUILD_SHA__: JSON.stringify((process.env.VERCEL_GIT_COMMIT_SHA || "local").slice(0, 7)),
+    },
     server: {
       host: "0.0.0.0",
       port: 5000,
