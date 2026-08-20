@@ -87,7 +87,11 @@ async function parseInWorker(arrayBuffer: ArrayBuffer): Promise<MasterRow[]> {
 async function downloadArrayBuffer(storagePath: string): Promise<{ arrayBuffer: ArrayBuffer; resolvedPath: string }> {
   const tryFetch = async (path: string) => {
     const url = await getDownloadURL(ref(storage, path));
-    const res = await fetch(url);
+    // IDB + the masterSync version check above already decide WHEN a real
+    // network fetch is warranted — once we're here, never let the browser's
+    // own HTTP cache silently hand back a stale response for this same
+    // download URL (idbDelete() only clears our app-level cache, not this).
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) throw Object.assign(new Error(`HTTP ${res.status}`), { code: "storage/unknown" });
     return res.arrayBuffer();
   };
