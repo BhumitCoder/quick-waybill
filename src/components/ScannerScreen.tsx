@@ -598,7 +598,6 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
             {masterRowCount !== null && (
               <span className="ml-1.5 text-white/20">· {masterRowCount}{typeof masterRowCount === "number" ? " rows" : ""}</span>
             )}
-            <span className="ml-1.5 text-white/15">· build {__BUILD_SHA__}</span>
           </p>
           <div className="flex items-center gap-1.5 mt-0.5">
             <span
@@ -609,6 +608,11 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
                 style={{ backgroundColor: statusColor.glow, boxShadow: `0 0 4px ${statusColor.glow}` }}
               />
               {selection.status}
+            </span>
+            {/* Loud on purpose — this is the only way to tell whether a fix has
+                actually reached this device, so it must not be easy to miss. */}
+            <span className="inline-flex items-center gap-1 rounded-full bg-fuchsia-500/20 px-2.5 py-0.5 text-[11px] font-bold tracking-wide text-fuchsia-300">
+              build {__BUILD_SHA__}
             </span>
             {needsConditionChoice && sessionReturnCondition && (
               <button
