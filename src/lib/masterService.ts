@@ -1,5 +1,5 @@
 import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
-import { doc, setDoc, getDoc, getDocs, serverTimestamp } from "firebase/firestore";
+import { doc, setDoc, getDoc, getDocs, serverTimestamp, runTransaction } from "firebase/firestore";
 import { storage, db, masterSyncCollection } from "./firebase";
 import { idbGet, idbSet } from "./idbCache";
 
@@ -17,6 +17,85 @@ export function masterPath(companyId: string, platformId: string) {
 
 export function masterPathXls(companyId: string, platformId: string) {
   return `companies/${companyId}/platforms/${platformId}/master.xls`;
+}
+
+// ── Concurrency control ─────────────────────────────────────────────────────
+//
+// This app and the report panel both do read-mutate-upload on the same master
+// file with no coordination, so a scan and a report-panel upload landing close
+// together could silently clobber each other — whichever upload finished last
+// won, with no error and no way to tell anything was lost. This lock lives on
+// the SAME masterSync/{companyId}_{platformId} doc both apps already write to,
+// using the same field names (version/lockedAt/lockedBy), so a lock taken by
+// either app is honored by the other. A version check performed AFTER
+// uploading can't fix this — Storage writes aren't part of a Firestore
+// transaction, so by the time a conflict is detected the damage is already
+// done — so the lock must be acquired BEFORE reading, and released (bumping
+// the version) only after a successful upload. A stale lock from a writer
+// that crashed mid-write self-heals after LOCK_TIMEOUT_MS.
+
+const LOCK_TIMEOUT_MS = 20_000;
+const MAX_WRITE_ATTEMPTS = 5;
+
+function masterSyncDocId(storagePath: string): string | null {
+  const parts = storagePath.split("/"); // companies/{cid}/platforms/{pid}/master.xlsx
+  const companyId = parts[1];
+  const platformId = parts[3];
+  return companyId && platformId ? `${companyId}_${platformId}` : null;
+}
+
+function lockAgeMs(lockedAt: unknown): number {
+  const ms = typeof lockedAt === "number" ? lockedAt : (lockedAt as { toMillis?: () => number } | undefined)?.toMillis?.() ?? 0;
+  return ms > 0 ? Date.now() - ms : Infinity;
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Try to acquire the write lock. Returns the version to release-with-bump on
+ *  success, or null if someone else (this app or the report panel) currently
+ *  holds a fresh lock. */
+async function acquireMasterFileLock(storagePath: string): Promise<number | null> {
+  const docId = masterSyncDocId(storagePath);
+  if (!docId) return 0; // can't track this path — don't block the write on it
+  const parts = storagePath.split("/");
+  const companyId = parts[1];
+  const platformId = parts[3];
+
+  try {
+    return await runTransaction(db, async (tx) => {
+      const docRef = doc(masterSyncCollection, docId);
+      const snap = await tx.get(docRef);
+      const data = (snap.data() ?? {}) as { version?: number; lockedAt?: unknown };
+      if (lockAgeMs(data.lockedAt) < LOCK_TIMEOUT_MS) return null; // someone else is actively writing
+      const version = data.version ?? 0;
+      tx.set(docRef, { storagePath, companyId, platformId, lockedAt: Date.now(), lockedBy: CLIENT_ID }, { merge: true });
+      return version;
+    });
+  } catch {
+    return 0; // transaction infra hiccup — degrade to "assume uncontended" rather than block the write entirely
+  }
+}
+
+/** Release the lock. `success: true` bumps the version and refreshes the
+ *  change-signal fields the report app's live-sync listener reads; `success:
+ *  false` just clears the lock without bumping version, since nothing changed. */
+async function releaseMasterFileLock(storagePath: string, version: number, success: boolean): Promise<void> {
+  const docId = masterSyncDocId(storagePath);
+  if (!docId) return;
+  const parts = storagePath.split("/");
+  const companyId = parts[1];
+  const platformId = parts[3];
+  try {
+    await setDoc(
+      doc(masterSyncCollection, docId),
+      {
+        storagePath, companyId, platformId,
+        lockedAt: null, lockedBy: null,
+        ...(success ? { clientId: CLIENT_ID, updatedAt: serverTimestamp(), version: version + 1 } : {}),
+      },
+      { merge: true },
+    );
+  } catch { /* best-effort, matches the existing change-signal's error handling */ }
 }
 
 // ── Web Worker for XLSX parsing ──────────────────────────────────────────────
@@ -231,7 +310,7 @@ function logAwbInfo(rows: MasterRow[], resolvedPath: string) {
   }
 }
 
-export async function writeMasterRows(storagePath: string, rows: MasterRow[]): Promise<void> {
+async function serializeAndUpload(storagePath: string, rows: MasterRow[]): Promise<void> {
   const XLSX = await import("xlsx");
   const workbook = XLSX.utils.book_new();
   const sheet = XLSX.utils.json_to_sheet(rows);
@@ -244,8 +323,14 @@ export async function writeMasterRows(storagePath: string, rows: MasterRow[]): P
   await uploadBytes(fileRef, buffer as ArrayBuffer, {
     contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
+}
 
-  // Notify the report app that this master file changed.
+export async function writeMasterRows(storagePath: string, rows: MasterRow[]): Promise<void> {
+  await serializeAndUpload(storagePath, rows);
+
+  // Notify the report app that this master file changed. Only used by the
+  // no-lock fallback path (readMasterRows itself failed, so there's nothing
+  // sensible to hold a lock around) — the normal path is writeMasterRowsWithLock.
   const parts = storagePath.split("/");
   const companyId = parts[1];
   const platformId = parts[3];
@@ -262,6 +347,46 @@ export async function writeMasterRows(storagePath: string, rows: MasterRow[]): P
   // Bust IDB cache for this path so next open re-downloads the updated file
   const { idbDelete } = await import("./idbCache");
   idbDelete(storagePath).catch(() => {});
+}
+
+/**
+ * Read the current file → compute the new rows → upload, all while holding
+ * this file's write lock (shared with the report app), retrying if the lock
+ * is currently held by another writer. `computeRows` must be a pure function
+ * of the rows it's handed — it is called fresh on every attempt, so it must
+ * never close over rows read on an earlier attempt. Returning null means
+ * "nothing to write" — the lock is released without bumping the version and
+ * Storage is never touched.
+ */
+export async function writeMasterRowsWithLock(
+  storagePath: string,
+  computeRows: (freshRows: MasterRow[]) => MasterRow[] | null | Promise<MasterRow[] | null>,
+): Promise<{ rowsBefore: MasterRow[]; finalRows: MasterRow[] }> {
+  for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
+    const version = await acquireMasterFileLock(storagePath);
+    if (version === null) {
+      await sleep(300 + Math.random() * 500);
+      continue;
+    }
+    try {
+      const rowsBefore = await readMasterRows(storagePath, { fresh: true });
+      const finalRows = await computeRows(rowsBefore);
+      if (finalRows === null) {
+        await releaseMasterFileLock(storagePath, version, false);
+        return { rowsBefore, finalRows: rowsBefore };
+      }
+
+      await serializeAndUpload(storagePath, finalRows);
+      await releaseMasterFileLock(storagePath, version, true);
+      const { idbDelete } = await import("./idbCache");
+      idbDelete(storagePath).catch(() => {});
+      return { rowsBefore, finalRows };
+    } catch (err) {
+      await releaseMasterFileLock(storagePath, version, false);
+      throw err;
+    }
+  }
+  throw new Error("This file is busy being updated by someone else right now — please try again in a moment.");
 }
 
 // ── AWB column detection ─────────────────────────────────────────────────────

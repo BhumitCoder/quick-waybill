@@ -10,7 +10,7 @@ import { getDocs, query, where, doc, runTransaction } from "firebase/firestore";
 import { useScanner } from "@/hooks/useScanner";
 import {
   findRowByAwb, getField, masterPath, readMasterRows, resolveCanonicalAwb,
-  setField, writeMasterRows, normalize, type MasterRow,
+  setField, writeMasterRows, writeMasterRowsWithLock, normalize, type MasterRow,
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
 import { idbDelete } from "@/lib/idbCache";
@@ -375,34 +375,34 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           pendingRowsRef.current.delete(p);
           if (!ourChanges.size) return;
 
-          // Re-read the latest file to pick up changes from other users scanning concurrently.
-          // fresh: bypass the IDB cache — a cached copy can predate this session's scans
-          let baseRows: MasterRow[];
           try {
-            baseRows = await readMasterRows(p, { fresh: true });
+            // Holds this file's write lock (shared with the report app) for the
+            // whole read+merge+write cycle, so a concurrent write from the report
+            // app (or another scan session) can't land in between and get
+            // silently overwritten — see writeMasterRowsWithLock.
+            const { finalRows } = await writeMasterRowsWithLock(p, (freshRows) => {
+              const merged = freshRows.slice();
+              for (const [awb, updatedRow] of ourChanges) {
+                const idx = findRowByAwb(merged, awb);
+                if (idx !== -1) merged[idx] = updatedRow;
+              }
+              return merged;
+            });
+
+            // Sync our local copy so subsequent in-session scans see merged state
+            if (selection.scanAll) {
+              const entry = allMastersRef.current.get(p);
+              if (entry) entry.rows = finalRows;
+            } else {
+              rowsRef.current = finalRows;
+            }
           } catch {
-            // Re-read failed — fall back to writing our local snapshot rather than losing data
+            // Lock/read failed entirely — fall back to writing our local snapshot
+            // (already carries our changes, applyUpdate applied them optimistically)
+            // rather than losing them outright. Best-effort, unprotected by the lock.
             const fallback = selection.scanAll ? allMastersRef.current.get(p)?.rows : rowsRef.current;
             if (fallback) await writeMasterRows(p, fallback);
-            return;
           }
-
-          // Apply only our changed rows on top of the fresh base (leaves other users' rows untouched)
-          const mergedRows = baseRows.slice();
-          for (const [awb, updatedRow] of ourChanges) {
-            const idx = findRowByAwb(mergedRows, awb);
-            if (idx !== -1) mergedRows[idx] = updatedRow;
-          }
-
-          // Sync our local copy so subsequent in-session scans see merged state
-          if (selection.scanAll) {
-            const entry = allMastersRef.current.get(p);
-            if (entry) entry.rows = mergedRows;
-          } else {
-            rowsRef.current = mergedRows;
-          }
-
-          await writeMasterRows(p, mergedRows);
         }));
       } catch (e) {
         toast.error("Upload failed", { description: (e as Error).message });
