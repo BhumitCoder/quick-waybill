@@ -318,7 +318,11 @@ async function serializeAndUpload(storagePath: string, rows: MasterRow[]): Promi
 
   await new Promise((r) => setTimeout(r, 0));
 
-  const buffer = XLSX.write(workbook, { type: "array", bookType: "xlsx" });
+  // compression is NOT optional here. Uncompressed, a large master file
+  // serialises to ~137MB and allocating that as a JS array throws "Invalid
+  // array length" — every scan writing to that platform would fail. With
+  // compression the same file is ~32MB.
+  const buffer = XLSX.write(workbook, { type: "array", bookType: "xlsx", compression: true });
   const fileRef = ref(storage, storagePath);
   await uploadBytes(fileRef, buffer as ArrayBuffer, {
     contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
