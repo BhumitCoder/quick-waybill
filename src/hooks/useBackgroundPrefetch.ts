@@ -166,8 +166,13 @@ export async function refreshAllFiles(
  * Subscribes to the module-level prefetch singleton.
  * The prefetch starts once per page load (not per component mount),
  * so navigating away and back never re-triggers the fetch.
+ *
+ * `enabled` is true only in Scan All mode — the only mode that needs every
+ * platform's file. Pre-loading all of them on every app open made each phone
+ * download and parse ~95 MB whenever any file had changed, even to scan one
+ * platform (whose file the setup screen already loads on its own).
  */
-export function useBackgroundPrefetch(companies: Company[]): PrefetchProgress {
+export function useBackgroundPrefetch(companies: Company[], enabled: boolean): PrefetchProgress {
   const dispatch = useAppDispatch();
   const [progress, setProgress] = useState<PrefetchProgress>(_progress);
 
@@ -180,10 +185,10 @@ export function useBackgroundPrefetch(companies: Company[]): PrefetchProgress {
 
   // Start the prefetch only on the very first call with a non-empty companies list
   useEffect(() => {
-    if (!companies.length || _started) return;
+    if (!enabled || !companies.length || _started) return;
     _started = true;
     runPrefetch(companies, dispatch);
-  }, [companies.length > 0, dispatch]);
+  }, [enabled, companies.length > 0, dispatch]);
 
   return progress;
 }

@@ -2,8 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { getDocs } from "firebase/firestore";
 import {
   ScanLine, Building2, Layers, Sun, Moon,
-  CheckCircle2, AlertTriangle, Loader2, ChevronRight, Globe, RefreshCw,
+  CheckCircle2, AlertTriangle, Loader2, ChevronRight, Globe, RefreshCw, Camera, ScanBarcode,
 } from "lucide-react";
+import { readScanInput, writeScanInput, type ScanInput } from "@/lib/scanInput";
 import { companiesCollection } from "@/lib/firebase";
 import { readMasterRows, masterPath } from "@/lib/masterService";
 import { Button } from "@/components/ui/button";
@@ -56,11 +57,16 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
   const [prefetch, setPrefetch] = useState<PrefetchStatus>("idle");
   const [starting, setStarting] = useState(false);
   const [refreshingFiles, setRefreshingFiles] = useState(false);
+  // Server render has no localStorage — start from the default and load the
+  // saved choice after hydration so server and client markup match
+  const [scanInput, setScanInput] = useState<ScanInput>("camera");
+  useEffect(() => { setScanInput(readScanInput()); }, []);
+  const chooseScanInput = (v: ScanInput) => { setScanInput(v); writeScanInput(v); };
   const pendingRef = useRef<Promise<void> | null>(null);
 
   const { companyId, platformId, status, scanAll } = setup;
 
-  const bgPrefetch = useBackgroundPrefetch(companies);
+  const bgPrefetch = useBackgroundPrefetch(companies, scanAll);
 
   useEffect(() => {
     getDocs(companiesCollection)
@@ -154,6 +160,7 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
 
       {/* ── Background prefetch progress banner ── */}
       {(() => {
+        if (!scanAll) return null; // only Scan All pre-loads every platform's file
         const allPaths = companies.flatMap(c => c.platforms.map(p => masterPath(c.id, p.id)));
         const totalPlatforms = allPaths.length;
         if (totalPlatforms === 0) return null;
@@ -301,6 +308,36 @@ export function SetupScreen({ onStart }: { onStart: (s: SetupSelection) => void 
                 >
                   <span className={`h-2 w-2 shrink-0 rounded-full ${selected ? "bg-white/60" : dot}`} />
                   {label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Input device */}
+        <div>
+          <SectionLabel>Scan With</SectionLabel>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              { id: "camera", label: "Phone Camera", hint: "Point the camera at the label", Icon: Camera },
+              { id: "scanner", label: "Barcode Scanner", hint: "TVS · USB cable or Bluetooth", Icon: ScanBarcode },
+            ] as const).map(({ id, label, hint, Icon }) => {
+              const selected = scanInput === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => chooseScanInput(id)}
+                  aria-pressed={selected}
+                  className={`flex flex-col items-start gap-1.5 rounded-2xl border px-4 py-3 text-left transition-all active:scale-[0.96] ${
+                    selected
+                      ? "border-primary bg-gradient-to-br from-primary to-primary-glow text-primary-foreground shadow-glow"
+                      : "border-border bg-card text-foreground"
+                  }`}
+                >
+                  <Icon className={`h-5 w-5 ${selected ? "text-primary-foreground" : "text-muted-foreground"}`} />
+                  <span className="text-[14px] font-semibold">{label}</span>
+                  <span className={`text-[11px] leading-tight ${selected ? "text-primary-foreground/80" : "text-muted-foreground"}`}>{hint}</span>
                 </button>
               );
             })}

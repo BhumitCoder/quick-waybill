@@ -9,6 +9,8 @@ import { getDebugLog, subscribeDebugLog, type LogEntry } from "@/lib/debugLog";
 import { getDocs, query, where, doc, runTransaction } from "firebase/firestore";
 import { useScanner } from "@/hooks/useScanner";
 import { useHardwareScanner } from "@/hooks/useHardwareScanner";
+import { HardwareScanBuffer, SCAN_TIMING } from "@/lib/hardwareScanBuffer";
+import { readScanInput, writeScanInput, type ScanInput } from "@/lib/scanInput";
 import {
   findRowByAwb, getField, masterPath, readMasterRows, resolveCanonicalAwb,
   setField, writeMasterRows, writeMasterRowsWithLock, normalize, type MasterRow,
@@ -39,15 +41,6 @@ const returnDocKey = (awb: string) => awb.trim().toLowerCase().replace(/[^a-z0-9
 // literally named "Amazon" — match both so this doesn't silently regress if a
 // platform is ever named "Amazon" directly.
 const isAmazonPlatform = (name: string | undefined) => /amazon|shipeaso/i.test(name ?? "");
-
-// Per-device choice: phones scanning with a TVS (hardware) scanner turn the camera off.
-const CAMERA_PREF_KEY = "awb_camera_enabled";
-function readCameraPref(): boolean {
-  try { return localStorage.getItem(CAMERA_PREF_KEY) !== "0"; } catch { return true; }
-}
-function writeCameraPref(on: boolean) {
-  try { localStorage.setItem(CAMERA_PREF_KEY, on ? "1" : "0"); } catch { /* storage unavailable — choice lasts this session */ }
-}
 
 class ReturnAlreadyLockedError extends Error {
   condition: "good" | "bad";
@@ -637,9 +630,11 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     handleDecode(val);
   }, [manualAwb, handleDecode]);
 
-  const [cameraOn, setCameraOn] = useState(readCameraPref);
+  // Chosen on the setup screen ("Scan With"); the header button switches it mid-session
+  const [scanInput, setScanInput] = useState<ScanInput>(readScanInput);
+  const cameraOn = scanInput === "camera";
   const toggleCamera = useCallback(() => {
-    setCameraOn(on => { writeCameraPref(!on); return !on; });
+    setScanInput(v => { const next: ScanInput = v === "camera" ? "scanner" : "camera"; writeScanInput(next); return next; });
   }, []);
   const { cameraError, hasTorch, torchOn, toggleTorch } = useScanner(videoRef, handleDecode, cameraOn);
 
@@ -667,14 +662,18 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         : null;
   const notReadyRef = useRef<string | null>(notReadyReason);
   notReadyRef.current = notReadyReason;
-  useHardwareScanner(useCallback((code: string) => {
+  // Scans received from a hardware scanner this session — lets staff see it is working
+  const [deviceScans, setDeviceScans] = useState(0);
+  const handleDeviceScan = useCallback((code: string) => {
+    setDeviceScans(n => n + 1);
     if (notReadyRef.current) {
       errorBeep(); vibrate(30);
       toast.warning("Not ready to scan yet", { description: notReadyRef.current });
       return;
     }
     handleDecode(code);
-  }, [handleDecode]));
+  }, [handleDecode]);
+  useHardwareScanner(handleDeviceScan);
 
   return (
     <div className="flex h-dvh flex-col bg-[#080a0f]" onPointerDown={unlockAudio}>
@@ -749,8 +748,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
         <button
           onClick={toggleCamera}
-          aria-label={cameraOn ? "Turn camera off (use hardware scanner)" : "Turn camera on"}
-          title={cameraOn ? "Camera on — tap to use only the hardware scanner" : "Camera off — tap to turn it on"}
+          aria-label={cameraOn ? "Switch to barcode scanner" : "Switch to camera"}
+          title={cameraOn ? "Using camera — tap to use a barcode scanner" : "Using barcode scanner — tap to use the camera"}
           className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl transition-all active:scale-95 ${
             cameraOn
               ? "bg-white/5 text-white/40 hover:bg-white/10 hover:text-white"
@@ -799,13 +798,13 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         <video ref={videoRef} className={`h-full w-full object-cover ${cameraOn ? "" : "invisible"}`} playsInline muted autoPlay />
 
         {!cameraOn && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0b0e14] px-6 text-center">
-            <ScanBarcode className="h-10 w-10" style={{ color: statusColor.glow }} />
-            <p className="text-[14px] font-bold text-white/80">Hardware scanner mode</p>
-            <p className="text-[11px] leading-snug text-white/40 max-w-[260px]">
-              Scan with your TVS scanner. The camera is off — tap the camera button above to turn it back on.
-            </p>
-          </div>
+          <ScannerDevicePanel
+            onScan={handleDeviceScan}
+            deviceScans={deviceScans}
+            notReadyReason={notReadyReason}
+            glowColor={statusColor.glow}
+            onUseCamera={toggleCamera}
+          />
         )}
 
         {/* Flash overlay */}
@@ -1166,6 +1165,118 @@ function ScanFrame({ active, glowColor, flashType }: { active: boolean; glowColo
           <div className="absolute left-1/2 top-1/2 -translate-x-px -translate-y-1/2 w-px h-4 rounded-full" style={{ backgroundColor: `${frameColor}60` }} />
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Dedicated section for a wired/Bluetooth barcode scanner (TVS etc.). Its
+ * capture box stays focused so every scan lands here — no need to tap the
+ * manual AWB box — and inputMode="none" keeps the phone's on-screen keyboard
+ * hidden while it is focused. Scans arriving while focus is elsewhere are
+ * still caught by the window-level useHardwareScanner listener.
+ */
+function ScannerDevicePanel({ onScan, deviceScans, notReadyReason, glowColor, onUseCamera }: {
+  onScan: (code: string) => void;
+  deviceScans: number;
+  notReadyReason: string | null;
+  glowColor: string;
+  onUseCamera: () => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [focused, setFocused] = useState(false);
+  const bufferRef = useRef(new HardwareScanBuffer());
+  const idleRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const submit = useCallback(() => {
+    if (idleRef.current) { clearTimeout(idleRef.current); idleRef.current = null; }
+    bufferRef.current.reset();
+    const el = inputRef.current;
+    const code = el?.value.trim() ?? "";
+    if (el) el.value = "";
+    if (code.length >= 3) onScan(code);
+  }, [onScan]);
+
+  // Grab focus on open, and take it back whenever nothing else holds it
+  // (e.g. after tapping a button) — but never steal it from the manual AWB box
+  const refocus = useCallback(() => {
+    setTimeout(() => {
+      const active = document.activeElement;
+      if (!active || active === document.body) inputRef.current?.focus({ preventScroll: true });
+    }, 0);
+  }, []);
+  useEffect(() => {
+    inputRef.current?.focus({ preventScroll: true });
+    const onPointerUp = () => refocus();
+    window.addEventListener("pointerup", onPointerUp);
+    return () => {
+      window.removeEventListener("pointerup", onPointerUp);
+      if (idleRef.current) clearTimeout(idleRef.current);
+    };
+  }, [refocus]);
+
+  const working = deviceScans > 0;
+  const state = notReadyReason
+    ? { dot: "bg-amber-400", text: "text-amber-300", label: notReadyReason }
+    : focused
+      ? { dot: "bg-emerald-400 animate-pulse", text: "text-emerald-300", label: "Ready — scan a barcode" }
+      : { dot: "bg-white/30", text: "text-white/60", label: "Tap here to activate the scanner" };
+
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#0b0e14] px-5 text-center">
+      <div className="flex items-center gap-2">
+        <ScanBarcode className="h-6 w-6" style={{ color: glowColor }} />
+        <p className="text-[15px] font-bold text-white/85">Barcode Scanner</p>
+      </div>
+
+      <label
+        className={`relative flex w-full max-w-[320px] cursor-text items-center gap-3 rounded-2xl border px-4 py-3.5 text-left transition-all ${
+          focused && !notReadyReason ? "border-emerald-400/50 bg-emerald-500/10" : "border-white/10 bg-white/5"
+        }`}
+      >
+        <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${state.dot}`} />
+        <span className={`text-[13px] font-semibold ${state.text}`}>{state.label}</span>
+        <input
+          ref={inputRef}
+          aria-label="Barcode scanner input"
+          inputMode="none"
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellCheck={false}
+          className="absolute inset-0 h-full w-full cursor-text opacity-0"
+          onFocus={() => setFocused(true)}
+          onBlur={() => { setFocused(false); refocus(); }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === "Tab") {
+              e.preventDefault();
+              submit();
+              return;
+            }
+            if (e.key.length !== 1 || e.ctrlKey || e.metaKey || e.altKey) return;
+            // Scanners set to "no suffix" never send Enter — submit once a fast burst goes quiet
+            bufferRef.current.push(e.key, performance.now());
+            if (idleRef.current) clearTimeout(idleRef.current);
+            idleRef.current = setTimeout(() => {
+              if (bufferRef.current.isScan()) submit();
+              else bufferRef.current.reset();
+            }, SCAN_TIMING.idleMs);
+          }}
+        />
+      </label>
+
+      <p className="text-[11px] text-white/40">
+        {working
+          ? <span className="font-semibold text-emerald-400">✓ Scanner working · {deviceScans} scan{deviceScans === 1 ? "" : "s"} received</span>
+          : "Connect the scanner by USB cable or Bluetooth, then scan."}
+      </p>
+
+      <button
+        onClick={onUseCamera}
+        className="flex items-center gap-1.5 rounded-xl bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-white/50 hover:bg-white/10 hover:text-white active:scale-95 transition-all"
+      >
+        <Camera className="h-3.5 w-3.5" /> Use camera instead
+      </button>
     </div>
   );
 }
