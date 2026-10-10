@@ -3,11 +3,12 @@ import { toast } from "sonner";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle,
   Loader2, RefreshCw, CloudUpload, Zap, Hash, Flashlight, FlashlightOff, Send, Lock,
-  ThumbsUp, PackageX, Bug, Copy, X,
+  ThumbsUp, PackageX, Bug, Copy, X, Camera, CameraOff, ScanBarcode,
 } from "lucide-react";
 import { getDebugLog, subscribeDebugLog, type LogEntry } from "@/lib/debugLog";
 import { getDocs, query, where, doc, runTransaction } from "firebase/firestore";
 import { useScanner } from "@/hooks/useScanner";
+import { useHardwareScanner } from "@/hooks/useHardwareScanner";
 import {
   findRowByAwb, getField, masterPath, readMasterRows, resolveCanonicalAwb,
   setField, writeMasterRows, writeMasterRowsWithLock, normalize, type MasterRow,
@@ -38,6 +39,15 @@ const returnDocKey = (awb: string) => awb.trim().toLowerCase().replace(/[^a-z0-9
 // literally named "Amazon" — match both so this doesn't silently regress if a
 // platform is ever named "Amazon" directly.
 const isAmazonPlatform = (name: string | undefined) => /amazon|shipeaso/i.test(name ?? "");
+
+// Per-device choice: phones scanning with a TVS (hardware) scanner turn the camera off.
+const CAMERA_PREF_KEY = "awb_camera_enabled";
+function readCameraPref(): boolean {
+  try { return localStorage.getItem(CAMERA_PREF_KEY) !== "0"; } catch { return true; }
+}
+function writeCameraPref(on: boolean) {
+  try { localStorage.setItem(CAMERA_PREF_KEY, on ? "1" : "0"); } catch { /* storage unavailable — choice lasts this session */ }
+}
 
 class ReturnAlreadyLockedError extends Error {
   condition: "good" | "bad";
@@ -396,7 +406,13 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
             } else {
               rowsRef.current = finalRows;
             }
-          } catch {
+          } catch (err) {
+            // The file is gone — its platform/company was deleted in the report
+            // panel. Writing our local snapshot back would resurrect every
+            // deleted order, so drop the changes and say so instead.
+            if ((err as { code?: string })?.code === "storage/object-not-found") {
+              throw new Error("This platform was deleted in the report panel — scans for it were not saved.");
+            }
             // Lock/read failed entirely — fall back to writing our local snapshot
             // (already carries our changes, applyUpdate applied them optimistically)
             // rather than losing them outright. Best-effort, unprotected by the lock.
@@ -621,7 +637,11 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     handleDecode(val);
   }, [manualAwb, handleDecode]);
 
-  const { cameraError, hasTorch, torchOn, toggleTorch } = useScanner(videoRef, handleDecode, true);
+  const [cameraOn, setCameraOn] = useState(readCameraPref);
+  const toggleCamera = useCallback(() => {
+    setCameraOn(on => { writeCameraPref(!on); return !on; });
+  }, []);
+  const { cameraError, hasTorch, torchOn, toggleTorch } = useScanner(videoRef, handleDecode, cameraOn);
 
   const masterRowCount = selection.scanAll
     ? (scanAllStatus ? `${scanAllStatus.loaded}/${scanAllStatus.total} files` : null)
@@ -634,6 +654,27 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
   const statusColor = STATUS_COLOR[selection.status] ?? { bg: "bg-white/10", text: "text-white/70", glow: "#ffffff" };
   const scanning = !loadingMaster && !masterError && (!needsConditionChoice || sessionReturnCondition !== null);
+
+  // Hardware (TVS) scanner — works with the camera on or off. Scans that arrive
+  // before the screen is ready get a clear "not ready" instead of a false
+  // "not found" (scan-all would otherwise search only the files loaded so far).
+  const notReadyReason = loadingMaster
+    ? "Master file is still loading"
+    : masterError
+      ? masterError
+      : needsConditionChoice && sessionReturnCondition === null
+        ? "Choose Good or Damaged first"
+        : null;
+  const notReadyRef = useRef<string | null>(notReadyReason);
+  notReadyRef.current = notReadyReason;
+  useHardwareScanner(useCallback((code: string) => {
+    if (notReadyRef.current) {
+      errorBeep(); vibrate(30);
+      toast.warning("Not ready to scan yet", { description: notReadyRef.current });
+      return;
+    }
+    handleDecode(code);
+  }, [handleDecode]));
 
   return (
     <div className="flex h-dvh flex-col bg-[#080a0f]" onPointerDown={unlockAudio}>
@@ -706,7 +747,20 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           )}
         </div>
 
-        {hasTorch && (
+        <button
+          onClick={toggleCamera}
+          aria-label={cameraOn ? "Turn camera off (use hardware scanner)" : "Turn camera on"}
+          title={cameraOn ? "Camera on — tap to use only the hardware scanner" : "Camera off — tap to turn it on"}
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl transition-all active:scale-95 ${
+            cameraOn
+              ? "bg-white/5 text-white/40 hover:bg-white/10 hover:text-white"
+              : "bg-sky-500/20 text-sky-300 ring-1 ring-sky-400/40"
+          }`}
+        >
+          {cameraOn ? <Camera className="h-4 w-4" /> : <CameraOff className="h-4 w-4" />}
+        </button>
+
+        {cameraOn && hasTorch && (
           <button
             onClick={toggleTorch}
             className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl transition-all active:scale-95 ${
@@ -742,7 +796,17 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         className="relative w-full shrink-0 overflow-hidden"
         style={{ height: "clamp(230px, 58vw, 340px)", background: "#000" }}
       >
-        <video ref={videoRef} className="h-full w-full object-cover" playsInline muted autoPlay />
+        <video ref={videoRef} className={`h-full w-full object-cover ${cameraOn ? "" : "invisible"}`} playsInline muted autoPlay />
+
+        {!cameraOn && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-[#0b0e14] px-6 text-center">
+            <ScanBarcode className="h-10 w-10" style={{ color: statusColor.glow }} />
+            <p className="text-[14px] font-bold text-white/80">Hardware scanner mode</p>
+            <p className="text-[11px] leading-snug text-white/40 max-w-[260px]">
+              Scan with your TVS scanner. The camera is off — tap the camera button above to turn it back on.
+            </p>
+          </div>
+        )}
 
         {/* Flash overlay */}
         <div
@@ -757,10 +821,10 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
         <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 38%, rgba(0,0,0,0.72) 100%)" }} />
 
         {/* Scan frame */}
-        <ScanFrame active={scanning} glowColor={statusColor.glow} flashType={flashType} />
+        {cameraOn && <ScanFrame active={scanning} glowColor={statusColor.glow} flashType={flashType} />}
 
         {/* Status overlay */}
-        {(loadingMaster || masterError || cameraError) && (
+        {(loadingMaster || masterError || (cameraOn && cameraError)) && (
           <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-3 rounded-3xl bg-black/80 px-6 py-5 ring-1 ring-white/10">
               {loadingMaster ? (
@@ -772,7 +836,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
                       : "Loading master file…"}
                   </p>
                 </>
-              ) : cameraError ? (
+              ) : cameraOn && cameraError ? (
                 <>
                   <AlertTriangle className="h-7 w-7 text-rose-400" />
                   <p className="text-[13px] font-semibold text-white/80">Camera Error</p>
@@ -795,7 +859,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           </div>
         )}
 
-        {scanning && (
+        {scanning && cameraOn && (
           <p className="absolute inset-x-0 bottom-2 text-center text-[10px] font-medium tracking-widest text-white/30 uppercase">
             Align barcode in frame
           </p>
