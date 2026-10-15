@@ -6,3 +6,9 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+
+# Shared verbatim with excel-report-manager/src/lib/orderStore — kept byte-identical there
+src/lib/orderStore/rowCodec.ts
+src/lib/orderStore/rowCodec.test.ts
+src/lib/orderStore/orderRepo.ts
+src/lib/orderStore/orderSync.ts
