@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   ArrowLeft, CheckCircle2, XCircle, AlertTriangle,
@@ -16,6 +16,7 @@ import {
   setField, writeMasterRows, writeMasterRowsWithLock, normalize, type MasterRow,
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
+import { visibleRange } from "@/lib/visibleRange";
 import { idbDelete } from "@/lib/idbCache";
 import type { SetupSelection } from "./SetupScreen";
 import { invalidate, markScanned, setMaster, store, updateRow, useAppDispatch, useAppSelector } from "@/store";
@@ -41,6 +42,12 @@ const returnDocKey = (awb: string) => awb.trim().toLowerCase().replace(/[^a-z0-9
 // literally named "Amazon" — match both so this doesn't silently regress if a
 // platform is ever named "Amazon" directly.
 const isAmazonPlatform = (name: string | undefined) => /amazon|shipeaso/i.test(name ?? "");
+
+// The scan log keeps every scan of the session but only draws the rows on
+// screen, so scan 5,000 costs the same as scan 1. Rows have a fixed height.
+const LOG_ROW_HEIGHT = 50;
+const LOG_ROW_GAP = 6;
+const LOG_ROW_PITCH = LOG_ROW_HEIGHT + LOG_ROW_GAP;
 
 class ReturnAlreadyLockedError extends Error {
   condition: "good" | "bad";
@@ -139,7 +146,12 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     return !cacheEntry;
   });
   const [masterError, setMasterError] = useState<string | null>(null);
+  // The scan log keeps every scan of the session. It used to keep only the
+  // latest 200 — older entries dropped off and the counters (counted from the
+  // log) stopped at 200, even though every scan after that was still saved.
   const [results, setResults] = useState<ScanResult[]>([]);
+  const [counts, setCounts] = useState({ ok: 0, fail: 0, warn: 0 });
+  const resultSeqRef = useRef(0);
   const [uploading, setUploading] = useState(false);
   const [pendingUpload, setPendingUpload] = useState(false);
   const [exiting, setExiting] = useState(false);
@@ -354,6 +366,14 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     } finally { setRefreshing(false); }
   }, [dispatch, path, selection.scanAll, selection.allCompanies]);
 
+  const recordResult = useCallback((scan: ScanResult) => {
+    // Unique key even when the same AWB is logged twice in the same millisecond
+    const r = { ...scan, id: `${scan.id}-${++resultSeqRef.current}` };
+    setLastScan(r);
+    setResults((p) => [r, ...p]);
+    setCounts((c) => r.success ? { ...c, ok: c.ok + 1 } : r.warning ? { ...c, warn: c.warn + 1 } : { ...c, fail: c.fail + 1 });
+  }, []);
+
   const flash = useCallback((type: "success" | "error") => {
     setFlashType(type);
     setTimeout(() => setFlashType(null), 400);
@@ -456,7 +476,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       errorBeep(); vibrate(30); flash("error");
       setReturnLockConflict({ awb: canonicalAwb, condition: lockedCondition });
       const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Return locked — already marked ${lockedCondition}` };
-      setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+      recordResult(r);
       return;
     }
 
@@ -467,7 +487,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       setPickupConflict({ awb, company: entry.company.name, platform: entry.platform.name });
       toast.error("Manifest is locked", { description: `AWB ${awb} — status can only be changed by an Excel upload` });
       const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: "Manifest locked — no status change allowed" };
-      setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+      recordResult(r);
       return;
     }
     const orderId = getField(row, "order_id") || getField(row, "orderId") || getField(row, "Order ID") || "";
@@ -494,8 +514,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     beep(); vibrate(50); flash("success");
 
     const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: true, orderInfo: { orderId, productName, previousStatus } };
-    setLastScan(r);
-    setResults((p) => [r, ...p].slice(0, 200));
+    recordResult(r);
 
     const suffix = selection.scanAll ? ` · ${entry.company.name} › ${entry.platform.name}` : "";
     toast.success(`Marked as ${selection.status}`, { description: (productName || orderId || awb) + suffix });
@@ -547,7 +566,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       });
     }
     scheduleUpload(targetPath);
-  }, [dispatch, flash, scheduleUpload, selection.scanAll, selection.status, needsConditionChoice, sessionReturnCondition]);
+  }, [dispatch, flash, recordResult, scheduleUpload, selection.scanAll, selection.status, needsConditionChoice, sessionReturnCondition]);
 
   const handleDecode = useCallback(async (text: string) => {
     // Return sessions must have a batch condition chosen before any scan is processed
@@ -569,7 +588,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     if (scannedRef.current.has(key)) {
       vibrate(30); flash("error");
       const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, warning: true, error: "Already scanned this session" };
-      setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+      recordResult(r);
       toast.warning("Already scanned", { description: awb });
       return;
     }
@@ -585,7 +604,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
       if (matches.length === 0) {
         errorBeep(); vibrate(30); flash("error");
         const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Not found in any platform` };
-        setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+        recordResult(r);
         toast.error("AWB not found", { description: `Searched ${allMastersRef.current.size} platforms` });
         return;
       }
@@ -607,7 +626,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     if (idx === -1) {
       errorBeep(); vibrate(30); flash("error");
       const r: ScanResult = { id: `${Date.now()}-${awb}`, awb, timestamp: new Date(), success: false, error: `Not found in master file` };
-      setLastScan(r); setResults((p) => [r, ...p].slice(0, 200));
+      recordResult(r);
       toast.error("AWB not found", { description: `Scanned: ${awb}` });
       return;
     }
@@ -619,7 +638,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     };
     await applyUpdate(awb, path, singleEntry, idx);
     rowsRef.current = singleEntry.rows; // applyUpdate mutates entry.rows
-  }, [applyUpdate, dispatch, flash, path, selection, needsConditionChoice, sessionReturnCondition]);
+  }, [applyUpdate, dispatch, flash, recordResult, path, selection, needsConditionChoice, sessionReturnCondition]);
 
   const [manualAwb, setManualAwb] = useState("");
 
@@ -642,10 +661,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     ? (scanAllStatus ? `${scanAllStatus.loaded}/${scanAllStatus.total} files` : null)
     : (rowsRef.current?.length ?? null);
 
-  const ok   = results.filter((r) => r.success).length;
-  const fail = results.filter((r) => !r.success && !r.warning).length;
-  const warn = results.filter((r) => !!r.warning).length;
-  const total = results.length;
+  const { ok, fail, warn } = counts;
+  const total = ok + fail + warn;
 
   const statusColor = STATUS_COLOR[selection.status] ?? { bg: "bg-white/10", text: "text-white/70", glow: "#ffffff" };
   const scanning = !loadingMaster && !masterError && (!needsConditionChoice || sessionReturnCondition !== null);
@@ -886,13 +903,7 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1.5">
-          {results.length === 0 ? (
-            <EmptyLog scanning={scanning} />
-          ) : (
-            results.map((r) => <LogRow key={r.id} r={r} />)
-          )}
-        </div>
+        <ScanLogList results={results} scanning={scanning} />
 
         {/* Manual AWB input + Done bar */}
         <div className="border-t border-white/5 px-4 pt-3 pb-[max(env(safe-area-inset-bottom),16px)] space-y-2">
@@ -1349,6 +1360,50 @@ function LastScanBanner({ result, status }: { result: ScanResult | null; status:
   );
 }
 
+function ScanLogList({ results, scanning }: { results: ScanResult[]; scanning: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState({ top: 0, height: 600 });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => setView({ top: el.scrollTop, height: el.clientHeight });
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => { el.removeEventListener("scroll", update); ro.disconnect(); };
+  }, []);
+
+  // New scans go on top. If the user has scrolled down to read older entries,
+  // shift the scroll by the rows added so what they are reading stays put.
+  const countRef = useRef(results.length);
+  useLayoutEffect(() => {
+    const added = results.length - countRef.current;
+    countRef.current = results.length;
+    const el = ref.current;
+    if (el && added > 0 && el.scrollTop > 0) el.scrollTop += added * LOG_ROW_PITCH;
+  }, [results.length]);
+
+  const { start, end } = visibleRange(view.top, view.height, LOG_ROW_PITCH, results.length, 6);
+
+  return (
+    <div ref={ref} className="flex-1 overflow-y-auto px-3 py-2">
+      {results.length === 0 ? (
+        <EmptyLog scanning={scanning} />
+      ) : (
+        <div className="relative" style={{ height: results.length * LOG_ROW_PITCH - LOG_ROW_GAP }}>
+          {results.slice(start, end).map((r, i) => (
+            <div key={r.id} className="absolute inset-x-0" style={{ top: (start + i) * LOG_ROW_PITCH, height: LOG_ROW_HEIGHT }}>
+              <LogRow r={r} />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function EmptyLog({ scanning }: { scanning: boolean }) {
   return (
     <div className="flex h-full flex-col items-center justify-center gap-2 py-8">
@@ -1363,12 +1418,13 @@ function EmptyLog({ scanning }: { scanning: boolean }) {
   );
 }
 
-function LogRow({ r }: { r: ScanResult }) {
+// Memoized: adding a scan re-renders only the new row, not the whole log
+const LogRow = memo(function LogRow({ r }: { r: ScanResult }) {
   const time = r.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
 
   if (r.success) {
     return (
-      <div className="flex items-center gap-2.5 rounded-xl border border-emerald-500/12 bg-emerald-500/4 px-3 py-2">
+      <div className="flex h-full items-center gap-2.5 rounded-xl border border-emerald-500/12 bg-emerald-500/4 px-3">
         <CheckCircle2 className="h-3.5 w-3.5 shrink-0 text-emerald-500" />
         <div className="min-w-0 flex-1">
           <p className="truncate text-[12px] font-semibold tabular-nums text-white/80">{r.awb}</p>
@@ -1385,7 +1441,7 @@ function LogRow({ r }: { r: ScanResult }) {
 
   const isWarn = !!r.warning;
   return (
-    <div className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 ${isWarn ? "border-amber-500/12 bg-amber-500/4" : "border-rose-500/12 bg-rose-500/4"}`}>
+    <div className={`flex h-full items-center gap-2.5 rounded-xl border px-3 ${isWarn ? "border-amber-500/12 bg-amber-500/4" : "border-rose-500/12 bg-rose-500/4"}`}>
       {isWarn
         ? <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-amber-500" />
         : <XCircle className="h-3.5 w-3.5 shrink-0 text-rose-500" />}
@@ -1396,4 +1452,4 @@ function LogRow({ r }: { r: ScanResult }) {
       <span className="shrink-0 text-[9px] tabular-nums text-white/20">{time}</span>
     </div>
   );
-}
+});
