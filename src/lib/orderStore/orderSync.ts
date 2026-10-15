@@ -36,7 +36,10 @@ export interface PersistedSync extends SyncMeta {
  */
 export interface SyncPersistence {
   load(): Promise<PersistedSync | null>;
+  /** Must throw if nothing was saved — the caller re-queues. */
   save(meta: SyncMeta, upserts: SyncedDoc[], deletedIds: string[]): Promise<void>;
+  /** Remove everything (before a full reload, so stale leftovers can't survive it). */
+  reset(): Promise<void>;
 }
 
 export interface OrderSyncOptions {
@@ -94,6 +97,7 @@ export class OrderSync {
       return;
     }
     const { db, dataset, scope } = this.o;
+    await this.o.persistence.reset();
     const t0 = await readMaxUpdatedAt(db, dataset, scope);
     const [all, cols] = await Promise.all([readAllLive(db, dataset, scope), readColumns(db, dataset, scope)]);
     cols.forEach((v, k) => this.columns.set(k, v));
@@ -154,7 +158,16 @@ export class OrderSync {
       this.pendingUpserts.clear();
       this.pendingDeletes.clear();
       this.metaDirty = false;
-      await this.o.persistence.save({ cursor: this.cursor, columns: Object.fromEntries(this.columns) }, upserts, deletes);
+      try {
+        await this.o.persistence.save({ cursor: this.cursor, columns: Object.fromEntries(this.columns) }, upserts, deletes);
+      } catch {
+        // Put them back (unless something newer for the same doc arrived
+        // meanwhile) so a later save can't record a cursor past them
+        for (const d of upserts) if (!this.pendingUpserts.has(d.id) && !this.pendingDeletes.has(d.id)) this.pendingUpserts.set(d.id, d);
+        for (const id of deletes) if (!this.pendingUpserts.has(id)) this.pendingDeletes.add(id);
+        this.metaDirty = true;
+        this.schedulePersist();
+      }
     });
     return this.persisting;
   }
@@ -270,12 +283,16 @@ function sameColumns(a: string[] | undefined, b: string[]): boolean {
 }
 
 /** Persistence held in memory — tests, and a fallback where IndexedDB is unavailable. */
-export function memoryPersistence(): SyncPersistence & { state: PersistedSync | null; saves: number } {
+export function memoryPersistence(): SyncPersistence & { state: PersistedSync | null; saves: number; failNext: number } {
   const p = {
     state: null as PersistedSync | null,
     saves: 0,
+    /** Tests: make the next N saves fail. */
+    failNext: 0,
     async load() { return p.state ? structuredClone(p.state) : null; },
+    async reset() { p.state = null; },
     async save(meta: SyncMeta, upserts: SyncedDoc[], deletedIds: string[]) {
+      if (p.failNext > 0) { p.failNext--; throw new Error('simulated storage failure'); }
       p.saves++;
       const docs = new Map((p.state?.docs ?? []).map(d => [d.id, d]));
       deletedIds.forEach(id => docs.delete(id));

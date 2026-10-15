@@ -17,6 +17,7 @@ import {
 } from "@/lib/masterService";
 import { beep, errorBeep, vibrate, unlockAudio } from "@/lib/scanner";
 import { visibleRange } from "@/lib/visibleRange";
+import { getOrdersBackend } from "@/lib/orderStore/backendSwitch";
 import { idbDelete } from "@/lib/idbCache";
 import type { SetupSelection } from "./SetupScreen";
 import { invalidate, markScanned, setMaster, store, updateRow, useAppDispatch, useAppSelector } from "@/store";
@@ -90,6 +91,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
 
   // Debounced upload — accumulate dirty paths, flush once after DEBOUNCE_MS of silence
   const DEBOUNCE_MS = 3000;
+  // A save that failed keeps its scans queued and retries after this long
+  const UPLOAD_RETRY_MS = 10_000;
   const dirtyPathsRef = useRef<Set<string>>(new Set());
   const uploadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Tracks exactly which rows THIS user changed (path → awb → updated row)
@@ -426,17 +429,36 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
             if ((err as { code?: string })?.code === "storage/object-not-found") {
               throw new Error("This platform was deleted in the report panel — scans for it were not saved.");
             }
-            // Lock/read failed entirely — fall back to writing our local snapshot
-            // (already carries our changes, applyUpdate applied them optimistically)
-            // rather than losing them outright. Best-effort, unprotected by the lock.
-            const fallback = selection.scanAll ? allMastersRef.current.get(p)?.rows : rowsRef.current;
-            if (fallback) await writeMasterRows(p, fallback);
+            try {
+              // Orders in Firestore, or saving paused while they are being
+              // moved: never fall back to a whole-file write
+              if ((await getOrdersBackend()) !== "files") throw err;
+              // Lock/read failed entirely — fall back to writing our local snapshot
+              // (already carries our changes, applyUpdate applied them optimistically)
+              // rather than losing them outright. Best-effort, unprotected by the lock.
+              const fallback = selection.scanAll ? allMastersRef.current.get(p)?.rows : rowsRef.current;
+              if (fallback) await writeMasterRows(p, fallback);
+            } catch (finalErr) {
+              // Not saved — put the scans back in the queue (unless a newer scan
+              // of the same order is already queued) so the retry saves them
+              const queued = pendingRowsRef.current.get(p) ?? new Map<string, MasterRow>();
+              for (const [awb, row] of ourChanges) if (!queued.has(awb)) queued.set(awb, row);
+              pendingRowsRef.current.set(p, queued);
+              dirtyPathsRef.current.add(p);
+              throw finalErr;
+            }
           }
         }));
       } catch (e) {
-        toast.error("Upload failed", { description: (e as Error).message });
+        const retrying = dirtyPathsRef.current.size > 0;
+        toast.error(retrying ? "Not saved yet — retrying automatically" : "Upload failed", { description: (e as Error).message });
       } finally {
         setUploading(false);
+        if (dirtyPathsRef.current.size > 0) {
+          setPendingUpload(true);
+          if (uploadTimerRef.current) clearTimeout(uploadTimerRef.current);
+          uploadTimerRef.current = setTimeout(() => void doUploadRef.current(), UPLOAD_RETRY_MS);
+        }
       }
     };
     const chained = uploadChainRef.current.then(run);
@@ -444,6 +466,8 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
     uploadChainRef.current = chained.catch(() => {});
     return chained;
   }, [selection.scanAll]);
+  const doUploadRef = useRef(doUpload);
+  doUploadRef.current = doUpload;
 
   // Mark a path dirty and reset the debounce timer
   const scheduleUpload = useCallback((targetPath: string) => {
@@ -934,6 +958,12 @@ export function ScannerScreen({ selection, onExit }: { selection: SetupSelection
               setExiting(true);
               if (uploadTimerRef.current) { clearTimeout(uploadTimerRef.current); uploadTimerRef.current = null; }
               await doUpload();
+              if (dirtyPathsRef.current.size > 0) {
+                // Leaving now would drop scans that aren't saved yet
+                setExiting(false);
+                toast.error("Some scans aren't saved yet", { description: "Keep this screen open — saving retries automatically." });
+                return;
+              }
               onExit();
             }}
             className="w-full h-[48px] rounded-2xl bg-white/8 text-[15px] font-bold text-white/80 hover:bg-white/12 active:scale-[0.98] transition-all"

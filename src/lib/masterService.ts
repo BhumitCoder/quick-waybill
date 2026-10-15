@@ -2,6 +2,10 @@ import { ref, getDownloadURL, uploadBytes } from "firebase/storage";
 import { doc, setDoc, getDoc, getDocs, serverTimestamp, runTransaction } from "firebase/firestore";
 import { storage, db, masterSyncCollection } from "./firebase";
 import { idbGet, idbSet } from "./idbCache";
+import { getOrdersBackend, SavingPausedError } from "./orderStore/backendSwitch";
+import { OrderSync } from "./orderStore/orderSync";
+import { idbPersistence } from "./orderStore/idbPersistence";
+import { mergedRowKey } from "./orderStore/rowKey";
 
 export type MasterRow = Record<string, unknown>;
 
@@ -17,6 +21,38 @@ export function masterPath(companyId: string, platformId: string) {
 
 export function masterPathXls(companyId: string, platformId: string) {
   return `companies/${companyId}/platforms/${platformId}/master.xls`;
+}
+
+// ── Orders in Firestore (Phase 2) ───────────────────────────────────────────
+//
+// The remote switch (orderStore/backendSwitch.ts) decides where orders live.
+// With 'firestore', readMasterRows / writeMasterRowsWithLock keep their exact
+// contracts but use order documents: each platform has its own synced copy on
+// the phone (restored instantly, then only changes are fetched), and a save
+// writes only the scanned orders — ~1 KB each instead of a whole file.
+
+const orderStores = new Map<string, OrderSync>();
+
+function platformOrders(companyId: string, platformId: string): OrderSync {
+  const key = `${companyId}_${platformId}`;
+  let store = orderStores.get(key);
+  if (!store) {
+    store = new OrderSync({
+      db,
+      dataset: "master",
+      persistence: idbPersistence(`zaiko-orders-v1-${key}`),
+      keyOf: mergedRowKey,
+      writer: CLIENT_ID,
+      scope: { companyId, platformId },
+    });
+    orderStores.set(key, store);
+  }
+  return store;
+}
+
+function parseMasterPath(path: string): { companyId: string; platformId: string } | null {
+  const m = /^companies\/([^/]+)\/platforms\/([^/]+)\/master\.xlsx?$/.exec(path);
+  return m ? { companyId: m[1], platformId: m[2] } : null;
 }
 
 // ── Concurrency control ─────────────────────────────────────────────────────
@@ -252,6 +288,14 @@ export async function readMasterRows(
   storagePath: string,
   opts?: { fresh?: boolean; version?: number },
 ): Promise<MasterRow[]> {
+  const target = parseMasterPath(storagePath);
+  if (target && (await getOrdersBackend()) === "firestore") {
+    const store = platformOrders(target.companyId, target.platformId);
+    await store.init();
+    await store.catchUp(); // one small query: only orders changed since last time
+    return store.rows(target.companyId, target.platformId).map((r) => ({ ...r }));
+  }
+
   // fresh: merge-before-write reads MUST see the latest Storage content —
   // an IDB hit here can be a pre-merge snapshot, and merging onto it would
   // erase every row another flush already wrote.
@@ -330,6 +374,10 @@ async function serializeAndUpload(storagePath: string, rows: MasterRow[]): Promi
 }
 
 export async function writeMasterRows(storagePath: string, rows: MasterRow[]): Promise<void> {
+  // Unlocked whole-file fallback — only meaningful while orders live in files
+  const backend = await getOrdersBackend();
+  if (backend === "frozen") throw new SavingPausedError();
+  if (backend === "firestore") throw new Error("Unlocked whole-file writes are not used with Firestore orders");
   await serializeAndUpload(storagePath, rows);
 
   // Notify the report app that this master file changed. Only used by the
@@ -366,11 +414,31 @@ export async function writeMasterRowsWithLock(
   storagePath: string,
   computeRows: (freshRows: MasterRow[]) => MasterRow[] | null | Promise<MasterRow[] | null>,
 ): Promise<{ rowsBefore: MasterRow[]; finalRows: MasterRow[] }> {
+  const backend = await getOrdersBackend();
+  if (backend === "frozen") throw new SavingPausedError();
+  const target = backend === "firestore" ? parseMasterPath(storagePath) : null;
+  if (backend === "firestore" && !target) throw new Error(`Not an orders file: ${storagePath}`);
+
   for (let attempt = 1; attempt <= MAX_WRITE_ATTEMPTS; attempt++) {
     const version = await acquireMasterFileLock(storagePath);
     if (version === null) {
       await sleep(300 + Math.random() * 500);
       continue;
+    }
+    if (target) {
+      // Same lock, same contract — but only the changed orders are written
+      try {
+        const result = await platformOrders(target.companyId, target.platformId).write(
+          target.companyId,
+          target.platformId,
+          computeRows,
+        );
+        await releaseMasterFileLock(storagePath, version, result.finalRows !== result.rowsBefore);
+        return result;
+      } catch (err) {
+        await releaseMasterFileLock(storagePath, version, false);
+        throw err;
+      }
     }
     try {
       const rowsBefore = await readMasterRows(storagePath, { fresh: true });

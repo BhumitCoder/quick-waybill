@@ -1,5 +1,5 @@
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore, collection } from "firebase/firestore";
+import { getFirestore, connectFirestoreEmulator, collection } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -14,6 +14,19 @@ const firebaseConfig = {
 
 const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
 export const db = getFirestore(app, "zaiko-reports");
+
+// Local testing only: `VITE_FIRESTORE_EMULATOR=127.0.0.1:8085 npm run dev`
+// points this database at the Firestore emulator. Ignored in production builds.
+const emulatorHost = import.meta.env.DEV ? import.meta.env.VITE_FIRESTORE_EMULATOR : undefined;
+if (emulatorHost) {
+  const [host, port] = String(emulatorHost).split(":");
+  try {
+    connectFirestoreEmulator(db, host, Number(port));
+    console.warn(`[firebase] zaiko-reports → Firestore emulator at ${emulatorHost}`);
+  } catch {
+    /* already connected (hot reload reuses the same instance) */
+  }
+}
 export const storage = getStorage(app);
 export const companiesCollection = collection(db, "companies");
 export const manifestsCollection = collection(db, "manifests");

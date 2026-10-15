@@ -5,6 +5,7 @@ import { Toaster } from "sonner";
 import { SetupScreen, type SetupSelection } from "@/components/SetupScreen";
 import { store } from "@/store";
 import { useTheme } from "@/hooks/useTheme";
+import { refreshOrdersBackend, watchOrdersBackend } from "@/lib/orderStore/backendSwitch";
 
 // Lazy-load the scanner screen so its heavy dependencies (ZXing ~1 MB,
 // scanner logic) are not downloaded or parsed until the user actually
@@ -45,6 +46,10 @@ function Index() {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
     }
   }, []);
+
+  // When orders move to new storage, use it from the next read/save on — no
+  // reload, so a scan session (and any scans still queued) carries on intact
+  useEffect(() => watchOrdersBackend(() => refreshOrdersBackend()), []);
 
   return (
     <Provider store={store}>
