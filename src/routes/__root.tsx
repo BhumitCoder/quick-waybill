@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { installDebugLogCapture } from "../lib/debugLog";
+import { isTestEnv } from "../lib/firebase";
 
 // As early as possible on the client — before background prefetch or any
 // scanning starts — so the on-screen log viewer (ScannerScreen) can show a
@@ -128,6 +129,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {isTestEnv && (
+        <div className="pointer-events-none fixed left-1/2 top-0 z-[100] -translate-x-1/2 rounded-b-md bg-amber-500 px-3 py-0.5 text-xs font-bold tracking-wide text-black shadow">
+          TEST ENVIRONMENT
+        </div>
+      )}
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
     </QueryClientProvider>

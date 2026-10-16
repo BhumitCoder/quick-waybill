@@ -146,12 +146,22 @@ export function listenColumns(
 }
 
 const BATCH_LIMIT = 400;
+/**
+ * Batches committed at once. One at a time ran at ~80 documents/s (a 5,000-row
+ * upload took a minute); 4 in parallel is ~4x that while staying well under
+ * Firestore's 500 writes/s ramp-up limit for a collection that is still small.
+ */
+const COMMIT_CONCURRENCY = 4;
 
 /**
  * Write a diff for one platform. Firestore batches cap at 500 writes, so a
  * large change is split across several batches — each is atomic, the whole
  * is not. Every write is idempotent (a full document set), so re-running the
  * same operation after a partial failure completes it.
+ *
+ * If a batch fails, no new batch is started, the batches already in flight
+ * finish, and only then does this throw — so nothing is still being written
+ * after the caller sees the error and releases its lock.
  */
 export async function commitDiff(
   db: Firestore, dataset: Dataset, scope: PlatformScope, diff: Pick<RowDiff, 'writes' | 'deletes'>,
@@ -169,14 +179,29 @@ export async function commitDiff(
     }));
   }
   for (const id of diff.deletes) {
-    // Tombstone, so every device's local copy learns the row is gone
+    // Tombstone, so every device's copy learns the row is gone
     ops.push(b => b.set(doc(col, id), { ...scope, deleted: true, updatedAt: serverTimestamp(), writer }));
   }
-  for (let i = 0; i < ops.length; i += BATCH_LIMIT) {
-    const batch = writeBatch(db);
-    ops.slice(i, i + BATCH_LIMIT).forEach(op => op(batch));
-    await batch.commit();
-  }
+
+  const chunks: Array<typeof ops> = [];
+  for (let i = 0; i < ops.length; i += BATCH_LIMIT) chunks.push(ops.slice(i, i + BATCH_LIMIT));
+
+  let next = 0;
+  let failure: { error: unknown } | null = null;
+  const worker = async () => {
+    while (!failure && next < chunks.length) {
+      const chunk = chunks[next++];
+      try {
+        const batch = writeBatch(db);
+        chunk.forEach(op => op(batch));
+        await batch.commit();
+      } catch (error) {
+        failure ??= { error };
+      }
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(COMMIT_CONCURRENCY, chunks.length) }, worker));
+  if (failure) throw (failure as { error: unknown }).error;
 }
 
 /** A new document id, generated locally (no network). */
