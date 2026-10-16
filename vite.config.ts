@@ -16,11 +16,10 @@ export default defineConfig({
   // This causes Nitro to emit to .vercel/output/ (Build Output API) which Vercel picks up automatically.
   nitro: {
     preset: "vercel",
-    // Force Node.js runtime — the Nitro beta defaults to bun1.x on Vercel
-    // which causes FUNCTION_INVOCATION_FAILED crashes.
+    // Force a supported Node.js runtime — the Nitro beta defaults to bun1.x on Vercel.
     vercel: {
       functions: {
-        runtime: "nodejs20.x",
+        runtime: "nodejs22.x",
       },
     },
     externals: {
